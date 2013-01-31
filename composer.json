@@ -1,0 +1,7 @@
+{
+    "require": {
+        "php": ">=5.3.3",
+        "phpdocumentor/reflection": "dev-master"
+    },
+    "minimum-stability": "dev"
+}
