@@ -97,7 +97,7 @@ class WP_NodeVisitor extends PHPParser_NodeVisitorAbstract {
 				return false;
 		}
 
-		$caller = new QP_Caller;
+		$caller = new WP_Caller;
 		$caller->name = $this->getLocation();
 		$caller->file = $this->file;
 		$caller->line = $node->getLine();
