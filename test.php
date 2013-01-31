@@ -2,11 +2,11 @@
 
 require dirname(__FILE__) . '/PHP-Parser/lib/PHPParser/Autoloader.php';
 PHPParser_Autoloader::register();
-require dirname(__FILE__) . '/library/QP/NodeVisitor.php';
+require dirname(__FILE__) . '/library/WP/NodeVisitor.php';
 
 $wp_dir = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'trunk-git' . DIRECTORY_SEPARATOR . 'wp-includes';
 
-class QP_CallingCard {
+class WP_CallingCard {
 	public $caller = array();
 	public $callee = '';
 	public $line = 0;
@@ -16,7 +16,7 @@ class QP_CallingCard {
 	public $args = array();
 }
 
-class QP_Filter {
+class WP_Filter {
 	public $name = '';
 
 	public $callers = array();
@@ -26,14 +26,14 @@ class QP_Filter {
 	}
 }
 
-class QP_Caller {
+class WP_Caller {
 	public $name = '';
 	public $file = '';
 	public $line = 0;
 	public $type = 'unknown';
 }
 
-class QP_Function {
+class WP_Function {
 	public $doc = '';
 	public $file = '';
 	public $line = 0;
@@ -45,10 +45,10 @@ class QP_Function {
 	public $used_by = array();
 }
 
-class QP_Repo_Functions implements ArrayAccess {
+class WP_Repo_Functions implements ArrayAccess {
 	public function offsetGet($name) {
 		if (!isset($this->functions[$name]))
-			$this->functions[$name] = new QP_Function($name);
+			$this->functions[$name] = new WP_Function($name);
 
 		return $this->functions[$name];
 	}
@@ -66,10 +66,10 @@ class QP_Repo_Functions implements ArrayAccess {
 	}
 }
 
-class QP_Repo_Filters implements ArrayAccess {
+class WP_Repo_Filters implements ArrayAccess {
 	public function offsetGet($name) {
 		if (!isset($this->filters[$name]))
-			$this->filters[$name] = new QP_Filter($name);
+			$this->filters[$name] = new WP_Filter($name);
 
 		return $this->filters[$name];
 	}

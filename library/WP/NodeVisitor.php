@@ -1,6 +1,6 @@
 <?php
 
-class QP_NodeVisitor extends PHPParser_NodeVisitorAbstract {
+class WP_NodeVisitor extends PHPParser_NodeVisitorAbstract {
 	protected $file = '';
 	protected $location = array();
 	protected $printer = null;
