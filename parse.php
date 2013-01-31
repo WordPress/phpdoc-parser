@@ -36,7 +36,7 @@ function parse_files($files, $root) {
 	$functions = array();
 
 	foreach ($files as $filename) {
-		$file = new FileReflector($filename);
+		$file = new WP_Reflection_FileReflector($filename);
 
 		$path = ltrim(substr($filename, strlen($root)), DIRECTORY_SEPARATOR);
 		$file->setFilename($path);
@@ -44,11 +44,27 @@ function parse_files($files, $root) {
 		$file->process();
 
 		// TODO proper exporter
+
+		print $file->getFilename() . "\n";
+		if (!empty($file->hooks)) {
+			foreach ($file->hooks as $hook) {
+				print '  ' . $hook->getName() . "\n";
+			}
+		}
+
 		foreach ($file->getFunctions() as $function) {
+			print '  ' . $function->getShortName() . "\n";
+			if (!empty($function->hooks)) {
+				foreach ($function->hooks as $hook) {
+					print '    ' . $hook->getName() . "\n";
+				}
+			}
+		/*
 			$functions[$file->getFilename()][] = array(
 				'name' => $function->getShortName(),
 				'line' => $function->getLineNumber(),
 			);
+		 */
 		}
 	}
 
