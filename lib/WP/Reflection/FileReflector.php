@@ -83,6 +83,13 @@ class WP_Reflection_FileReflector extends FileReflector {
 				$include = new Reflection\IncludeReflector($node, $this->context);
 				$this->includes[] = $include;
 				break;
+			case 'Stmt_ClassMethod':
+				$method = $this->findMethodReflector($this->getLocation(), $node);
+				if ($method)
+					array_push($this->location, $method);
+				else
+					array_push($this->location, $this->getLocation());
+				break;
 		}
 	}
 
@@ -108,5 +115,35 @@ class WP_Reflection_FileReflector extends FileReflector {
 
 	protected function getLocation() {
 		return empty($this->location) ? $this : end($this->location);
+	}
+
+	/**
+	 * Find the MethodReflector in a ClassReflector that matches the
+	 * given Stmt_ClassMethod node.
+	 *
+	 * @param phpDocumentor\Reflection\ClassReflector $class Class to search in
+	 * @param PHPParser_Node_Stmt_ClassMethod $node AST node to match with
+	 * @return phpDocumentor\Reflection\MethodReflector|bool
+	 */
+	protected function findMethodReflector($class, PHPParser_Node_Stmt_ClassMethod $node) {
+		if (!$class instanceof Reflection\ClassReflector)
+			return false;
+
+		$found = false;
+		$method = new Reflection\ClassReflector\MethodReflector($node, $this->context);
+
+		foreach ($class->getMethods() as $poss_method) {
+			if ($method->getName() === $poss_method->getName()
+				&& $method->getVisibility() === $poss_method->getVisibility()
+				&& $method->isAbstract() === $poss_method->isAbstract()
+				&& $method->isStatic() === $poss_method->isStatic()
+				&& $method->isFinal() === $poss_method->isFinal()
+			) {
+				$found = $poss_method;
+				break;
+			}
+		}
+
+		return $found;
 	}
 }
