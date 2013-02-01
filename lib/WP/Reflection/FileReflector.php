@@ -10,6 +10,9 @@ use phpDocumentor\Reflection\FileReflector;
  * hooks and note function relationships.
  */
 class WP_Reflection_FileReflector extends FileReflector {
+	/** @var WP_Reflection_HookReflector[] */
+	public $hooks = array();
+
 	/** @var PHPParser_Node[] */
 	protected $location = array();
 
@@ -104,10 +107,6 @@ class WP_Reflection_FileReflector extends FileReflector {
 	}
 
 	protected function getLocation() {
-		if (empty($this->location)) {
-			return $this;
-		} else {
-			return end($this->location);
-		}
+		return empty($this->location) ? $this : end($this->location);
 	}
 }
