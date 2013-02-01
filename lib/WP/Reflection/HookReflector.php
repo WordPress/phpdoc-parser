@@ -26,7 +26,7 @@ class WP_Reflection_HookReflector extends BaseReflector {
 
 	public function getType() {
 		$type = 'filter';
-		switch ((string) $node->name) {
+		switch ((string) $this->node->name) {
 			case 'do_action':
 				$type = 'action';
 				break;
