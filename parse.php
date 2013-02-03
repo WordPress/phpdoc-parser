@@ -132,6 +132,7 @@ function export_hooks(array $hooks) {
 			'name' => $hook->getName(),
 			'line' => $hook->getLineNumber(),
 			'type' => $hook->getType(),
+			'args' => implode(', ', $hook->getArgs()),
 		);
 	}
 	return $out;

@@ -37,4 +37,16 @@ class WP_Reflection_HookReflector extends BaseReflector {
 
 		return $type;
 	}
+
+	public function getArgs() {
+		$printer = new WP_PrettyPrinter;
+		$args = array();
+		foreach ($this->node->args as $arg) {
+			$args[] = $printer->prettyPrintArg($arg);
+		}
+
+		// Skip the filter name
+		array_shift($args);
+		return $args;
+	}
 }
