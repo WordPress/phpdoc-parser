@@ -119,6 +119,13 @@ function export_docblock($element) {
 		'description' => $docblock->getShortDescription(),
 		'long-description' => $docblock->getLongDescription()->getFormattedContents(),
 	);
+	$output['tags'] = array();
+	foreach ($docblock->getTags() as $tag) {
+		$output['tags'][] = array(
+			'name' => $tag->getName(),
+			'content' => $tag->getContent(),
+		);
+	}
 
 	// TODO output tags
 
