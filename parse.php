@@ -208,4 +208,4 @@ function export_methods(array $methods) {
 $files = get_wp_files($wp_dir);
 $output = parse_files($files, $wp_dir);
 
-file_put_contents('output.json', json_encode($output, defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0));
+echo json_encode($output, defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0);
