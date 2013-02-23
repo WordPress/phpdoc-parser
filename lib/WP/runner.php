@@ -39,7 +39,7 @@ function parse_files($files, $root) {
 
 		// TODO proper exporter
 		$out = array(
-			'path' => $file->getFilename(),
+			'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
 		);
 
 		foreach ($file->getIncludes() as $include) {
