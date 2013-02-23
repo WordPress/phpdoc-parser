@@ -67,11 +67,8 @@ function parse_files($files, $root) {
 				'name' => $function->getShortName(),
 				'line' => $function->getLineNumber(),
 				'arguments' => export_arguments($function->getArguments()),
+				'doc' => export_docblock($function),
 			);
-
-			$docblock = export_docblock($function);
-			if ($docblock)
-				$func['doc'] = $docblock;
 
 			if (!empty($function->hooks))
 				$func['hooks'] = export_hooks($function->hooks);
@@ -89,11 +86,8 @@ function parse_files($files, $root) {
 				'implements' => $class->getInterfaces(),
 				'properties' => export_properties($class->getProperties()),
 				'methods' => export_methods($class->getMethods()),
+				'doc' => export_docblock($class),
 			);
-
-			$docblock = export_docblock($class);
-			if ($docblock)
-				$cl['doc'] = $docblock;
 
 			$out['classes'][] = $cl;
 		}
@@ -106,22 +100,25 @@ function parse_files($files, $root) {
 
 function export_docblock($element) {
 	$docblock = $element->getDocBlock();
-	if (!$docblock)
-		return false;
+	if (!$docblock) {
+		return array(
+			'description' => '',
+			'long_description' => '',
+			'tags' => array(),
+		);
+	}
 
 	$output = array(
 		'description' => $docblock->getShortDescription(),
 		'long_description' => $docblock->getLongDescription()->getFormattedContents(),
+		'tags' => array(),
 	);
-	$output['tags'] = array();
 	foreach ($docblock->getTags() as $tag) {
 		$output['tags'][] = array(
 			'name' => $tag->getName(),
 			'content' => $tag->getContent(),
 		);
 	}
-
-	// TODO output tags
 
 	return $output;
 }
@@ -184,11 +181,8 @@ function export_methods(array $methods) {
 			'static' => $method->isStatic(),
 			'visibility' => $method->getVisibility(),
 			'arguments' => export_arguments($method->getArguments()),
+			'doc' => export_docblock($method),
 		);
-
-		$docblock = export_docblock($method);
-		if ($docblock)
-			$meth['doc'] = $docblock;
 
 		if (!empty($method->hooks))
 			$meth['hooks'] = export_hooks($method->hooks);
