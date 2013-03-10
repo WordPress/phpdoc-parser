@@ -13,9 +13,6 @@ function get_wp_files($directory) {
 			if ($file->getFilename() === 'class-wp-json-server.php')
 				continue;
 
-			if (strpos($file->getPath(), 'wp-content') !== false)
-				continue;
-
 			$files[] = $file->getPathname();
 		}
 	}
