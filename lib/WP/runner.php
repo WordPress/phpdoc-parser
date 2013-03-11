@@ -10,9 +10,6 @@ function get_wp_files($directory) {
 			if ($file->getExtension() !== 'php')
 				continue;
 
-			if ($file->getFilename() === 'class-wp-json-server.php')
-				continue;
-
 			$files[] = $file->getPathname();
 		}
 	}
