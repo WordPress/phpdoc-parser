@@ -1,0 +1,197 @@
+[
+    {
+        "name": "dflydev/markdown",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/dflydev/dflydev-markdown.git",
+            "reference": "11f8faa2d17f717a038b4d372abd22a6ac4a15dc"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://github.com/dflydev/dflydev-markdown/archive/11f8faa2d17f717a038b4d372abd22a6ac4a15dc.zip",
+            "reference": "11f8faa2d17f717a038b4d372abd22a6ac4a15dc",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3"
+        },
+        "time": "2012-07-15 16:31:27",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.0-dev"
+            }
+        },
+        "installation-source": "source",
+        "autoload": {
+            "psr-0": {
+                "dflydev\\markdown": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Dragonfly Development Inc.",
+                "email": "info@dflydev.com",
+                "homepage": "http://dflydev.com"
+            },
+            {
+                "name": "Beau Simensen",
+                "email": "beau@dflydev.com",
+                "homepage": "http://beausimensen.com"
+            },
+            {
+                "name": "Michel Fortin",
+                "homepage": "http://michelf.com"
+            },
+            {
+                "name": "John Gruber",
+                "homepage": "http://daringfireball.net"
+            }
+        ],
+        "description": "PHP Markdown & Extra",
+        "homepage": "http://github.com/dflydev/dflydev-markdown",
+        "keywords": [
+            "markdown"
+        ]
+    },
+    {
+        "name": "phpdocumentor/reflection-docblock",
+        "version": "2.0.0a2",
+        "version_normalized": "2.0.0.0-alpha2",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/phpDocumentor/ReflectionDocBlock",
+            "reference": "2.0.0a2"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://github.com/phpDocumentor/ReflectionDocBlock/archive/2.0.0a2.zip",
+            "reference": "2.0.0a2",
+            "shasum": ""
+        },
+        "require": {
+            "dflydev/markdown": "1.0.*",
+            "php": ">=5.3.3"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "3.7.*@stable"
+        },
+        "time": "2012-12-02 20:26:45",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "phpDocumentor": [
+                    "src/"
+                ]
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Mike van Riel",
+                "email": "mike.vanriel@naenius.com"
+            }
+        ]
+    },
+    {
+        "name": "nikic/php-parser",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/nikic/PHP-Parser.git",
+            "reference": "75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab",
+            "reference": "75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.2"
+        },
+        "time": "2013-02-14 20:49:08",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-0": {
+                "PHPParser": "lib/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Nikita Popov"
+            }
+        ],
+        "description": "A PHP parser written in PHP",
+        "keywords": [
+            "parser",
+            "php"
+        ]
+    },
+    {
+        "name": "phpdocumentor/reflection",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/phpDocumentor/Reflection.git",
+            "reference": "257f10cd44bed0a8257c30ef9e218cb115867d40"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/phpDocumentor/Reflection/zipball/257f10cd44bed0a8257c30ef9e218cb115867d40",
+            "reference": "257f10cd44bed0a8257c30ef9e218cb115867d40",
+            "shasum": ""
+        },
+        "require": {
+            "nikic/php-parser": "dev-master",
+            "php": ">=5.3.3",
+            "phpdocumentor/reflection-docblock": "2.0.0a2"
+        },
+        "require-dev": {
+            "behat/behat": ">=2.4@stable",
+            "mockery/mockery": ">=0.7.0@stable",
+            "phpunit/phpunit": "3.7.*@stable"
+        },
+        "time": "2013-02-01 21:05:30",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-0": {
+                "phpDocumentor": [
+                    "src/",
+                    "tests/unit/",
+                    "tests/mocks/"
+                ]
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "description": "Reflection library to do Static Analysis for PHP Projects",
+        "homepage": "http://www.phpdoc.org",
+        "keywords": [
+            "phpDocumentor",
+            "phpdoc",
+            "reflection",
+            "static analysis"
+        ]
+    }
+]
