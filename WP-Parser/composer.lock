@@ -1,5 +1,9 @@
 {
-    "hash": "0138a09193e1550b7154d2dcf43f7ed5",
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+    ],
+    "hash": "f74c79a7061421b34bce86b1457c9dc7",
     "packages": [
         {
             "name": "dflydev/markdown",
@@ -66,24 +70,29 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab"
+                "reference": "5fca55702b4e035b60a7b1cbac538572db47121d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab",
-                "reference": "75ec7a3e78bd1fca42ede6def41ce25a9b81c7ab",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/5fca55702b4e035b60a7b1cbac538572db47121d",
+                "reference": "5fca55702b4e035b60a7b1cbac538572db47121d",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.2"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.9-dev"
+                }
+            },
             "autoload": {
                 "psr-0": {
                     "PHPParser": "lib/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "notification-url": "http://packagist.org/downloads/",
             "license": [
                 "BSD-3-Clause"
             ],
@@ -97,7 +106,7 @@
                 "parser",
                 "php"
             ],
-            "time": "2013-02-14 20:49:08"
+            "time": "2013-03-05 14:42:24"
         },
         {
             "name": "phpdocumentor/reflection",
@@ -189,12 +198,21 @@
             "time": "2012-12-02 20:26:45"
         }
     ],
-    "packages-dev": null,
+    "packages-dev": [
+
+    ],
     "aliases": [
 
     ],
     "minimum-stability": "dev",
     "stability-flags": {
-        "phpdocumentor/reflection": 20
-    }
+        "phpdocumentor/reflection": 20,
+        "dflydev/markdown": 20
+    },
+    "platform": {
+        "php": ">=5.3.3"
+    },
+    "platform-dev": [
+
+    ]
 }

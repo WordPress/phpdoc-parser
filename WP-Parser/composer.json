@@ -1,7 +1,8 @@
 {
     "require": {
         "php": ">=5.3.3",
-        "phpdocumentor/reflection": "dev-master"
+        "phpdocumentor/reflection": "dev-master",
+        "dflydev/markdown": "dev-master"
     },
     "autoload": {
 	"psr-0": { "WP": "lib/" }
