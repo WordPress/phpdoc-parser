@@ -9,10 +9,14 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	/**
 	 * Generate a JSON file containing the PHPDoc markup, and save to filesystem.
 	 *
-	 * @synopsis <directory> <output_file>
+	 * @synopsis <directory> [<output_file>]
 	 */
 	public function generate( $args ) {
 		list( $directory, $output_file ) = $args;
+
+		if ( empty( $output_file ) )
+			$output_file = 'phpdoc.xml';
+
 		$directory = realpath( $directory );
 		$this->_load_libs();
 		WP_CLI::line();
