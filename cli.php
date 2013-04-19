@@ -75,7 +75,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 		list( $directory ) = $args;
 		$directory = realpath( $directory );
 		$this->_load_libs();
-		WP_CLI::line();	
+		WP_CLI::line();
 
 		// Import data
 		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ) );
@@ -413,11 +413,10 @@ class WP_PHPDoc_Importer {
 			$ID              = wp_update_post( $post_data, true );
 
 		} else {
-			$wpdb->insert( $wpdb->posts, $post_data );
-			$ID = $wpdb->insert_id;
+			$ID = wp_insert_post( $post_data );
 		}
 
-		if ( is_wp_error( $ID ) ) {
+		if ( ! $ID || is_wp_error( $ID ) ) {
 			$this->errors[] = sprintf( 'Problem inserting/updating post for function "%1$s": %2$s', $data['name'], $ID->get_error_message() );
 			return;
 		}
@@ -483,7 +482,7 @@ class WP_PHPDoc_Importer {
 			$ID = wp_insert_post( $post_data, true );
 		}
 
-		if ( is_wp_error( $ID ) ) {
+		if ( ! $ID || is_wp_error( $ID ) ) {
 			$this->errors[] = sprintf( 'Problem inserting/updating post for class "%1$s": %2$s', $data['name'], $ID->get_error_message() );
 			return;
 		}
