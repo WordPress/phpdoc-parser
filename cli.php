@@ -38,7 +38,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	/**
 	 * Read a JSON file containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
-	 * @synopsis <file>
+	 * @synopsis <file> [--quick]
 	 */
 	public function import( $args, $assoc_args ) {
 		list( $file ) = $args;
@@ -62,14 +62,14 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 		}
 
 		// Import data
-		$this->_do_import( $phpdoc );
+		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ) );
 	}
 
 	/**
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
 	 * @subcommand generate-and-import
-	 * @synopsis <directory>
+	 * @synopsis <directory> [--quick]
 	 */
 	public function generate_and_import( $args ) {
 		list( $directory ) = $args;
@@ -78,7 +78,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 		WP_CLI::line();
 
 		// Import data
-		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ) );
+		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ), isset( $assoc_args['quick'] ) );
 	}
 
 
@@ -133,8 +133,9 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
 	 * @param array $data
+	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
 	 */
-	protected function _do_import( array $data ) {
+	protected function _do_import( array $data, $skip_sleep = false ) {
 
 		// Make sure a current user is set
 		if ( ! wp_get_current_user()->exists() ) {
@@ -170,7 +171,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ) , number_format_i18n( $num_of_files ) ) );
 			$file_number++;
 
-			$importer->import_file( $file );
+			$importer->import_file( $file, $skip_sleep );
 		}
 
 		// Start counting again
@@ -233,8 +234,9 @@ class WP_PHPDoc_Importer {
 	 * For a specific file, go through and import the file, functions, and classes.
 	 *
 	 * @param array $file
+	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
 	 */
-	public function import_file( array $file ) {
+	public function import_file( array $file, $skip_sleep = false ) {
 
 		// Maybe add an item for this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
@@ -262,7 +264,7 @@ class WP_PHPDoc_Importer {
 				$i++;
 
 				// Wait 3 seconds after every 10 items
-				if ( $i % 10 == 0 )
+				if ( ! $skip_sleep && $i % 10 == 0 )
 					sleep( 3 );
 			}
 		}
@@ -277,7 +279,7 @@ class WP_PHPDoc_Importer {
 				$i++;
 
 				// Wait 3 seconds after every 10 items
-				if ( $i % 10 == 0 )
+				if ( ! $skip_sleep && $i % 10 == 0 )
 					sleep( 3 );
 			}
 		}
