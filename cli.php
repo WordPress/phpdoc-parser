@@ -307,95 +307,14 @@ class WP_PHPDoc_Importer {
 	 */
 	public static function _get_function_template( array $function_data ) {
 
-		// Prepare some variables to keep later code tidy
-		$description      = $function_data['doc']['description'];
+		// Long description
 		$long_description = self::_fix_linebreaks( $function_data['doc']['long_description'] );
-		$name             = $function_data['name'];
-		$output           = array();
-		$parameters       = array();
-		$return_desc      = '';
 
 		// Removing wrapping paragraph tags; see https://github.com/rmccue/WP-Parser/issues/6
 		$long_description = substr( $long_description, strlen( '<p>' ) );
 		$long_description = substr( $long_description, 0, strlen( $long_description ) - strlen( '</p>' ) );
 
-		// Extract the return type
-		$return_type = wp_list_filter( $function_data['doc']['tags'], array( 'name' => 'return' ) );
-		if ( ! empty( $return_type ) ) {
-
-			// Grab the description from the return type
-			$return_type = array_shift( $return_type )['content'];
-			$parts       = explode( ' ', $return_type );
-
-			// The substr handles where the parser had found something like "array Posts" when the PHPDoc looks like "@return array Posts".
-			if ( count( $parts ) > 1 ) {
-				$return_desc = implode( ' ', array_slice( $parts, 1 ) );
-				$return_type = substr( $return_type, 0, strpos( $return_type, ' ' ) );
-			}
-
-		} else {
-			$return_type = 'void';
-		}
-
-		// Function arguments, like: <function name> (<param1_type> <param1_name> = <param1_default_value>, ...)
-		$arg_string = "<h1 class='func-name'>{$name}</h1>(&nbsp;";
-
-		/**
-		 * Loop through the parameters
-		 *
-		 * This is messy because ['arguments'] doesn't contain information from ['doc']['tags'][x]['name' == 'param'].
-		 * See https://github.com/rmccue/WP-Parser/issues/4
-		 */
-		$arguments = wp_list_filter( $function_data['doc']['tags'], array( 'name' => 'param' ) );
-		foreach( $arguments as $param ) {
-
-			// Split the string: "[bool] [$launch_missles] Fire the rockets"
-			$parts       = explode( ' ', $param['content'] );
-			$arg_string .= "<span class='param-type'>{$parts[0]}</span> <strong class='param-name'>{$parts[1]}</strong>";
-
-			// Maybe add default value
-			$param_default = wp_list_filter( $function_data['arguments'], array( 'name' => $parts[1] ) );
-			if ( ! empty( $param_default ) ) {
-
-				$param_default = array_shift( $param_default )['default'];
-				if ( ! is_null( $param_default ) )
-					$arg_string .= " = {$param_default}";
-			}
-
-			$arg_string .= ',&nbsp;';
-		}
-		$output[] = "{$arg_string})";
-
-		// Short function description
-		$output[] = $description;
-
-		// Long description
-		$output[] = $long_description;
-		$output[] = '<!--more-->';
-
-		// Parameters
-		if ( ! empty( $arguments ) ) {
-			$output[] = '<h3>Parameters</h3>';
-			$output[] = '<dl>';
-
-			foreach( $arguments as $param ) {
-
-				// Split the param string: "bool [$launch_missles] [Fire the rockets]"
-				$parts = explode( ' ', $param['content'] );
-				$output[] = "<dt>{$parts[1]}</dt>";
-
-				if ( isset( $parts[2] ) )
-					$output[] = '<dd>' . implode( ' ', array_slice( $parts, 2 ) ) . '</dd>';
-			}
-
-			$output[] = '</dl>';
-		}
-
-		// Return value
-		$output[] = '<h3>Return Value</h3>';
-		$output[] = "<span class='func-return-type'>({$return_type})</span> <span class='func-return-desc'>{$return_desc}</span>";
-
-		return implode( PHP_EOL . PHP_EOL, array_filter( $output ) );
+		return self::_fix_linebreaks( $long_description );
 	}
 
 	/**
@@ -478,7 +397,7 @@ class WP_PHPDoc_Importer {
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
 			'name'         => $slug,
-			'post_content' => '<p>' . $data['doc']['description'] . '</p>' . "\n\n" . $data['doc']['long_description'],
+			'post_content' => $data['doc']['long_description'],
 			'post_excerpt' => $data['doc']['description'],
 			'post_status'  => 'publish',
 			'post_title'   => $data['name'],
