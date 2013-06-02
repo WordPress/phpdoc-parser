@@ -302,24 +302,6 @@ class WP_PHPDoc_Importer {
 	}
 
 	/**
-	 * Get the template for function pages' post_content 
-	 *
-	 * @param array $function_data Function data from the PHPDoc used to populate this template
-	 * @return string
-	 */
-	public static function _get_function_template( array $function_data ) {
-
-		// Long description
-		$long_description = self::_fix_linebreaks( $function_data['doc']['long_description'] );
-
-		// Removing wrapping paragraph tags; see https://github.com/rmccue/WP-Parser/issues/6
-		$long_description = substr( $long_description, strlen( '<p>' ) );
-		$long_description = substr( $long_description, 0, strlen( $long_description ) - strlen( '</p>' ) );
-
-		return self::_fix_linebreaks( $long_description );
-	}
-
-	/**
 	 * Create a post for a function
 	 *
 	 * @param array $data Function
@@ -331,7 +313,7 @@ class WP_PHPDoc_Importer {
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
-			'post_content' => self::_get_function_template( $data ),
+			'post_content' => self::_fix_linebreaks( $data['doc']['long_description'] ),
 			'post_excerpt' => self::_fix_linebreaks( $data['doc']['description'] ),
 			'post_name'    => $slug,
 			'post_parent'  => (int) $class_post_id,
