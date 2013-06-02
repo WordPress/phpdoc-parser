@@ -284,6 +284,22 @@ class WP_PHPDoc_Importer {
 	}
 
 	/**
+	 * Remove inline newlines in the $input string.
+	 *
+	 * This tidies up a block of text from phpDoc where the author split the block over multiple lines.
+	 * We remove the inline newlines and replace with a space to avoid getting the end of one line being
+	 * joined to the beginning of the next line, without any space inbetween.
+	 *
+	 * This regex was taken from wpautop().
+	 *
+	 * @param string $input
+	 * @return string
+	 */
+	public static function _fix_linebreaks( $input ) {
+		return preg_replace( '|(?<!<br />)\s*\n|', ' ', $input );
+	}
+
+	/**
 	 * Get the template for function pages' post_content 
 	 *
 	 * @param array $function_data Function data from the PHPDoc used to populate this template
@@ -293,7 +309,7 @@ class WP_PHPDoc_Importer {
 
 		// Prepare some variables to keep later code tidy
 		$description      = $function_data['doc']['description'];
-		$long_description = str_replace( array( "\r", "\n" ), '', $function_data['doc']['long_description'] );
+		$long_description = self::_fix_linebreaks( $function_data['doc']['long_description'] );
 		$name             = $function_data['name'];
 		$output           = array();
 		$parameters       = array();
@@ -395,7 +411,7 @@ class WP_PHPDoc_Importer {
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
 			'post_content' => self::_get_function_template( $data ),
-			'post_excerpt' => $data['doc']['description'],
+			'post_excerpt' => self::_fix_linebreaks( $data['doc']['description'] ),
 			'post_name'    => $slug,
 			'post_parent'  => (int) $class_post_id,
 			'post_status'  => 'publish',
