@@ -161,9 +161,15 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 			exit;
 		}
 
-		// Sanity check -- do the required taxonomies exist?
+		// Sanity check -- does the file taxonomy exist?
 		if ( ! taxonomy_exists( $importer->taxonomy_file ) ) {
 			WP_CLI::error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_file ) );
+			exit;
+		}
+
+		// Sanity check -- does the @since taxonomy exist?
+		if ( ! taxonomy_exists( $importer->taxonomy_since_version ) ) {
+			WP_CLI::error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_since_version ) );
 			exit;
 		}
 
@@ -199,6 +205,7 @@ WP_CLI::add_command( 'phpdoc', 'WP_PHPDoc_Command' );
  */
 class WP_PHPDoc_Importer {
 	public $taxonomy_file;
+	public $taxonomy_since_version;
 	public $taxonomy_package;  // todo
 	public $post_type_function;
 	public $post_type_class;
@@ -224,10 +231,11 @@ class WP_PHPDoc_Importer {
 	 * @param string $file Optional. Taxonony name for files.
 	 * @param string $function Optional. Post type name for functions.
 	 */
-	public function __construct( $class = 'wpapi-class', $file = 'wpapi-source-file', $function = 'wpapi-function' ) {
-		$this->post_type_class    = $class;
-		$this->post_type_function = $function;
-		$this->taxonomy_file      = $file;
+	public function __construct( $class = 'wpapi-class', $file = 'wpapi-source-file', $function = 'wpapi-function', $since = 'wpapi-since' ) {
+		$this->post_type_class         = $class;
+		$this->post_type_function      = $function;
+		$this->taxonomy_file           = $file;
+		$this->taxonomy_since_version  = $since;
 	}
 
 	/**
@@ -238,7 +246,7 @@ class WP_PHPDoc_Importer {
 	 */
 	public function import_file( array $file, $skip_sleep = false ) {
 
-		// Maybe add an item for this file to the file taxonomy
+		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
 		$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
 		if ( ! $term ) {
@@ -340,7 +348,22 @@ class WP_PHPDoc_Importer {
 			return;
 		}
 
-		// Set taxonomy and post meta to use in the theme template
+		// If the function has @since markup, assign the taxonomy
+		$since_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
+		if ( ! empty( $since_version ) ) {
+
+			$since_version = array_shift( $since_version );
+			$since_version = $since_version['content'];
+			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
+
+			if ( ! $since_term )
+				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
+
+			// Assign the tax item to the post
+			wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+		}
+
+		// Set other taxonomy and post meta to use in the theme template
 		wp_set_object_terms( $ID, $this->file_term_id, $this->taxonomy_file );
 
 		update_post_meta( $ID, '_wpapi_args',     $data['arguments'] );
