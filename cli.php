@@ -71,7 +71,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	 * @subcommand generate-and-import
 	 * @synopsis <directory> [--quick]
 	 */
-	public function generate_and_import( $args ) {
+	public function generate_and_import( $args, $assoc_args ) {
 		list( $directory ) = $args;
 		$directory = realpath( $directory );
 		$this->_load_libs();
