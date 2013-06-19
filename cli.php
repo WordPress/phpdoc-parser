@@ -38,7 +38,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	/**
 	 * Read a JSON file containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
-	 * @synopsis <file> [--quick]
+	 * @synopsis <file> [--quick] [--import-internal]
 	 */
 	public function import( $args, $assoc_args ) {
 		list( $file ) = $args;
@@ -62,23 +62,24 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 		}
 
 		// Import data
-		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ) );
+		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
 	}
 
 	/**
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
 	 * @subcommand generate-and-import
-	 * @synopsis <directory> [--quick]
+	 * @synopsis <directory> [--quick] [--import-internal]
 	 */
 	public function generate_and_import( $args, $assoc_args ) {
 		list( $directory ) = $args;
 		$directory = realpath( $directory );
+
 		$this->_load_libs();
 		WP_CLI::line();
 
 		// Import data
-		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ), isset( $assoc_args['quick'] ) );
+		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ), isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
 	}
 
 
@@ -134,8 +135,9 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 	 *
 	 * @param array $data
 	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
-	protected function _do_import( array $data, $skip_sleep = false ) {
+	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
 
 		// Make sure a current user is set
 		if ( ! wp_get_current_user()->exists() ) {
@@ -177,7 +179,7 @@ class WP_PHPDoc_Command extends WP_CLI_Command {
 			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ) , number_format_i18n( $num_of_files ) ) );
 			$file_number++;
 
-			$importer->import_file( $file, $skip_sleep );
+			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
 		}
 
 		// Start counting again
@@ -243,8 +245,9 @@ class WP_PHPDoc_Importer {
 	 *
 	 * @param array $file
 	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
-	public function import_file( array $file, $skip_sleep = false ) {
+	public function import_file( array $file, $skip_sleep = false, $import_internal_functions = false ) {
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
@@ -268,7 +271,7 @@ class WP_PHPDoc_Importer {
 			$i = 0;
 
 			foreach ( $file['functions'] as $function ) {
-				$this->import_function( $function );
+				$this->import_function( $function, 0, $import_internal_functions );
 				$i++;
 
 				// Wait 3 seconds after every 10 items
@@ -314,9 +317,21 @@ class WP_PHPDoc_Importer {
 	 *
 	 * @param array $data Function
 	 * @param int $class_post_id Optional; post ID of the class this method belongs to. Defaults to zero (not a method).
+	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
-	public function import_function( array $data, $class_post_id = 0 ) {
+	public function import_function( array $data, $class_post_id = 0, $import_internal_functions = false ) {
 		global $wpdb;
+
+		// Don't import functions marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
+		if ( ! $import_internal_functions && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+
+			if ( $class_post_id )
+				WP_CLI::line( sprintf( "\tSkipped importing @internal method \"%1\$s\"", $data['name'] ) );
+			else
+				WP_CLI::line( sprintf( "\tSkipped importing @internal function \"%1\$s\"", $data['name'] ) );
+
+			return;
+		}
 
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
