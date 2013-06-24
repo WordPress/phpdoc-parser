@@ -284,9 +284,8 @@ class WP_PHPDoc_Importer {
 		if ( ! empty( $file['classes'] ) ) {
 			$i = 0;
 
-			// @todo Temporarily disabled class/method generation until the templates are sorted out
 			foreach ( $file['classes'] as $class ) {
-				//$this->import_class( $class );
+				$this->import_class( $class, $import_internal_functions );
 				$i++;
 
 				// Wait 3 seconds after every 10 items
@@ -355,7 +354,7 @@ class WP_PHPDoc_Importer {
 			$ID              = wp_update_post( $post_data, true );
 
 		} else {
-			$ID = wp_insert_post( $post_data );
+			$ID = wp_insert_post( $post_data, true );
 		}
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
@@ -383,7 +382,7 @@ class WP_PHPDoc_Importer {
 
 		update_post_meta( $ID, '_wpapi_args',     $data['arguments'] );
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
-		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags']);
+		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
 
 		if ( $class_post_id ) {
 			update_post_meta( $ID, '_wpapi_final',      (bool) $data['final'] );
@@ -411,16 +410,23 @@ class WP_PHPDoc_Importer {
 	 * Create a post for a class
 	 *
 	 * @param array $data Class
+	 * @param bool $import_internal_classes Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
-	protected function import_class( array $data ) {
+	protected function import_class( array $data, $import_internal_classes = false ) {
 		global $wpdb;
+
+		// Don't import classes marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
+		if ( ! $import_internal_classes && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+			WP_CLI::line( sprintf( "\tSkipped importing @internal class \"%1\$s\"", $data['name'] ) );
+			return;
+		}
 
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
-			'name'         => $slug,
-			'post_content' => $data['doc']['long_description'],
-			'post_excerpt' => $data['doc']['description'],
+			'post_content' => self::_fix_linebreaks( $data['doc']['long_description'] ),
+			'post_excerpt' => self::_fix_linebreaks( $data['doc']['description'] ),
+			'post_name'    => $slug,
 			'post_status'  => 'publish',
 			'post_title'   => $data['name'],
 			'post_type'    => $this->post_type_class,
@@ -444,11 +450,28 @@ class WP_PHPDoc_Importer {
 			return;
 		}
 
+		// If the function has @since markup, assign the taxonomy
+		$since_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
+		if ( ! empty( $since_version ) ) {
+
+			$since_version = array_shift( $since_version );
+			$since_version = $since_version['content'];
+			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
+
+			if ( ! $since_term )
+				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
+
+			// Assign the tax item to the post
+			wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+		}
+
 		// Set taxonomy and post meta to use in the theme template
 		wp_set_object_terms( $ID, $this->file_term_id, $this->taxonomy_file );
 
-		update_post_meta( $ID, '_wpapi_line_num',   $data['line'] );
-		update_post_meta( $ID, '_wpapi_properties', $data['properties'] );
+		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
+		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
+		update_post_meta( $ID, '_wpapi_final',    (bool) $data['final'] );
+		update_post_meta( $ID, '_wpapi_abstract', (bool) $data['abstract'] );
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post )
@@ -456,7 +479,7 @@ class WP_PHPDoc_Importer {
 		else
 			WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
 
-		// Now add this class's methods
+		// Now add this class' methods
 		foreach ( $data['methods'] as $method )
 			$this->import_function( $method, $ID );
 	}
