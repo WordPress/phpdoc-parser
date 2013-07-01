@@ -50,8 +50,6 @@ function register_post_types() {
 
 /**
  * Register the file and @since taxonomies
- *
- * @return [type] [description]
  */
 function register_taxonomies() {
 	// Files
@@ -64,7 +62,16 @@ function register_taxonomies() {
 		'update_count_callback' => '_update_post_term_count',
 	) );
 
-	// Files
+	// Package
+	register_taxonomy( 'wpapi-package', array( 'wpapi-class', 'wpapi-function' ), array(
+		'hierarchical'          => true,
+		'label'                 => '@package',
+		'public'                => true,
+		'sort'                  => false,
+		'update_count_callback' => '_update_post_term_count',
+	) );
+
+	// @since
 	register_taxonomy( 'wpapi-since', array( 'wpapi-class', 'wpapi-function' ), array(
 		'hierarchical'          => true,
 		'label'                 => __( '@since' ),
