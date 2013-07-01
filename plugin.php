@@ -19,6 +19,9 @@ if ( defined('WP_CLI') && WP_CLI ) {
 add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
 add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
 
+/**
+ * Register the function and class post types
+ */
 function register_post_types() {
 	// Functions
 	register_post_type( 'wpapi-function', array(
@@ -43,6 +46,11 @@ function register_post_types() {
 	) );
 }
 
+/**
+ * Register the file and @since taxonomies
+ *
+ * @return [type] [description]
+ */
 function register_taxonomies() {
 	// Files
 	register_taxonomy( 'wpapi-source-file', array( 'wpapi-class', 'wpapi-function' ), array(
