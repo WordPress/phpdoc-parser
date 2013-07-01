@@ -58,15 +58,20 @@ class Importer {
 	/**
 	 * Constructor. Sets up post type/taxonomy names.
 	 *
-	 * @param string $class Optional. Post type name for classes.
-	 * @param string $file Optional. Taxonony name for files.
-	 * @param string $function Optional. Post type name for functions.
+	 * @param array $args Optional. Associative array; class property => value.
 	 */
-	public function __construct( $class = 'wpapi-class', $file = 'wpapi-source-file', $function = 'wpapi-function', $since = 'wpapi-since' ) {
-		$this->post_type_class         = $class;
-		$this->post_type_function      = $function;
-		$this->taxonomy_file           = $file;
-		$this->taxonomy_since_version  = $since;
+	public function __construct( array $args = array() ) {
+
+		$r = wp_parse_args( $args, array(
+			'post_type_class'        => 'wpapi-class',
+			'post_type_function'     => 'wpapi-function',
+			'taxonomy_file'          => 'wpapi-source-file',
+			'taxonomy_since_version' => 'wpapi-since',
+		) );
+
+		foreach ( $r as $property_name => $value ) {
+			$this->{$property_name} = $value;
+		}
 	}
 
 	/**
