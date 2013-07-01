@@ -8,13 +8,15 @@
  */
 
 require __DIR__ . '/importer.php';
-require __DIR__ . '/cli.php';
 
 WP_PHPDoc::bootstrap();
 
 class WP_PHPDoc {
 	public static function bootstrap() {
-		WP_CLI::add_command( 'phpdoc', 'WP_PHPDoc_Command' );
+		if ( defined('WP_CLI') && WP_CLI ) {
+			require __DIR__ . '/cli.php';
+			WP_CLI::add_command( 'phpdoc', 'WP_PHPDoc_Command' );
+		}
 
 		add_action( 'init', __CLASS__ . '::register_post_types' );
 		add_action( 'init', __CLASS__ . '::register_taxonomies' );
