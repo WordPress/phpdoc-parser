@@ -178,7 +178,10 @@ class Importer {
 				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
 
 			// Assign the tax item to the post
-			wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+			if ( ! is_wp_error( $since_term ) )
+				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+			else
+				WP_CLI::warning( "Cannot set @since term: " . $since_term->get_error_message() );
 		}
 
 		// Set other taxonomy and post meta to use in the theme template
@@ -266,7 +269,10 @@ class Importer {
 				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
 
 			// Assign the tax item to the post
-			wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+			if ( ! is_wp_error( $since_term ) )
+				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+			else
+				WP_CLI::warning( "Cannot set @since term: " . $since_term->get_error_message() );
 		}
 
 		// Set taxonomy and post meta to use in the theme template
