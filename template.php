@@ -22,8 +22,6 @@ function wpfuncref_return_type() {
 		$return_type = 'void';
 	}
 
-	$return_type = wpfuncref_format_type( $return_type );
-
 	return apply_filters( 'wpfuncref_the_return_type', $return_type );
 }
 

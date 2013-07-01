@@ -19,6 +19,7 @@ if ( defined('WP_CLI') && WP_CLI ) {
 add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
 add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
 add_filter( 'wpfuncref_get_the_arguments', __NAMESPACE__ . '\\make_args_safe' );
+add_filter( 'wpfuncref_the_return_type', __NAMESPACE__ . '\\humanize_separator' );
 
 /**
  * Register the function and class post types
@@ -110,7 +111,7 @@ function make_args_safe( $args ) {
  * @param string $type Variable type
  * @return string
  */
-function wpfuncref_format_type( $type ) {
+function humanize_separator( $type ) {
 	return str_replace( '|', ' <span class="wpapi-item-type-or">or</span> ', $type );
 }
 
