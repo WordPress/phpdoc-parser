@@ -39,7 +39,7 @@ function wpfuncref_the_return_type() {
  *
  * @return string
  */
-function wpfuncref_the_return_desc() {
+function wpfuncref_return_desc() {
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$return_desc   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
@@ -68,7 +68,7 @@ function wpfuncref_the_return_desc() {
  * Print the current function's return description
  */
 function wpfuncref_the_return_desc() {
-	echo wpfuncref_the_return_desc();
+	echo wpfuncref_return_desc();
 }
 
 /**
