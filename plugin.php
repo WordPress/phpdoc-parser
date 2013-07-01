@@ -114,27 +114,3 @@ function make_args_safe( $args ) {
 function humanize_separator( $type ) {
 	return str_replace( '|', ' <span class="wpapi-item-type-or">or</span> ', $type );
 }
-
-/**
- * Returns the URL to the current function on the bbP/BP trac.
- *
- * @return string
- */
-function bpcodex_get_wpapi_source_link() {
-	if ( strpos( wp_get_theme()->get( 'Name' ), 'BuddyPress.org' ) !== false )
-		$trac_url = 'https://buddypress.trac.wordpress.org/browser/trunk/';
-	else
-		$trac_url = 'https://bbpress.trac.wordpress.org/browser/trunk/';
-
-	// Find the current post in the wpapi-source-file term
-	$term = get_the_terms( get_the_ID(), 'wpapi-source-file' );
-	if ( ! empty( $term ) && ! is_wp_error( $term ) ) {
-		$term      = array_shift( $term );
-		$line_num  = (int) get_post_meta( get_the_ID(), '_wpapi_line_num', true );
-
-		// Link to the specific file name and the line number on trac
-		$trac_url .= "{$term->name}#L{$line_num}";
-	}
-
-	return $trac_url;
-}

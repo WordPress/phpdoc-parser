@@ -145,3 +145,29 @@ function wpfuncref_get_the_arguments() {
 
 	return apply_filters( 'wpfuncref_get_the_arguments', $return_args );
 }
+
+
+/**
+ * Returns the URL to the current function on the bbP/BP trac.
+ *
+ * @return string
+ */
+function wpfuncref_source_link() {
+	$trac_url = apply_filters( 'wpfuncref_source_link_base', false );
+	if ( empty( $trac_url ) )
+		return '';
+
+	// Find the current post in the wpapi-source-file term
+	$term = get_the_terms( get_the_ID(), 'wpapi-source-file' );
+	if ( ! empty( $term ) && ! is_wp_error( $term ) ) {
+		$term      = array_shift( $term );
+		$line_num  = (int) get_post_meta( get_the_ID(), '_wpapi_line_num', true );
+
+		// The format here takes the base URL, the term name, and the line number
+		$format = apply_filters( 'wpfuncref_source_link_format', '%s%s#L%d' );
+		// Link to the specific file name and the line number on trac
+		$trac_url = sprintf( $format, $trac_url, $term->name, $line_num );
+	}
+
+	return $trac_url;
+}
