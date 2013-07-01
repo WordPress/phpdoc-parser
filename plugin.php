@@ -16,13 +16,8 @@ if ( defined('WP_CLI') && WP_CLI ) {
 	require __DIR__ . '/cli.php';
 }
 
-bootstrap();
-
-function bootstrap() {
-
-	add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
-	add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
-}
+add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
+add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
 
 function register_post_types() {
 	// Functions
