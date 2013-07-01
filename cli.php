@@ -204,4 +204,4 @@ class Command extends WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'phpdoc', __NAMESPACE__ . '\\Command' );
+WP_CLI::add_command( 'funcref', __NAMESPACE__ . '\\Command' );

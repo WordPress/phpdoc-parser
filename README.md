@@ -8,4 +8,4 @@ Note: ensure the plugin is enabled first.
 
 In your site's directory:
 
-	$ wp phpdoc generate-and-import /path/to/source/code
+	$ wp funcref generate-and-import /path/to/source/code
