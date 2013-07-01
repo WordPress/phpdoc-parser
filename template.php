@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Prints the current function's return type. Template tag function for the function post type.
+ * Get the current function's return type
  *
  * @return string
  */
-function wpfuncref_the_return_type() {
+function wpfuncref_return_type() {
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$return_type   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
@@ -24,11 +24,20 @@ function wpfuncref_the_return_type() {
 
 	$return_type = wpfuncref_format_type( $return_type );
 
-	echo apply_filters( 'wpfuncref_the_return_type', $return_type );
+	return apply_filters( 'wpfuncref_the_return_type', $return_type );
 }
 
 /**
- * Prints the current function's return description. Template tag function for the function post type.
+ * Print the current function's return type
+ *
+ * @see wpfuncref_return_type
+ */
+function wpfuncref_the_return_type() {
+	echo wpfuncref_return_type();
+}
+
+/**
+ * Get the current function's return description
  *
  * @return string
  */
@@ -54,7 +63,14 @@ function wpfuncref_the_return_desc() {
 		$return_desc = '';
 	}
 
-	echo apply_filters( 'wpfuncref_the_return_desc', $return_desc );
+	return apply_filters( 'wpfuncref_the_return_desc', $return_desc );
+}
+
+/**
+ * Print the current function's return description
+ */
+function wpfuncref_the_return_desc() {
+	echo wpfuncref_the_return_desc();
 }
 
 /**
