@@ -10,12 +10,37 @@ use WP_CLI;
  * Based on the Importer class from https://github.com/rmccue/WP-Parser/
  */
 class Importer {
+
+	/**
+	 * Taxonony name for files
+	 *
+	 * @var string
+	 */
 	public $taxonomy_file;
+
+	/**
+	 * Taxonomy name for a function's @since tag
+	 *
+	 * @var string
+	 */
 	public $taxonomy_since_version;
-	public $taxonomy_package;  // todo
+
+	/**
+	 * Post type name for functions
+	 *
+	 * @var string
+	 */
 	public $post_type_function;
+
+	/**
+	 * Post type name for classes
+	 *
+	 * @var string
+	 */
 	public $post_type_class;
-	public $post_type_hook;  // todo
+
+	public $taxonomy_package;  // todo
+	public $post_type_hook;    // todo
 
 	/**
 	 * Stores a reference to the current file's term in the file taxonomy
