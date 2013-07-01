@@ -1,10 +1,15 @@
 <?php
+
+namespace WPFuncRef;
+
 use phpDocumentor\Reflection\FileReflector;
+use WP_CLI;
+use WP_CLI_Command;
 
 /**
  * Converts PHPDoc markup into a template ready for import to a WordPress blog.
  */
-class WP_PHPDoc_Command extends WP_CLI_Command {
+class Command extends WP_CLI_Command {
 
 	/**
 	 * Generate a JSON file containing the PHPDoc markup, and save to filesystem.
