@@ -160,7 +160,7 @@ class Command extends WP_CLI_Command {
 		wp_defer_comment_counting( true );
 
 		// Run the importer
-		$importer = new WP_PHPDoc_Importer;
+		$importer = new Importer;
 
 		// Sanity check -- do the required post types exist?
 		if ( ! post_type_exists( $importer->post_type_class ) || ! post_type_exists( $importer->post_type_function ) ) {
