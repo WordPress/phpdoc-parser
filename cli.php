@@ -80,6 +80,11 @@ class Command extends WP_CLI_Command {
 		list( $directory ) = $args;
 		$directory = realpath( $directory );
 
+		if ( empty( $directory ) ) {
+			WP_CLI::error( sprintf( "Can't read %1\$s. Does the file exist?", $directory ) );
+			exit;
+		}
+
 		$this->_load_libs();
 		WP_CLI::line();
 
