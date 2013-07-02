@@ -29,7 +29,7 @@ function register_post_types() {
 	register_post_type( 'wpapi-function', array(
 		'has_archive'  => true,
 		'hierarchical' => true,
-		'label'        => __( 'Functions' ),
+		'label'        => __( 'Functions', 'wpfuncref' ),
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'functions' ),
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'page-attributes', 'revisions', 'title' ),
@@ -40,7 +40,7 @@ function register_post_types() {
 	register_post_type( 'wpapi-class', array(
 		'has_archive'  => true,
 		'hierarchical' => false,
-		'label'        => __( 'Classes' ),
+		'label'        => __( 'Classes', 'wpfuncref' ),
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'classes' ),
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
@@ -55,7 +55,7 @@ function register_taxonomies() {
 	// Files
 	register_taxonomy( 'wpapi-source-file', array( 'wpapi-class', 'wpapi-function' ), array(
 		'hierarchical'          => true,
-		'label'                 => __( 'Files' ),
+		'label'                 => __( 'Files', 'wpfuncref' ),
 		'public'                => true,
 		'rewrite'               => array( 'slug' => 'files' ),
 		'sort'                  => false,
@@ -74,7 +74,7 @@ function register_taxonomies() {
 	// @since
 	register_taxonomy( 'wpapi-since', array( 'wpapi-class', 'wpapi-function' ), array(
 		'hierarchical'          => true,
-		'label'                 => __( '@since' ),
+		'label'                 => __( '@since', 'wpfuncref' ),
 		'public'                => true,
 		'sort'                  => false,
 		'update_count_callback' => '_update_post_term_count',
@@ -119,5 +119,5 @@ function make_args_safe( $args ) {
  * @return string
  */
 function humanize_separator( $type ) {
-	return str_replace( '|', ' <span class="wpapi-item-type-or">or</span> ', $type );
+	return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wpfuncref' ) . '</span>', $type );
 }
