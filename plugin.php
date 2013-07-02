@@ -96,7 +96,6 @@ function make_args_safe( $args ) {
 		'wptexturize',
 		'convert_smilies',
 		'convert_chars',
-		'wpautop',
 		'stripslashes_deep',
 	);
 
