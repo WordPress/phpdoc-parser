@@ -1,0 +1,12 @@
+[submodule "vendor/phpdocumentor/reflection"]
+	path = vendor/phpdocumentor/reflection
+	url = git@github.com:phpDocumentor/Reflection.git
+[submodule "vendor/phpdocumentor/reflection-docblock"]
+	path = vendor/phpdocumentor/reflection-docblock
+	url = git@github.com:phpDocumentor/ReflectionDocBlock.git
+[submodule "vendor/dflydev/markdown"]
+	path = vendor/dflydev/markdown
+	url = git@github.com:dflydev/dflydev-markdown.git
+[submodule "vendor/nikic/php-parser"]
+	path = vendor/nikic/php-parser
+	url = git@github.com:nikic/PHP-Parser.git

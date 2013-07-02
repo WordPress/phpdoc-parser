@@ -96,8 +96,36 @@ class Command extends WP_CLI_Command {
 	protected function _load_libs() {
 		$path = dirname( __FILE__ ). '/WP-Parser/';
 
-		require_once "$path/vendor/autoload.php";
+		spl_autoload_register( __CLASS__ . '::autoloader' );
 		require_once "$path/lib/WP/runner.php";
+	}
+
+	public static function autoloader( $class ) {
+		$vendorDir = __DIR__ . '/vendor';
+		$map = array(
+			'phpDocumentor' => array(
+				$vendorDir . '/phpdocumentor/reflection-docblock/src',
+				$vendorDir . '/phpdocumentor/reflection/src',
+				$vendorDir . '/phpdocumentor/reflection/tests/unit',
+				$vendorDir . '/phpdocumentor/reflection/tests/mocks'
+			),
+			'dflydev\\markdown' => $vendorDir . '/dflydev/markdown/src',
+			'WP' => __DIR__ . '/WP-Parser/lib',
+			'PHPParser' => $vendorDir . '/nikic/php-parser/lib',
+		);
+
+		foreach ( $map as $prefix => $paths ) {
+			foreach ( (array) $paths as $path ) {
+				if ( strpos( $class, $prefix ) !== 0 ) {
+					continue;
+				}
+
+				$file = $path . DIRECTORY_SEPARATOR . str_replace( array( '_', '\\' ), DIRECTORY_SEPARATOR, $class ) . '.php';
+
+				if (file_exists($file))
+					include $file;
+			}
+		}
 	}
 
 	/**
