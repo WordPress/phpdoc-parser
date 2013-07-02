@@ -99,10 +99,8 @@ class Command extends WP_CLI_Command {
 	 * @see https://github.com/rmccue/WP-Parser/
 	 */
 	protected function _load_libs() {
-		$path = dirname( __FILE__ ). '/WP-Parser/';
-
 		spl_autoload_register( __CLASS__ . '::autoloader' );
-		require_once "$path/lib/WP/runner.php";
+		require_once __DIR__ . "/lib/WP/runner.php";
 	}
 
 	public static function autoloader( $class ) {
@@ -115,7 +113,7 @@ class Command extends WP_CLI_Command {
 				$vendorDir . '/phpdocumentor/reflection/tests/mocks'
 			),
 			'dflydev\\markdown' => $vendorDir . '/dflydev/markdown/src',
-			'WP' => __DIR__ . '/WP-Parser/lib',
+			'WP' => __DIR__ . '/lib',
 			'PHPParser' => $vendorDir . '/nikic/php-parser/lib',
 		);
 
