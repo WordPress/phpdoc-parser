@@ -21,6 +21,8 @@ add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
 add_filter( 'wpfuncref_get_the_arguments', __NAMESPACE__ . '\\make_args_safe' );
 add_filter( 'wpfuncref_the_return_type', __NAMESPACE__ . '\\humanize_separator' );
 
+add_filter( 'the_content', __NAMESPACE__ . '\\expand_content' );
+
 /**
  * Register the function and class post types
  */
@@ -119,4 +121,35 @@ function make_args_safe( $args ) {
  */
 function humanize_separator( $type ) {
 	return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wpfuncref' ) . '</span>', $type );
+}
+
+function expand_content( $content ) {
+	$post = get_post();
+
+	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' )
+		return $content;
+
+	$before_content = wpfuncref_prototype();
+	$before_content .= '<p class="wpfuncref-description">' . get_the_excerpt() . '</p>';
+	$before_content .= '<div class="wpfuncref-longdesc">';
+
+	$after_content = '</div>';
+	$after_content .= '<div class="wpfuncref-arguments"><h3>Arguments</h3>';
+	$args = wpfuncref_get_the_arguments();
+	foreach ( $args as $arg ) {
+		$after_content .= '<div class="wpfuncref-arg">';
+		$after_content .= '<h4><code><span class="type">' . $arg['type'] . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
+		$after_content .= wpautop( $arg['desc'], false );
+		$after_content .= '</div>';
+	}
+	$after_content .= '</div>';
+
+	$source = wpfuncref_source_link();
+	if ( $source )
+		$after_content .= '<a href="' . $source . '">Source</a>';
+
+	$before_content = apply_filters( 'wpfuncref_before_content', $before_content );
+	$after_content = apply_filters( 'wpfuncref_after_content', $after_content );
+
+	return $before_content . $content . $after_content;
 }
