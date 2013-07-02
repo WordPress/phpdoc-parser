@@ -108,13 +108,13 @@ class Command extends WP_CLI_Command {
 	 * @return string
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json' ) {
-		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s/. This may take a few minutes...', $path ) );
+		$is_file = is_file( $path );
+		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $is_file ? "$path/" : $path ) );
 
 		// Find the files to get the PHPDoc data from. $path can either be a folder or an absolute ref to a file.
-		if ( is_file( $path ) ) {
+		if ( $is_file ) {
 			$files = array( $path );
 			$path  = dirname( $path );
-
 		} else {
 			ob_start();
 			$files = get_wp_files( $path );
