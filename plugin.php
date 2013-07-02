@@ -22,6 +22,8 @@ add_filter( 'wpfuncref_get_the_arguments', __NAMESPACE__ . '\\make_args_safe' );
 add_filter( 'wpfuncref_the_return_type', __NAMESPACE__ . '\\humanize_separator' );
 
 add_filter( 'the_content', __NAMESPACE__ . '\\expand_content' );
+add_filter( 'the_content', __NAMESPACE__ . '\\autop_for_non_funcref' );
+remove_filter( 'the_content', 'wpautop' );
 
 /**
  * Register the function and class post types
@@ -158,4 +160,22 @@ function expand_content( $content ) {
 	$after_content = apply_filters( 'wpfuncref_after_content', $after_content );
 
 	return $before_content . $content . $after_content;
+}
+
+/**
+ * Re-enable autopee for the non-funcref posts
+ *
+ * We can't selectively filter the_content for wpautop, so we remove it and
+ * readd this to check instead.
+ *
+ * @param string $content Unfiltered content
+ * @return string Autopeed content
+ */
+function autop_for_non_funcref( $content ) {
+	$post = get_post();
+
+	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' )
+		$content = wpautop( $content );
+
+	return $content;
 }
