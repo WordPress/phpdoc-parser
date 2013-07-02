@@ -123,6 +123,12 @@ function humanize_separator( $type ) {
 	return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wpfuncref' ) . '</span>', $type );
 }
 
+/**
+ * Extend the post's content with function reference pieces
+ *
+ * @param string $content Unfiltered content
+ * @return string Content with Function reference pieces added
+ */
 function expand_content( $content ) {
 	$post = get_post();
 
