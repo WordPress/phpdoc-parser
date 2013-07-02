@@ -146,6 +146,43 @@ function wpfuncref_get_the_arguments() {
 	return apply_filters( 'wpfuncref_get_the_arguments', $return_args );
 }
 
+/**
+ * Retrieve the function's prototype as HTML
+ *
+ * Use the wpfuncref_prototype filter to change the content of this.
+ *
+ * @return string Prototype HTML
+ */
+function wpfuncref_prototype() {
+	$type = wpfuncref_return_type();
+
+	$friendly_args = array();
+	$args = wpfuncref_get_the_arguments();
+	foreach ( $args as $arg ) {
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', $arg['type'], $arg['name'] );
+		if ( !empty( $arg['default_value'] ) )
+			$friendly .= ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
+
+		$friendly_args[] = $friendly;
+	}
+	$friendly_args = implode( ', ', $friendly_args );
+
+	$name = get_the_title();
+
+	$prototype = sprintf( '<p class="wpfuncref-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', $type, $name, $friendly_args );
+
+	return apply_filters( 'wpfuncref_prototype', $prototype );
+}
+
+/**
+ * Print the function's prototype
+ *
+ * @see wpfuncref_prototype
+ */
+function wpfuncref_the_prototype() {
+	echo wpfuncref_prototype();
+}
+
 
 /**
  * Returns the URL to the current function on the bbP/BP trac.
