@@ -126,7 +126,7 @@ class Command extends WP_CLI_Command {
 				$file = $path . DIRECTORY_SEPARATOR . str_replace( array( '_', '\\' ), DIRECTORY_SEPARATOR, $class ) . '.php';
 
 				if (file_exists($file))
-					include $file;
+					include_once $file;
 			}
 		}
 	}

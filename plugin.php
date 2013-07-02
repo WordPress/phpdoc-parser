@@ -9,11 +9,11 @@
 
 namespace WPFuncRef;
 
-require __DIR__ . '/template.php';
+require_once __DIR__ . '/template.php';
 
 if ( defined('WP_CLI') && WP_CLI ) {
-	require __DIR__ . '/importer.php';
-	require __DIR__ . '/cli.php';
+	require_once __DIR__ . '/importer.php';
+	require_once __DIR__ . '/cli.php';
 }
 
 add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
