@@ -130,22 +130,6 @@ class Importer {
 	}
 
 	/**
-	 * Remove inline newlines in the $input string.
-	 *
-	 * This tidies up a block of text from phpDoc where the author split the block over multiple lines.
-	 * We remove the inline newlines and replace with a space to avoid getting the end of one line being
-	 * joined to the beginning of the next line, without any space inbetween.
-	 *
-	 * This regex was taken from wpautop().
-	 *
-	 * @param string $input
-	 * @return string
-	 */
-	public static function _fix_linebreaks( $input ) {
-		return preg_replace( '|(?<!<br />)\s*\n|', ' ', $input );
-	}
-
-	/**
 	 * Create a post for a function
 	 *
 	 * @param array $data Function
@@ -169,8 +153,8 @@ class Importer {
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
-			'post_content' => self::_fix_linebreaks( $data['doc']['long_description'] ),
-			'post_excerpt' => self::_fix_linebreaks( $data['doc']['description'] ),
+			'post_content' => $data['doc']['long_description'],
+			'post_excerpt' => $data['doc']['description'],
 			'post_name'    => $slug,
 			'post_parent'  => (int) $class_post_id,
 			'post_status'  => 'publish',
@@ -261,8 +245,8 @@ class Importer {
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = array(
-			'post_content' => self::_fix_linebreaks( $data['doc']['long_description'] ),
-			'post_excerpt' => self::_fix_linebreaks( $data['doc']['description'] ),
+			'post_content' => $data['doc']['long_description'],
+			'post_excerpt' => $data['doc']['description'],
 			'post_name'    => $slug,
 			'post_status'  => 'publish',
 			'post_title'   => $data['name'],
