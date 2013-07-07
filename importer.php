@@ -79,9 +79,9 @@ class Importer {
 	 *
 	 * @param array $file
 	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool $import_internal Optional; defaults to false. If true, functions and classes marked @internal will be imported.
 	 */
-	public function import_file( array $file, $skip_sleep = false, $import_internal_functions = false ) {
+	public function import_file( array $file, $skip_sleep = false, $import_internal = false ) {
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
@@ -105,7 +105,7 @@ class Importer {
 			$i = 0;
 
 			foreach ( $file['functions'] as $function ) {
-				$this->import_function( $function, 0, $import_internal_functions );
+				$this->import_function( $function, 0, $import_internal );
 				$i++;
 
 				// Wait 3 seconds after every 10 items
@@ -119,7 +119,7 @@ class Importer {
 			$i = 0;
 
 			foreach ( $file['classes'] as $class ) {
-				$this->import_class( $class, $import_internal_functions );
+				$this->import_class( $class, $import_internal );
 				$i++;
 
 				// Wait 3 seconds after every 10 items
@@ -134,17 +134,63 @@ class Importer {
 	 *
 	 * @param array $data Function
 	 * @param int $class_post_id Optional; post ID of the class this method belongs to. Defaults to zero (not a method).
-	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
-	public function import_function( array $data, $class_post_id = 0, $import_internal_functions = false ) {
+	public function import_function( array $data, $class_post_id = 0, $import_internal = false ) {
+		return $this->import_item( $data, $class_post_id, $import_internal );
+	}
+
+	/**
+	 * Create a post for a class
+	 *
+	 * @param array $data Class
+	 * @param bool $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @return bool|int Post ID of this function, false if any failure.
+	 */
+	protected function import_class( array $data, $import_internal = false ) {
 		global $wpdb;
 
-		// Don't import functions marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
-		if ( ! $import_internal_functions && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+		// Insert this class
+		$class_id = $this->import_item( $data, 0, $import_internal, array( 'post_type' => $this->post_type_class ) );
+		if ( ! $class_id )
+			return false;
 
-			if ( $class_post_id )
-				WP_CLI::line( sprintf( "\tSkipped importing @internal method \"%1\$s\"", $data['name'] ) );
+		// Set class-specific meta
+		update_post_meta( $class_id, '_wpapi_final',      (bool) $data['final'] );
+		update_post_meta( $class_id, '_wpapi_abstract',   (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wpapi_static',     (bool) $data['static'] );
+		update_post_meta( $class_id, '_wpapi_visibility',        $data['visibility'] );
+
+		// Now add the methods
+		foreach ( $data['methods'] as $method )
+			$this->import_item( $method, $class_id, $import_internal );
+
+		return $class_id;
+	}
+
+	/**
+	 * Create a post for an item (a class or a function).
+	 *
+	 * Anything that needs to be dealt identically for functions or methods should go in this function.
+	 * Anything more specific should go in either import_function() or import_class() as appropriate.
+	 *
+	 * @param array $data Data
+	 * @param int $class_post_id Optional; post ID of the class this item belongs to. Defaults to zero (not a method).
+	 * @param bool $import_internal Optional; defaults to false. If true, functions or classes marked @internal will be imported.
+	 * @param array $arg_overrides Optional; array of parameters that override the defaults passed to wp_update_post().
+	 * @return bool|int Post ID of this item, false if any failure.
+	 */
+	public function import_item( array $data, $class_post_id = 0, $import_internal = false, array $arg_overrides = array() ) {
+		global $wpdb;
+
+		// Don't import items marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
+		if ( ! $import_internal && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+
+			if ( $post_data['post_type'] === $this->post_type_class )
+				WP_CLI::line( sprintf( "\tSkipped importing @internal class \"%1\$s\"", $data['name'] ) );
+			elseif ( $class_post_id )
+				WP_CLI::line( sprintf( "\t\tSkipped importing @internal method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tSkipped importing @internal function \"%1\$s\"", $data['name'] ) );
 
@@ -153,7 +199,7 @@ class Importer {
 
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
-		$post_data   = array(
+		$post_data   = wp_parse_args( $arg_overrides, array(
 			'post_content' => $data['doc']['long_description'],
 			'post_excerpt' => $data['doc']['description'],
 			'post_name'    => $slug,
@@ -161,10 +207,10 @@ class Importer {
 			'post_status'  => 'publish',
 			'post_title'   => $data['name'],
 			'post_type'    => $this->post_type_function,
-		);
+		) );
 
 		// Look for an existing post for this function
-		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $this->post_type_function, (int) $class_post_id ) );
+		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $post_data['post_type'], (int) $class_post_id ) );
 
 		// Insert/update the function post
 		if ( ! empty( $existing_post_id ) ) {
@@ -177,7 +223,14 @@ class Importer {
 		}
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
-			$this->errors[] = sprintf( 'Problem inserting/updating post for function "%1$s": %2$s', $data['name'], $ID->get_error_message() );
+
+			if ( $post_data['post_type'] === $this->post_type_class )
+				$this->errors[] = sprintf( "\tProblem inserting/updating post for class \"%1\$s\"", $data['name'], $ID->get_error_message() );
+			elseif ( $class_post_id )
+				$this->errors[] = sprintf( "\t\tProblem inserting/updating post for method \"%1\$s\"", $data['name'], $ID->get_error_message() );
+			else
+				$this->errors[] = sprintf( "\tProblem inserting/updating post for function \"%1\$s\"", $data['name'], $ID->get_error_message() );
+
 			return false;
 		}
 
@@ -196,7 +249,7 @@ class Importer {
 			if ( ! is_wp_error( $since_term ) )
 				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
 			else
-				WP_CLI::warning( "Cannot set @since term: " . $since_term->get_error_message() );
+				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
 		}
 
 		// Set other taxonomy and post meta to use in the theme template
@@ -206,108 +259,24 @@ class Importer {
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
 		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
 
-		if ( $class_post_id ) {
-			update_post_meta( $ID, '_wpapi_final',      (bool) $data['final'] );
-			update_post_meta( $ID, '_wpapi_abstract',   (bool) $data['abstract'] );
-			update_post_meta( $ID, '_wpapi_static',     (bool) $data['static'] );
-			update_post_meta( $ID, '_wpapi_visibility',        $data['visibility'] );
-		}
-
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {
-			if ( $class_post_id )
-				WP_CLI::line( sprintf( "\tImported method \"%1\$s\"", $data['name'] ) );
+			if ( $post_data['post_type'] === $this->post_type_class )
+				WP_CLI::line( sprintf( "\tImported class \"%1\$s\"", $data['name'] ) );
+			elseif ( $class_post_id )
+				WP_CLI::line( sprintf( "\t\tImported method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tImported function \"%1\$s\"", $data['name'] ) );
 
 		} else {
-			if ( $class_post_id )
-				WP_CLI::line( sprintf( "\tUpdated method \"%1\$s\"", $data['name'] ) );
+			if ( $post_data['post_type'] === $this->post_type_class )
+				WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
+			elseif ( $class_post_id )
+				WP_CLI::line( sprintf( "\t\tUpdated method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tUpdated function \"%1\$s\"", $data['name'] ) );
 		}
 
 		return $ID;
-	}
-
-	/**
-	 * Create a post for a class
-	 *
-	 * @param array $data Class
-	 * @param bool $import_internal_classes Optional; defaults to false. If true, functions marked @internal will be imported.
-	 */
-	protected function import_class( array $data, $import_internal_classes = false ) {
-		global $wpdb;
-
-		// Don't import classes marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
-		if ( ! $import_internal_classes && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
-			WP_CLI::line( sprintf( "\tSkipped importing @internal class \"%1\$s\"", $data['name'] ) );
-			return;
-		}
-
-		$is_new_post = true;
-		$slug        = sanitize_title( $data['name'] );
-		$post_data   = array(
-			'post_content' => $data['doc']['long_description'],
-			'post_excerpt' => $data['doc']['description'],
-			'post_name'    => $slug,
-			'post_status'  => 'publish',
-			'post_title'   => $data['name'],
-			'post_type'    => $this->post_type_class,
-		);
-
-		// Look for an existing post for this class
-		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s LIMIT 1", $slug, $this->post_type_class ) );
-
-		// Insert/update the function post
-		if ( ! empty( $existing_post_id ) ) {
-			$is_new_post     = false;
-			$post_data['ID'] = (int) $existing_post_id;
-			$ID              = wp_update_post( $post_data, true );
-
-		} else {
-			$ID = wp_insert_post( $post_data, true );
-		}
-
-		if ( ! $ID || is_wp_error( $ID ) ) {
-			$this->errors[] = sprintf( 'Problem inserting/updating post for class "%1$s": %2$s', $data['name'], $ID->get_error_message() );
-			return;
-		}
-
-		// If the function has @since markup, assign the taxonomy
-		$since_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
-		if ( ! empty( $since_version ) ) {
-
-			$since_version = array_shift( $since_version );
-			$since_version = $since_version['content'];
-			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
-
-			if ( ! $since_term )
-				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
-
-			// Assign the tax item to the post
-			if ( ! is_wp_error( $since_term ) )
-				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
-			else
-				WP_CLI::warning( "Cannot set @since term: " . $since_term->get_error_message() );
-		}
-
-		// Set taxonomy and post meta to use in the theme template
-		wp_set_object_terms( $ID, $this->file_term_id, $this->taxonomy_file );
-
-		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
-		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
-		update_post_meta( $ID, '_wpapi_final',    (bool) $data['final'] );
-		update_post_meta( $ID, '_wpapi_abstract', (bool) $data['abstract'] );
-
-		// Everything worked! Woo hoo!
-		if ( $is_new_post )
-			WP_CLI::line( sprintf( "\tImported class \"%1\$s\"", $data['name'] ) );
-		else
-			WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
-
-		// Now add this class' methods
-		foreach ( $data['methods'] as $method )
-			$this->import_function( $method, $ID );
 	}
 }
