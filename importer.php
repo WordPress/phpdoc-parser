@@ -135,6 +135,7 @@ class Importer {
 	 * @param array $data Function
 	 * @param int $class_post_id Optional; post ID of the class this method belongs to. Defaults to zero (not a method).
 	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @return bool|int Post ID of this function, false if any failure.
 	 */
 	public function import_function( array $data, $class_post_id = 0, $import_internal_functions = false ) {
 		global $wpdb;
@@ -147,7 +148,7 @@ class Importer {
 			else
 				WP_CLI::line( sprintf( "\tSkipped importing @internal function \"%1\$s\"", $data['name'] ) );
 
-			return;
+			return false;
 		}
 
 		$is_new_post = true;
@@ -177,7 +178,7 @@ class Importer {
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
 			$this->errors[] = sprintf( 'Problem inserting/updating post for function "%1$s": %2$s', $data['name'], $ID->get_error_message() );
-			return;
+			return false;
 		}
 
 		// If the function has @since markup, assign the taxonomy
@@ -225,6 +226,8 @@ class Importer {
 			else
 				WP_CLI::line( sprintf( "\tUpdated function \"%1\$s\"", $data['name'] ) );
 		}
+
+		return $ID;
 	}
 
 	/**
