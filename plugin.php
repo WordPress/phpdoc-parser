@@ -58,7 +58,6 @@ function register_post_types() {
 function register_taxonomies() {
 	// Files
 	register_taxonomy( 'wpapi-source-file', array( 'wpapi-class', 'wpapi-function' ), array(
-		'hierarchical'          => true,
 		'label'                 => __( 'Files', 'wpfuncref' ),
 		'public'                => true,
 		'rewrite'               => array( 'slug' => 'files' ),
