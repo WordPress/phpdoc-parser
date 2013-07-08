@@ -19,7 +19,7 @@ class Importer {
 	public $taxonomy_file;
 
 	/**
-	 * Taxonomy name for a function's @since tag
+	 * Taxonomy name for an item's @since tag
 	 *
 	 * @var string
 	 */
@@ -209,10 +209,10 @@ class Importer {
 			'post_type'    => $this->post_type_function,
 		) );
 
-		// Look for an existing post for this function
+		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $post_data['post_type'], (int) $class_post_id ) );
 
-		// Insert/update the function post
+		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
 			$is_new_post     = false;
 			$post_data['ID'] = (int) $existing_post_id;
@@ -234,7 +234,7 @@ class Importer {
 			return false;
 		}
 
-		// If the function has @since markup, assign the taxonomy
+		// If the item has @since markup, assign the taxonomy
 		$since_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
 		if ( ! empty( $since_version ) ) {
 
