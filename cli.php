@@ -161,7 +161,7 @@ class Command extends WP_CLI_Command {
 		$output = parse_files( $files, $path );
 
 		if ( $format == 'json' )
-			$output = json_encode( $output, JSON_PRETTY_PRINT );
+			$output = json_encode( $output );
 
 		return $output;
 	}
