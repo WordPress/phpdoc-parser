@@ -20,7 +20,7 @@ class Command extends WP_CLI_Command {
 		list( $directory, $output_file ) = $args;
 
 		if ( empty( $output_file ) )
-			$output_file = 'phpdoc.xml';
+			$output_file = 'phpdoc.json';
 
 		$directory = realpath( $directory );
 		$this->_load_libs();
