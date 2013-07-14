@@ -26,6 +26,13 @@ class Importer {
 	public $taxonomy_since_version;
 
 	/**
+	 * Taxonomy name for an item's @package/@subpackage tags
+	 *
+	 * @var string
+	 */
+	public $taxonomy_package;
+
+	/**
 	 * Post type name for functions
 	 *
 	 * @var string
@@ -39,7 +46,6 @@ class Importer {
 	 */
 	public $post_type_class;
 
-	public $taxonomy_package;  // todo
 	public $post_type_hook;    // todo
 
 	/**
