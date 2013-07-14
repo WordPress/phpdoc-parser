@@ -33,6 +33,7 @@ function parse_files($files, $root) {
 
 		// TODO proper exporter
 		$out = array(
+			'file'  => export_docblock( $file ),
 			'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
 		);
 
