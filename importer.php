@@ -107,7 +107,8 @@ class Importer {
 
 		// Store file meta for later use
 		$this->file_meta = array(
-			'term_id' => $term['name'],  // File's term item in the file taxonomy
+			'docblock' => $file['file'],  // File docblock
+			'term_id'  => $term['name'],  // File's term item in the file taxonomy
 		}
 
 		// Functions
