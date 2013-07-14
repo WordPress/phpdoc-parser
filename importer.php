@@ -72,6 +72,7 @@ class Importer {
 			'post_type_class'        => 'wpapi-class',
 			'post_type_function'     => 'wpapi-function',
 			'taxonomy_file'          => 'wpapi-source-file',
+			'taxonomy_package'       => 'wpapi-package',
 			'taxonomy_since_version' => 'wpapi-since',
 		) );
 
