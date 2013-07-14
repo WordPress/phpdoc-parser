@@ -199,15 +199,9 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		// Sanity check -- does the file taxonomy exist?
-		if ( ! taxonomy_exists( $importer->taxonomy_file ) ) {
+		// Sanity check -- do the required taxonomies exist?
+		if ( ! taxonomy_exists( $importer->taxonomy_file ) || ! taxonomy_exists( $importer->taxonomy_since_version ) || ! taxonomy_exists( $importer->taxonomy_package ) ) {
 			WP_CLI::error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_file ) );
-			exit;
-		}
-
-		// Sanity check -- does the @since taxonomy exist?
-		if ( ! taxonomy_exists( $importer->taxonomy_since_version ) ) {
-			WP_CLI::error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_since_version ) );
 			exit;
 		}
 
