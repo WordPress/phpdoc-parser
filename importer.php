@@ -49,11 +49,11 @@ class Importer {
 	public $post_type_hook;    // todo
 
 	/**
-	 * Stores a reference to the current file's term in the file taxonomy
+	 * Handy store for meta about the current item being imported
 	 *
-	 * @var string
+	 * @var array
 	 */
-	public $file_term_id;
+	public $file_meta = array();
 
 	/**
 	 * @var array Human-readable errors
@@ -105,7 +105,10 @@ class Importer {
 			$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
 		}
 
-		$this->file_term_id = $term['name'];
+		// Store file meta for later use
+		$this->file_meta = array(
+			'term_id' => $term['name'],  // File's term item in the file taxonomy
+		}
 
 		// Functions
 		if ( ! empty( $file['functions'] ) ) {
@@ -259,9 +262,9 @@ class Importer {
 				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
 		}
 
-		// Set other taxonomy and post meta to use in the theme template
-		wp_set_object_terms( $ID, $this->file_term_id, $this->taxonomy_file );
 
+		// Set other taxonomy and post meta to use in the theme templates
+		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
 		update_post_meta( $ID, '_wpapi_args',     $data['arguments'] );
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
 		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
