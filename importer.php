@@ -109,7 +109,7 @@ class Importer {
 		$this->file_meta = array(
 			'docblock' => $file['file'],  // File docblock
 			'term_id'  => $term['name'],  // File's term item in the file taxonomy
-		}
+		);
 
 		// Functions
 		if ( ! empty( $file['functions'] ) ) {
