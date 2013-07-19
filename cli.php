@@ -212,6 +212,15 @@ class Command extends WP_CLI_Command {
 			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
 		}
 
+		/**
+		 * Workaround for a WP core bug where hierarchial taxonomy caches are not being cleared
+		 *
+		 * https://core.trac.wordpress.org/ticket/14485
+		 * http://wordpress.stackexchange.com/questions/8357/inserting-terms-in-an-hierarchical-taxonomy
+		 */
+		delete_option( "{$importer->taxonomy_package}_children" );
+		delete_option( "{$importer->taxonomy_since_version}_children" );
+
 		// Start counting again
 		wp_defer_term_counting( false );
 		wp_defer_comment_counting( false );
