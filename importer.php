@@ -263,6 +263,52 @@ class Importer {
 				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
 		}
 
+		$packages = array(
+			'main' => wp_list_filter( $data['doc']['tags'], array( 'name' => 'package' ) ),
+			'sub'  => wp_list_filter( $data['doc']['tags'], array( 'name' => 'subpackage' ) ),
+		);
+
+		// If the @package/@subpackage is not set by the individual function or class, get it from the file scope
+		if ( empty( $packages['main'] ) )
+			$packages['main'] = wp_list_filter( $this->file_meta['docblock']['tags'], array( 'name' => 'package' ) );
+
+		if ( empty( $packages['sub'] ) )
+			$packages['sub'] = wp_list_filter( $this->file_meta['docblock']['tags'], array( 'name' => 'subpackage' ) );
+
+		$main_package_id   = false;
+		$package_term_args = array();
+
+		// If the item has any @package/@subpackage markup (or has inherited it from file scope), assign the taxonomy.
+		foreach ( $packages as $pack_name => $pack_value ) {
+			if ( empty( $pack_value ) )
+				continue;
+
+			$pack_value = array_shift( $pack_value );
+			$pack_value = $pack_value['content'];
+
+			// Set the parent term_id to look for, as the package taxonomy is hierarchical.
+			if ( $pack_name === 'sub' && is_int( $main_package_id ) )
+				$package_term_args = array( 'parent' => $main_package_id );
+			else
+				$package_term_args = array( 'parent' => 0 );
+
+			// If the package doesn't already exist in the taxonomy, add it
+			$package_term = term_exists( $pack_value, $this->taxonomy_package, $package_term_args['parent'] );
+			if ( ! $package_term )
+				$package_term = wp_insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
+
+			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) )
+				$main_package_id = (int) $package_term['term_id'];
+
+			// Assign the tax item to the post
+			if ( ! is_wp_error( $package_term ) )
+				wp_set_object_terms( $ID, (int) $package_term['term_id'], $this->taxonomy_package );
+
+			elseif ( is_int( $main_package_id ) )
+				WP_CLI::warning( "\tCannot set @subpackage term: " . $package_term->get_error_message() );
+			else
+				WP_CLI::warning( "\tCannot set @package term: " . $package_term->get_error_message() );
+		}
 
 		// Set other taxonomy and post meta to use in the theme templates
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
