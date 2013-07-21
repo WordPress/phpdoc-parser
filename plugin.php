@@ -70,6 +70,7 @@ function register_taxonomies() {
 		'hierarchical'          => true,
 		'label'                 => '@package',
 		'public'                => true,
+		'rewrite'               => array( 'slug' => 'package' ),
 		'sort'                  => false,
 		'update_count_callback' => '_update_post_term_count',
 	) );
@@ -79,6 +80,7 @@ function register_taxonomies() {
 		'hierarchical'          => true,
 		'label'                 => __( '@since', 'wpfuncref' ),
 		'public'                => true,
+		'rewrite'               => array( 'slug' => 'since' ),
 		'sort'                  => false,
 		'update_count_callback' => '_update_post_term_count',
 	) );
