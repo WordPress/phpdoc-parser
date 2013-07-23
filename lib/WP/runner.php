@@ -109,10 +109,15 @@ function export_docblock($element) {
 		'tags' => array(),
 	);
 	foreach ($docblock->getTags() as $tag) {
-		$output['tags'][] = array(
+		$t = array(
 			'name' => $tag->getName(),
-			'content' => $tag->getContent(),
+			'content' => $tag->getDescription(),
 		);
+		if (method_exists($tag, 'getTypes'))
+			$t['types'] = $tag->getTypes();
+		if (method_exists($tag, 'getVariableName'))
+			$t['variable'] = $tag->getVariableName();
+		$output['tags'][] = $t;
 	}
 
 	return $output;
