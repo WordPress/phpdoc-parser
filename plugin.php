@@ -134,6 +134,9 @@ function humanize_separator( $type ) {
  */
 function expand_content( $content ) {
 	$post = get_post();
+	
+	// Remove our filter, as we don't want to run again recursively if get_the_content is called
+	remove_filter( 'the_content', __NAMESPACE__ . '\\expand_content' );
 
 	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' )
 		return $content;
