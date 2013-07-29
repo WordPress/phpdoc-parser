@@ -117,7 +117,7 @@ function export_docblock($element) {
 			$t['types'] = $tag->getTypes();
 		if (method_exists($tag, 'getVariableName'))
 			$t['variable'] = $tag->getVariableName();
-		if ( method_exists( $tag, 'getVersion' ) )
+		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) )
 			$t['content'] = $tag->getVersion();
 		$output['tags'][] = $t;
 	}
