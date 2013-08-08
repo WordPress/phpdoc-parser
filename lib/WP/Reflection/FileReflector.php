@@ -57,6 +57,10 @@ class WP_Reflection_FileReflector extends FileReflector {
 		}
 	}
 
+	public function getHooks() {
+		return $this->hooks;
+	}
+
 	public function leaveNode(PHPParser_Node $node) {
 		switch ($node->getType()) {
 			case 'Stmt_Class':

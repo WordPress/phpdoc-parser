@@ -53,9 +53,8 @@ function parse_files($files, $root) {
 			);
 		}
 
-		$hooks = export_hooks($file->hooks);
-		if (!empty($hooks))
-			$out['hooks'] = $hooks;
+		if ( $hooks = $file->getHooks() )
+			$out['hooks'] = export_hooks( $hooks );
 
 		foreach ($file->getFunctions() as $function) {
 			$func = array(
@@ -63,10 +62,11 @@ function parse_files($files, $root) {
 				'line' => $function->getLineNumber(),
 				'arguments' => export_arguments($function->getArguments()),
 				'doc' => export_docblock($function),
+				'hooks' => array(),
 			);
 
-			if (!empty($function->hooks))
-				$func['hooks'] = export_hooks($function->hooks);
+			if ( ! empty( $function->hooks ) )
+				$func['hooks'] = export_hooks( $function->hooks );
 
 			$out['functions'][] = $func;
 		}
@@ -125,14 +125,14 @@ function export_docblock($element) {
 	return $output;
 }
 
-function export_hooks(array $hooks) {
+function export_hooks( array $hooks ) {
 	$out = array();
-	foreach ($hooks as $hook) {
+	foreach ( $hooks as $hook ) {
 		$out[] = array(
-			'name' => $hook->getName(),
-			'line' => $hook->getLineNumber(),
-			'type' => $hook->getType(),
-			'arguments' => implode(', ', $hook->getArgs()),
+			'name'      => $hook->getName(),
+			'line'      => $hook->getLineNumber(),
+			'type'      => $hook->getType(),
+			'arguments' => implode( ', ', $hook->getArgs() ),
 		);
 	}
 	return $out;
