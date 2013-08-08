@@ -50,6 +50,17 @@ function register_post_types() {
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
 		'taxonomies'   => array( 'wpapi-source-file' ),
 	) );
+
+	// Hooks
+	register_post_type( 'wpapi-hook', array(
+		'has_archive'  => true,
+		'hierarchical' => false,
+		'label'        => __( 'Hooks', 'wpfuncref' ),
+		'public'       => true,
+		'rewrite'      => array( 'slug' => 'hooks' ),
+		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
+		'taxonomies'   => array( 'wpapi-source-file' ),
+	) );
 }
 
 /**
@@ -57,7 +68,7 @@ function register_post_types() {
  */
 function register_taxonomies() {
 	// Files
-	register_taxonomy( 'wpapi-source-file', array( 'wpapi-class', 'wpapi-function' ), array(
+	register_taxonomy( 'wpapi-source-file', array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ), array(
 		'label'                 => __( 'Files', 'wpfuncref' ),
 		'public'                => true,
 		'rewrite'               => array( 'slug' => 'files' ),
@@ -66,7 +77,7 @@ function register_taxonomies() {
 	) );
 
 	// Package
-	register_taxonomy( 'wpapi-package', array( 'wpapi-class', 'wpapi-function' ), array(
+	register_taxonomy( 'wpapi-package', array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ), array(
 		'hierarchical'          => true,
 		'label'                 => '@package',
 		'public'                => true,
@@ -76,7 +87,7 @@ function register_taxonomies() {
 	) );
 
 	// @since
-	register_taxonomy( 'wpapi-since', array( 'wpapi-class', 'wpapi-function' ), array(
+	register_taxonomy( 'wpapi-since', array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ), array(
 		'hierarchical'          => true,
 		'label'                 => __( '@since', 'wpfuncref' ),
 		'public'                => true,
@@ -138,7 +149,7 @@ function humanize_separator( $type ) {
 function expand_content( $content ) {
 	$post = get_post();
 
-	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' )
+	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' )
 		return $content;
 
 	$before_content = wpfuncref_prototype();

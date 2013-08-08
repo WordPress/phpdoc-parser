@@ -46,7 +46,12 @@ class Importer {
 	 */
 	public $post_type_class;
 
-	public $post_type_hook;    // todo
+	/**
+	 * Post type name for hooks
+	 *
+	 * @var string
+	 */
+	public $post_type_hook;
 
 	/**
 	 * Handy store for meta about the current item being imported
@@ -71,6 +76,7 @@ class Importer {
 		$r = wp_parse_args( $args, array(
 			'post_type_class'        => 'wpapi-class',
 			'post_type_function'     => 'wpapi-function',
+			'post_type_hook'         => 'wpapi-hook',
 			'taxonomy_file'          => 'wpapi-source-file',
 			'taxonomy_package'       => 'wpapi-package',
 			'taxonomy_since_version' => 'wpapi-since',
@@ -138,18 +144,46 @@ class Importer {
 					sleep( 3 );
 			}
 		}
+
+		if ( ! empty( $file['hooks'] ) ) {
+			$i = 0;
+
+			foreach ( $file['hooks'] as $hook ) {
+				$this->import_hook( $hook, 0, $import_internal );
+				$i++;
+
+				// Wait 3 seconds after every 10 items
+				if ( ! $skip_sleep && $i % 10 == 0 )
+					sleep( 3 );
+			}
+		}
 	}
 
 	/**
 	 * Create a post for a function
 	 *
 	 * @param array $data Function
-	 * @param int $class_post_id Optional; post ID of the class this method belongs to. Defaults to zero (not a method).
+	 * @param int $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
 	 * @param bool $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
-	public function import_function( array $data, $class_post_id = 0, $import_internal = false ) {
-		return $this->import_item( $data, $class_post_id, $import_internal );
+	public function import_function( array $data, $parent_post_id = 0, $import_internal = false ) {
+		$function_id = $this->import_item( $data, $parent_post_id, $import_internal );
+
+		foreach ( $data['hooks'] as $hook )
+			$this->import_hook( $hook, $function_id, $import_internal );
+	}
+
+	/**
+	 * Create a post for a hook
+	 *
+	 * @param array $data Hook
+	 * @param int $parent_post_id Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool $import_internal Optional; defaults to false. If true, hooks marked @internal will be imported.
+	 * @return bool|int Post ID of this hook, false if any failure.
+	 */
+	public function import_hook( array $data, $parent_post_id = 0, $import_internal = false ) {
+		return $this->import_item( $data, $parent_post_id, $import_internal, array( 'post_type' => $this->post_type_hook ) );
 	}
 
 	/**
@@ -187,12 +221,12 @@ class Importer {
 	 * Anything more specific should go in either import_function() or import_class() as appropriate.
 	 *
 	 * @param array $data Data
-	 * @param int $class_post_id Optional; post ID of the class this item belongs to. Defaults to zero (not a method).
+	 * @param int $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
 	 * @param bool $import_internal Optional; defaults to false. If true, functions or classes marked @internal will be imported.
 	 * @param array $arg_overrides Optional; array of parameters that override the defaults passed to wp_update_post().
 	 * @return bool|int Post ID of this item, false if any failure.
 	 */
-	public function import_item( array $data, $class_post_id = 0, $import_internal = false, array $arg_overrides = array() ) {
+	public function import_item( array $data, $parent_post_id = 0, $import_internal = false, array $arg_overrides = array() ) {
 		global $wpdb;
 
 		// Don't import items marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
@@ -200,7 +234,7 @@ class Importer {
 
 			if ( $post_data['post_type'] === $this->post_type_class )
 				WP_CLI::line( sprintf( "\tSkipped importing @internal class \"%1\$s\"", $data['name'] ) );
-			elseif ( $class_post_id )
+			elseif ( $parent_post_id )
 				WP_CLI::line( sprintf( "\t\tSkipped importing @internal method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tSkipped importing @internal function \"%1\$s\"", $data['name'] ) );
@@ -214,14 +248,14 @@ class Importer {
 			'post_content' => $data['doc']['long_description'],
 			'post_excerpt' => $data['doc']['description'],
 			'post_name'    => $slug,
-			'post_parent'  => (int) $class_post_id,
+			'post_parent'  => (int) $parent_post_id,
 			'post_status'  => 'publish',
 			'post_title'   => $data['name'],
 			'post_type'    => $this->post_type_function,
 		) );
 
 		// Look for an existing post for this item
-		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $post_data['post_type'], (int) $class_post_id ) );
+		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $post_data['post_type'], (int) $parent_post_id ) );
 
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
@@ -237,7 +271,7 @@ class Importer {
 
 			if ( $post_data['post_type'] === $this->post_type_class )
 				$this->errors[] = sprintf( "\tProblem inserting/updating post for class \"%1\$s\"", $data['name'], $ID->get_error_message() );
-			elseif ( $class_post_id )
+			elseif ( $parent_post_id )
 				$this->errors[] = sprintf( "\t\tProblem inserting/updating post for method \"%1\$s\"", $data['name'], $ID->get_error_message() );
 			else
 				$this->errors[] = sprintf( "\tProblem inserting/updating post for function \"%1\$s\"", $data['name'], $ID->get_error_message() );
@@ -320,7 +354,7 @@ class Importer {
 		if ( $is_new_post ) {
 			if ( $post_data['post_type'] === $this->post_type_class )
 				WP_CLI::line( sprintf( "\tImported class \"%1\$s\"", $data['name'] ) );
-			elseif ( $class_post_id )
+			elseif ( $parent_post_id )
 				WP_CLI::line( sprintf( "\t\tImported method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tImported function \"%1\$s\"", $data['name'] ) );
@@ -328,7 +362,7 @@ class Importer {
 		} else {
 			if ( $post_data['post_type'] === $this->post_type_class )
 				WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
-			elseif ( $class_post_id )
+			elseif ( $parent_post_id )
 				WP_CLI::line( sprintf( "\t\tUpdated method \"%1\$s\"", $data['name'] ) );
 			else
 				WP_CLI::line( sprintf( "\tUpdated function \"%1\$s\"", $data['name'] ) );
