@@ -125,6 +125,19 @@ function export_docblock($element) {
 	return $output;
 }
 
+function export_hooks( array $hooks ) {
+	$out = array();
+	foreach ( $hooks as $hook ) {
+		$out[] = array(
+			'name'      => $hook->getName(),
+			'line'      => $hook->getLineNumber(),
+			'type'      => $hook->getType(),
+			'arguments' => implode( ', ', $hook->getArgs() ),
+		);
+	}
+	return $out;
+}
+
 function export_arguments(array $arguments) {
 	$output = array();
 	foreach ($arguments as $argument) {
@@ -177,19 +190,6 @@ function export_methods(array $methods) {
 			$meth['hooks'] = export_hooks($method->hooks);
 
 		$out[] = $meth;
-	}
-	return $out;
-}
-
-function export_hooks( array $hooks ) {
-	$out = array();
-	foreach ( $hooks as $hook ) {
-		$out[] = array(
-			'name'      => $hook->getName(),
-			'line'      => $hook->getLineNumber(),
-			'type'      => $hook->getType(),
-			'arguments' => implode( ', ', $hook->getArgs() ),
-		);
 	}
 	return $out;
 }
