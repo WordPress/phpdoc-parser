@@ -92,7 +92,7 @@ function wpfuncref_is_function_deprecated() {
 }
 
 /**
- * Return the current function or hook's arguments. Template tag function for the function and hook post types.
+ * Return the current function's arguments. Template tag function for the function post type.
  *
  * The default value stuff is messy because ['arguments'] doesn't contain information from ['doc']['tags'][x]['name' == 'param'].
  *
@@ -108,15 +108,25 @@ function wpfuncref_get_the_arguments() {
 	if ( ! empty( $params ) ) {
 		foreach ( $params as $param ) {
 
+			// Split the string: "[bool] [$launch_missles] Fire the rockets"
+			$parts = explode( ' ', $param['content'] );
+
+			$return_desc = '';
+			$return_type = $parts[0];
+
+			// The substr handles where the parser had found something like "array Posts" when the PHPDoc looks like "@return array Posts".
+			if ( count( $parts ) > 2 )
+				$return_desc = implode( ' ', array_slice( $parts, 2 ) );
+
 			// Assemble data for this parameter
 			$arg = array(
-				'desc' => $param['content'],
-				'name' => $param['variable'],
-				'types' => implode( ' ', $param['types'] ),
+				'desc' => $return_desc,
+				'name' => $parts[1],
+				'type' => $return_type,
 			);
 
 			// Maybe add default value
-			$param_default_value = wp_list_filter( $args_data, array( 'name' => $param['variable'] ) );
+			$param_default_value = wp_list_filter( $args_data, array( 'name' => $parts[1] ) );
 			if ( ! empty( $param_default_value ) ) {
 				$param_default_value = array_shift( $param_default_value );
 				$param_default_value = $param_default_value['default'];
@@ -144,13 +154,12 @@ function wpfuncref_get_the_arguments() {
  * @return string Prototype HTML
  */
 function wpfuncref_prototype() {
-	$post = get_post();
-
+	$type = wpfuncref_return_type();
 
 	$friendly_args = array();
 	$args = wpfuncref_get_the_arguments();
 	foreach ( $args as $arg ) {
-		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', $arg['types'], $arg['name'] );
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', $arg['type'], $arg['name'] );
 		if ( !empty( $arg['default_value'] ) )
 			$friendly .= ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
 
@@ -160,14 +169,7 @@ function wpfuncref_prototype() {
 
 	$name = get_the_title();
 
-	$prototype = '<p class="wpfuncref-prototype"><code>';
-	// For functions, include the return type
-	if ( 'wpapi-function' == $post->post_type ) {
-		$type = wpfuncref_return_type();
-		$prototype .= sprintf( '<span class="type">%s</span> ', $type );
-	}
-
-	$prototype .= sprintf( '%s ( %s )</code></p>', $name, $friendly_args );
+	$prototype = sprintf( '<p class="wpfuncref-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', $type, $name, $friendly_args );
 
 	return apply_filters( 'wpfuncref_prototype', $prototype );
 }
