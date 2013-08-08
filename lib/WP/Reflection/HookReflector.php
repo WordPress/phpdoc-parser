@@ -13,7 +13,7 @@ class WP_Reflection_HookReflector extends BaseReflector {
 				$name = $printer->prettyPrintExpr($filter);
 				break;
 			case 'Scalar_String':
-				$name = "'" . $filter->value . "'";
+				$name = $filter->value;
 				break;
 		}
 
