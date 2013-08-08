@@ -53,17 +53,8 @@ function parse_files($files, $root) {
 			);
 		}
 
-		if ( $file->getHooks() ) {
-			foreach ( $file->getHooks() as $hook ) {
-				$out['hooks'][] = array(
-					'name' => $hook->getName(),
-					'line' => $hook->getLineNumber(),
-					'type' => $hook->getType(),
-					'arguments' => implode( ', ', $hook->getArgs() ),
-					'doc' => export_docblock( $hook ),
-				);
-			};
-		}
+		if ( $hooks = $file->getHooks() )
+			$out['hooks'] = export_hooks( $hooks );
 
 		foreach ($file->getFunctions() as $function) {
 			$func = array(
@@ -74,17 +65,8 @@ function parse_files($files, $root) {
 				'hooks' => array(),
 			);
 
-			if ( ! empty( $function->hooks ) ) {
-				foreach ( $function->hooks as $hook ) {
-					$func['hooks'][] = array(
-						'name' => $hook->getName(),
-						'line' => $hook->getLineNumber(),
-						'type' => $hook->getType(),
-						'arguments' => implode( ', ', $hook->getArgs() ),
-						'doc' => export_docblock( $hook )
-					);
-				};
-			}
+			if ( ! empty( $function->hooks ) )
+				$func['hooks'] = export_hooks( $function->hooks );
 
 			$out['functions'][] = $func;
 		}
@@ -195,6 +177,19 @@ function export_methods(array $methods) {
 			$meth['hooks'] = export_hooks($method->hooks);
 
 		$out[] = $meth;
+	}
+	return $out;
+}
+
+function export_hooks( array $hooks ) {
+	$out = array();
+	foreach ( $hooks as $hook ) {
+		$out[] = array(
+			'name'      => $hook->getName(),
+			'line'      => $hook->getLineNumber(),
+			'type'      => $hook->getType(),
+			'arguments' => implode( ', ', $hook->getArgs() ),
+		);
 	}
 	return $out;
 }
