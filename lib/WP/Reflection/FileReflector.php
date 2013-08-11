@@ -54,6 +54,14 @@ class WP_Reflection_FileReflector extends FileReflector {
 					$this->getLocation()->hooks[] = $hook;
 				}
 				break;
+
+			// Associate filter documentation with the Expr_FuncCall node instead of
+			// the Expr_Assign node so that it's picked up by the hook reflector
+			case 'Expr_Assign':
+				if (($docblock = $node->getDocComment()) && $this->isFilter($node->expr)) {
+					$node->expr->setAttribute('comments', array($docblock));
+				}
+				break;
 		}
 	}
 
