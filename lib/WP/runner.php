@@ -1,13 +1,13 @@
 <?php
 
 function get_wp_files($directory) {
-	$iterableFiles =  new RecursiveIteratorIterator(
+	$iterableFiles = new RecursiveIteratorIterator(
 		new RecursiveDirectoryIterator($directory)
 	);
 	$files = array();
 	try {
 		foreach( $iterableFiles as $file ) {
-			if ($file->getExtension() !== 'php')
+			if ($file->getExtension() !== 'php' || strpos($iterableFiles->getSubPath(), 'wp-content') !== false)
 				continue;
 
 			$files[] = $file->getPathname();
