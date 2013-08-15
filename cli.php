@@ -60,7 +60,7 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		$phpdoc = json_decode( $phpdoc );
+		$phpdoc = json_decode( $phpdoc, true );
 		if ( is_null( $phpdoc ) ) {
 			WP_CLI::error( sprintf( "JSON in %1\$s can't be decoded :(", $file ) );
 			exit;
