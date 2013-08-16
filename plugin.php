@@ -106,10 +106,13 @@ function make_args_safe( $args ) {
 
 	foreach ( $args as &$arg ) {
 		foreach ( $arg as &$value ) {
-
-			// Loop through all elements of the $args array, and apply our set of filters to them.
 			foreach ( $filters as $filter_function )
-				$value = call_user_func( $filter_function, $value );
+				if ( is_array( $value ) ) {
+					foreach ( $value as &$v )
+						$v = call_user_func( $filter_function, $v );
+				} else {
+					$value = call_user_func( $filter_function, $value );
+				}
 		}
 	}
 
@@ -147,7 +150,7 @@ function expand_content( $content ) {
 	$args = wpfuncref_get_the_arguments();
 	foreach ( $args as $arg ) {
 		$after_content .= '<div class="wpfuncref-arg">';
-		$after_content .= '<h4><code><span class="type">' . $arg['type'] . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
+		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
 		$after_content .= wpautop( $arg['desc'], false );
 		$after_content .= '</div>';
 	}

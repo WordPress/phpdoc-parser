@@ -1,25 +1,20 @@
 <?php
 
 /**
- * Get the current function's return type
+ * Get the current function's return types
  *
- * @return string
+ * @return array
  */
 function wpfuncref_return_type() {
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$return_type   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
 	if ( ! empty( $return_type ) ) {
-
 		// Grab the description from the return type
 		$return_type = array_shift( $return_type );
-		$return_type = $return_type['content'];
-		$parts       = explode( ' ', $return_type );
-		$return_type = $parts[0];
-
-
+		$return_type = $return_type['types'];
 	} else {
-		$return_type = 'void';
+		$return_type = array( 'void' );
 	}
 
 	return apply_filters( 'wpfuncref_the_return_type', $return_type );
@@ -31,7 +26,7 @@ function wpfuncref_return_type() {
  * @see wpfuncref_return_type
  */
 function wpfuncref_the_return_type() {
-	echo wpfuncref_return_type();
+	echo implode( '|', wpfuncref_return_type() );
 }
 
 /**
@@ -44,19 +39,9 @@ function wpfuncref_return_desc() {
 	$return_desc   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
 	if ( ! empty( $return_desc ) ) {
-
 		// Grab the description from the return type
 		$return_desc = array_shift( $return_desc );
 		$return_desc = $return_desc['content'];
-		$parts       = explode( ' ', $return_desc );
-
-		// This handles where the parser had found something like "array Posts" when the PHPDoc looks like "@return array Posts".
-		if ( count( $parts ) > 1 )
-			$return_desc = ': ' . implode( ' ', array_slice( $parts, 1 ) );
-		else
-			$return_desc = '';
-
-
 	} else {
 		$return_desc = '';
 	}
@@ -92,12 +77,9 @@ function wpfuncref_is_function_deprecated() {
 }
 
 /**
- * Return the current function's arguments. Template tag function for the function post type.
- *
- * The default value stuff is messy because ['arguments'] doesn't contain information from ['doc']['tags'][x]['name' == 'param'].
+ * Return the current function's arguments.
  *
  * @return array array( [0] => array( 'name' => '', 'type' => '', 'desc' => '' ), ... )
- * @see https://github.com/rmccue/WP-Parser/issues/4
  */
 function wpfuncref_get_the_arguments() {
 	$args_data     = get_post_meta( get_the_ID(), '_wpapi_args', true );
@@ -105,42 +87,30 @@ function wpfuncref_get_the_arguments() {
 	$params        = wp_list_filter( $function_data, array( 'name' => 'param' ) );
 	$return_args   = array();
 
-	if ( ! empty( $params ) ) {
-		foreach ( $params as $param ) {
+	if ( ! empty( $args_data ) ) {
+		foreach ( $args_data as $arg ) {
+			$param_tag = wp_list_filter( $params, array( 'variable' => $arg['name'] ) );
+			$param_tag = array_shift( $param_tag );
 
-			// Split the string: "[bool] [$launch_missles] Fire the rockets"
-			$parts = explode( ' ', $param['content'] );
-
-			$return_desc = '';
-			$return_type = $parts[0];
-
-			// The substr handles where the parser had found something like "array Posts" when the PHPDoc looks like "@return array Posts".
-			if ( count( $parts ) > 2 )
-				$return_desc = implode( ' ', array_slice( $parts, 2 ) );
-
-			// Assemble data for this parameter
-			$arg = array(
-				'desc' => $return_desc,
-				'name' => $parts[1],
-				'type' => $return_type,
+			$param = array(
+				'name' => $arg['name'],
 			);
 
-			// Maybe add default value
-			$param_default_value = wp_list_filter( $args_data, array( 'name' => $parts[1] ) );
-			if ( ! empty( $param_default_value ) ) {
-				$param_default_value = array_shift( $param_default_value );
-				$param_default_value = $param_default_value['default'];
+			if ( ! empty( $arg['default'] ) )
+				$param['default_value'] = $arg['default'];
 
-				if ( ! is_null( $param_default_value ) )
-					$arg['default_value'] = $param_default_value;
-			}
+			if ( ! empty( $arg['type'] ) )
+				$param['types'] = array( $arg['type'] );
+			else if ( ! empty( $param_tag['types'] ) )
+				$param['types'] = $param_tag['types'];
+			else
+				$param['types'] = array();
 
-			$return_args[] = $arg;
+			if ( ! empty( $param_tag['content'] ) )
+				$param['desc'] = $param_tag['content'];
+
+			$return_args[] = $param;
 		}
-
-
-	} else {
-		$return_args = array();
 	}
 
 	return apply_filters( 'wpfuncref_get_the_arguments', $return_args );
@@ -159,7 +129,7 @@ function wpfuncref_prototype() {
 	$friendly_args = array();
 	$args = wpfuncref_get_the_arguments();
 	foreach ( $args as $arg ) {
-		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', $arg['type'], $arg['name'] );
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
 		if ( !empty( $arg['default_value'] ) )
 			$friendly .= ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
 
@@ -169,7 +139,7 @@ function wpfuncref_prototype() {
 
 	$name = get_the_title();
 
-	$prototype = sprintf( '<p class="wpfuncref-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', $type, $name, $friendly_args );
+	$prototype = sprintf( '<p class="wpfuncref-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', implode( '|', $type ), $name, $friendly_args );
 
 	return apply_filters( 'wpfuncref_prototype', $prototype );
 }
