@@ -40,29 +40,41 @@ function register_post_types() {
 
 	// Functions
 	register_post_type( 'wpapi-function', array(
-		'has_archive'  => true,
-		'label'        => __( 'Functions', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'functions' ),
-		'supports'     => $supports,
+		'has_archive' => 'functions',
+		'label' => __( 'Functions', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'function',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
 
 	// Classes
 	register_post_type( 'wpapi-class', array(
-		'has_archive'  => true,
-		'label'        => __( 'Classes', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'classes' ),
-		'supports'     => $supports,
+		'has_archive' => 'classes',
+		'label' => __( 'Classes', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'class',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
 
 	// Hooks
 	register_post_type( 'wpapi-hook', array(
-		'has_archive'  => true,
-		'label'        => __( 'Hooks', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'hooks' ),
-		'supports'     => $supports,
+		'has_archive' => 'hooks',
+		'label' => __( 'Hooks', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'hook',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
 }
 
