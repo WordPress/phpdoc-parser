@@ -37,7 +37,6 @@ function register_post_types() {
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'functions' ),
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'page-attributes', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
 	) );
 
 	// Classes
@@ -48,7 +47,6 @@ function register_post_types() {
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'classes' ),
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
 	) );
 
 	// Hooks
@@ -59,7 +57,6 @@ function register_post_types() {
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'hooks' ),
 		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
 	) );
 }
 
