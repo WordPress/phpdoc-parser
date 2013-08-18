@@ -208,8 +208,11 @@ class Importer {
 		update_post_meta( $class_id, '_wpapi_visibility',        $data['visibility'] );
 
 		// Now add the methods
-		foreach ( $data['methods'] as $method )
+		foreach ( $data['methods'] as $method ) {
+			// Namespace method names with the class name
+			$method['name'] = $data['name'] . '-' . $method['name'];
 			$this->import_item( $method, $class_id, $import_internal );
+		}
 
 		return $class_id;
 	}

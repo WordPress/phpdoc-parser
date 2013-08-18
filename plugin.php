@@ -29,37 +29,55 @@ remove_filter( 'the_content', 'wpautop' );
  * Register the function and class post types
  */
 function register_post_types() {
+	$supports = array(
+		'comments',
+		'custom-fields',
+		'editor',
+		'excerpt',
+		'revisions',
+		'title',
+	);
+
 	// Functions
 	register_post_type( 'wpapi-function', array(
-		'has_archive'  => true,
-		'hierarchical' => true,
-		'label'        => __( 'Functions', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'functions' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'page-attributes', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
+		'has_archive' => 'functions',
+		'label' => __( 'Functions', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'function',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
+
+	// Methods
+	add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-function&name=$matches[1]-$matches[2]', 'top' );
 
 	// Classes
 	register_post_type( 'wpapi-class', array(
-		'has_archive'  => true,
-		'hierarchical' => false,
-		'label'        => __( 'Classes', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'classes' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
+		'has_archive' => 'classes',
+		'label' => __( 'Classes', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'class',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
 
 	// Hooks
 	register_post_type( 'wpapi-hook', array(
-		'has_archive'  => true,
-		'hierarchical' => false,
-		'label'        => __( 'Hooks', 'wpfuncref' ),
-		'public'       => true,
-		'rewrite'      => array( 'slug' => 'hooks' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
-		'taxonomies'   => array( 'wpapi-source-file' ),
+		'has_archive' => 'hooks',
+		'label' => __( 'Hooks', 'wpfuncref' ),
+		'public' => true,
+		'rewrite' => array(
+			'feeds' => false,
+			'slug' => 'hook',
+			'with_front' => false,
+		),
+		'supports' => $supports,
 	) );
 }
 
@@ -96,6 +114,16 @@ function register_taxonomies() {
 		'update_count_callback' => '_update_post_term_count',
 	) );
 }
+
+function method_permalink( $link, $post ) {
+	if ( $post->post_type !== 'wpapi-function' || $post->post_parent == 0 )
+		return $link;
+
+	list( $class, $method ) = explode( '-', $post->post_name );
+	$link = home_url( user_trailingslashit( "method/$class/$method" ) );
+	return $link;
+}
+add_filter( 'post_type_link', __NAMESPACE__ . '\\method_permalink', 10, 2 );
 
 /**
  * Raw phpDoc could potentially introduce unsafe markup into the HTML, so we sanitise it here.
