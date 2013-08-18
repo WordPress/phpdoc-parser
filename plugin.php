@@ -29,34 +29,40 @@ remove_filter( 'the_content', 'wpautop' );
  * Register the function and class post types
  */
 function register_post_types() {
+	$supports = array(
+		'comments',
+		'custom-fields',
+		'editor',
+		'excerpt',
+		'revisions',
+		'title',
+	);
+
 	// Functions
 	register_post_type( 'wpapi-function', array(
 		'has_archive'  => true,
-		'hierarchical' => true,
 		'label'        => __( 'Functions', 'wpfuncref' ),
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'functions' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'page-attributes', 'revisions', 'title' ),
+		'supports'     => $supports,
 	) );
 
 	// Classes
 	register_post_type( 'wpapi-class', array(
 		'has_archive'  => true,
-		'hierarchical' => false,
 		'label'        => __( 'Classes', 'wpfuncref' ),
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'classes' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
+		'supports'     => $supports,
 	) );
 
 	// Hooks
 	register_post_type( 'wpapi-hook', array(
 		'has_archive'  => true,
-		'hierarchical' => false,
 		'label'        => __( 'Hooks', 'wpfuncref' ),
 		'public'       => true,
 		'rewrite'      => array( 'slug' => 'hooks' ),
-		'supports'     => array( 'comments', 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' ),
+		'supports'     => $supports,
 	) );
 }
 
