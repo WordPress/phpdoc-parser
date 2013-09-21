@@ -25,6 +25,13 @@ class WP_Reflection_FileReflector extends FileReflector {
 	 */
 	protected $location = array();
 
+	/**
+	 * Last DocBlock associated with a non-documentable element.
+	 *
+	 * @var PHPParser_Comment_Doc
+	 */
+	protected $last_doc = null;
+
 	public function enterNode(PHPParser_Node $node) {
 		parent::enterNode($node);
 
@@ -50,10 +57,20 @@ class WP_Reflection_FileReflector extends FileReflector {
 			// Parse out hook definitions and add them to the current location
 			case 'Expr_FuncCall':
 				if ($this->isFilter($node)) {
+					if ($this->last_doc && !$node->getDocComment()) {
+						$node->setAttribute('comments', array($this->last_doc));
+						$this->last_doc = null;
+					}
 					$hook = new WP_Reflection_HookReflector($node, $this->context);
 					$this->getLocation()->hooks[] = $hook;
 				}
 				break;
+		}
+
+		// Pick up DocBlock from non-documentable elements so that it can be assigned
+		// to the next hook if necessary.
+		if (!$this->isNodeDocumentable($node) && ($docblock = $node->getDocComment())) {
+			$this->last_doc = $docblock;
 		}
 	}
 
@@ -109,5 +126,11 @@ class WP_Reflection_FileReflector extends FileReflector {
 		}
 
 		return $found;
+	}
+
+	protected function isNodeDocumentable(PHPParser_Node $node) {
+		return parent::isNodeDocumentable($node)
+			|| ($node instanceof PHPParser_Node_Expr_FuncCall
+			&& $this->isFilter($node));
 	}
 }
