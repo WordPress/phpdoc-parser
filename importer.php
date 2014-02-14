@@ -357,6 +357,12 @@ class Importer {
 		if ( $is_new_post ) {
 			if ( $post_data['post_type'] === $this->post_type_class )
 				WP_CLI::line( sprintf( "\tImported class \"%1\$s\"", $data['name'] ) );
+			elseif ( $post_data['post_type'] === $this->post_type_hook )
+				if ( $parent_post_id ) {
+					WP_CLI::line( sprintf( "\t\tImported hook \"%1\$s\"", $data['name'] ) );
+				} else {
+					WP_CLI::line( sprintf( "\tImported hook \"%1\$s\"", $data['name'] ) );
+				}
 			elseif ( $parent_post_id )
 				WP_CLI::line( sprintf( "\t\tImported method \"%1\$s\"", $data['name'] ) );
 			else
@@ -365,6 +371,12 @@ class Importer {
 		} else {
 			if ( $post_data['post_type'] === $this->post_type_class )
 				WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
+			elseif ( $post_data['post_type'] === $this->post_type_hook )
+				if ( $parent_post_id ) {
+					WP_CLI::line( sprintf( "\t\tUpdated hook \"%1\$s\"", $data['name'] ) );
+				} else {
+					WP_CLI::line( sprintf( "\tUpdated hook \"%1\$s\"", $data['name'] ) );
+				}
 			elseif ( $parent_post_id )
 				WP_CLI::line( sprintf( "\t\tUpdated method \"%1\$s\"", $data['name'] ) );
 			else
