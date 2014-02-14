@@ -17,10 +17,12 @@ class Command extends WP_CLI_Command {
 	 * @synopsis <directory> [<output_file>]
 	 */
 	public function generate( $args ) {
-		list( $directory, $output_file ) = $args;
+		$directory = $args[0];
 
-		if ( empty( $output_file ) )
-			$output_file = 'phpdoc.json';
+		$output_file = 'phpdoc.json';
+		if ( ! empty( $args[1] ) ) {
+			$output_file = $args[1];
+		}
 
 		$directory = realpath( $directory );
 		$this->_load_libs();
