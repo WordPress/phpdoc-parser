@@ -14,7 +14,7 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate a JSON file containing the PHPDoc markup, and save to filesystem.
 	 *
-	 * @synopsis <directory> [<output_file>]
+	 * @synopsis <directory> [<output-file>]
 	 */
 	public function generate( $args ) {
 		list( $directory, $output_file ) = $args;
