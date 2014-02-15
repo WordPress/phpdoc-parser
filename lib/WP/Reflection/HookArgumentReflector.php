@@ -7,6 +7,25 @@ class WP_Reflection_HookArgumentReflector extends ArgumentReflector {
 	/** @var phpDocumentor\Reflection\DocBlock\Tag\ParamTag $param_tag */
 	protected $param_tag;
 
+    /**
+     * Returns the default value or null is none is set.
+     *
+     * @return string|null
+     */
+    public function getDefault() {
+        $result = null;
+
+		if ( ! $this->node->value instanceof PHPParser_Node_Expr_Variable ) {
+			if ( $this->node->value instanceof PHPParser_Node_Expr_Assign ) {
+				$result = $this->getRepresentationOfValue( $this->node->value->expr );
+			} else {
+				$result = $this->getRepresentationOfValue( $this->node->value );
+			}
+		}
+
+        return $result;
+    }
+
 	/**
 	 * Returns the name of the argument.
 	 *
