@@ -17,6 +17,10 @@ class WP_Reflection_HookArgumentReflector extends ArgumentReflector {
     		return $this->param_tag->getVariableName();
     	}
 
+    	if ( get_class( $this->node->value ) == 'PHPParser_Node_Expr_Assign' ) {
+    		return '$' . $this->node->value->var->name;
+    	}
+
         return '$' . $this->node->value->name;
     }
 
