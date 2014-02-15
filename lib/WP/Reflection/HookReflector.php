@@ -39,14 +39,34 @@ class WP_Reflection_HookReflector extends BaseReflector {
 	}
 
 	public function getArgs() {
-		$printer = new WP_PrettyPrinter;
 		$args = array();
-		foreach ($this->node->args as $arg) {
-			$args[] = $printer->prettyPrintArg($arg);
+
+		if ( ! is_array( $this->node->args ) ) {
+			return $args;
 		}
 
-		// Skip the filter name
-		array_shift($args);
+		$params = array();
+		$docblock = $this->getDocBlock();
+
+		if ( $docblock instanceof phpDocumentor\Reflection\DocBlock ) {
+			$params = $docblock->getTagsByName( 'param' );
+		}
+
+		$_args = $this->node->args;
+
+		// Skip the filter name.
+		array_shift( $_args );
+
+		foreach ( $_args as $index => $arg ) {
+			$reflector = new WP_Reflection_HookArgumentReflector( $arg, $this->context );
+
+			if ( isset( $params[ $index ] ) ) {
+				$reflector->setParamTag( $params[ $index ] );
+			}
+
+			$args[ $reflector->getName() ] = $reflector;
+		}
+
 		return $args;
 	}
 }
