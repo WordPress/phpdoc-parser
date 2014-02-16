@@ -33,6 +33,9 @@ class WP_Reflection_HookReflector extends BaseReflector {
 			case 'do_action_ref_array':
 				$type = 'action_reference';
 				break;
+			case 'apply_filters_ref_array':
+				$type = 'filter_reference';
+				break;
 		}
 
 		return $type;
@@ -57,9 +60,10 @@ class WP_Reflection_HookReflector extends BaseReflector {
 		// Skip the filter name.
 		array_shift( $_args );
 
+		$type = $this->getType();
 		if (
 			isset( $_args[0] )
-			&& $this->getType() == 'action_reference'
+			&& ( 'action_reference' == $type || 'filter_reference' == $type )
 			&& $_args[0]->value instanceof PHPParser_Node_Expr_Array
 		) {
 			$_args = $_args[0]->value->items;
