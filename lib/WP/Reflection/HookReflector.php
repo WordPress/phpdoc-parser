@@ -64,7 +64,7 @@ class WP_Reflection_HookReflector extends BaseReflector {
 				$reflector->setParamTag( $params[ $index ] );
 			}
 
-			$args[ $reflector->getName() ] = $reflector;
+			$args[] = $reflector;
 		}
 
 		return $args;
