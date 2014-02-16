@@ -40,6 +40,10 @@ class WP_Reflection_HookArgumentReflector extends ArgumentReflector {
     		return '$' . $this->node->value->var->name;
     	}
 
+    	if ( empty( $this->node->value->name ) || ! is_string( $this->node->value->name ) ) {
+    		return '$(unnamed)';
+    	}
+
         return '$' . $this->node->value->name;
     }
 
