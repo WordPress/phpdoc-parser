@@ -57,6 +57,14 @@ class WP_Reflection_HookReflector extends BaseReflector {
 		// Skip the filter name.
 		array_shift( $_args );
 
+		if (
+			isset( $_args[0] )
+			&& $this->getType() == 'action_reference'
+			&& $_args[0]->value instanceof PHPParser_Node_Expr_Array
+		) {
+			$_args = $_args[0]->value->items;
+		}
+
 		foreach ( $_args as $index => $arg ) {
 			$reflector = new WP_Reflection_HookArgumentReflector( $arg, $this->context );
 
