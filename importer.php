@@ -355,20 +355,27 @@ class Importer {
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {
-			if ( $post_data['post_type'] === $this->post_type_class )
+			if ( $post_data['post_type'] === $this->post_type_class ) {
 				WP_CLI::line( sprintf( "\tImported class \"%1\$s\"", $data['name'] ) );
-			elseif ( $parent_post_id )
+			} elseif ( $post_data['post_type'] === $this->post_type_hook ) {
+				$indent = ( $parent_post_id ) ? "\t\t" : "\t";
+				WP_CLI::line( $indent . sprintf( 'Imported hook "%1$s"', $data['name'] ) );
+			} elseif ( $parent_post_id ) {
 				WP_CLI::line( sprintf( "\t\tImported method \"%1\$s\"", $data['name'] ) );
-			else
+			} else {
 				WP_CLI::line( sprintf( "\tImported function \"%1\$s\"", $data['name'] ) );
-
+			}
 		} else {
-			if ( $post_data['post_type'] === $this->post_type_class )
+			if ( $post_data['post_type'] === $this->post_type_class ) {
 				WP_CLI::line( sprintf( "\tUpdated class \"%1\$s\"", $data['name'] ) );
-			elseif ( $parent_post_id )
+			} elseif ( $post_data['post_type'] === $this->post_type_hook ) {
+				$indent = ( $parent_post_id ) ? "\t\t" : "\t";
+				WP_CLI::line( $indent . sprintf( 'Updated hook "%1$s"', $data['name'] ) );
+			} elseif ( $parent_post_id ) {
 				WP_CLI::line( sprintf( "\t\tUpdated method \"%1\$s\"", $data['name'] ) );
-			else
+			} else {
 				WP_CLI::line( sprintf( "\tUpdated function \"%1\$s\"", $data['name'] ) );
+			}
 		}
 
 		return $ID;
