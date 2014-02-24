@@ -17,7 +17,7 @@ function wpfuncref_return_type() {
 		$return_type = array( 'void' );
 	}
 
-	return apply_filters( 'wpfuncref_the_return_type', $return_type );
+	return apply_filters( 'wpfuncref_return_type', $return_type );
 }
 
 /**
@@ -46,7 +46,7 @@ function wpfuncref_return_desc() {
 		$return_desc = '';
 	}
 
-	return apply_filters( 'wpfuncref_the_return_desc', $return_desc );
+	return apply_filters( 'wpfuncref_return_desc', $return_desc );
 }
 
 /**
