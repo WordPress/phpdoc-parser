@@ -1,0 +1,28 @@
+{
+	"name"       : "rmccue/wp-parser",
+	"description": "Static code parser for WordPress source.",
+	"keywords"   : ["wordpress"],
+	"type"       : "wordpress-plugin",
+	"homepage"   : "https://github.com/rmccue/WP-Parser",
+	"authors"    : [
+		{
+			"name"    : "Ryan McCue",
+			"homepage": "http://ryanmccue.info"
+		}
+	],
+	"support"    : {
+		"issues": "https://github.com/rmccue/WP-Parser/issues",
+		"source": "https://github.com/rmccue/WP-Parser"
+	},
+	"require"    : {
+		"php"                     : ">=5.3.3",
+		"composer/installers"     : "~1.0",
+		"phpdocumentor/reflection": "~1.0",
+		"erusev/parsedown"        : "~0.9"
+	},
+	"autoload"   : {
+		"psr-0": {
+			"WP": "lib/"
+		}
+	}
+}
