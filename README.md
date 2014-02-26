@@ -8,7 +8,7 @@ Note: ensure the plugin is enabled first.
 
 In your site's directory:
 
-	$ wp funcref generate-and-import /path/to/source/code
+	$ wp funcref generate-and-import /path/to/source/code --user=<id|login>
 
 ## Displaying in your theme
 By default, your theme will use the built-in content. This content is generated

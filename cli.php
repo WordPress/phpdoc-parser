@@ -74,7 +74,7 @@ class Command extends WP_CLI_Command {
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
 	 * @subcommand generate-and-import
-	 * @synopsis <directory> [--quick] [--import-internal]
+	 * @synopsis <directory> [--quick] [--import-internal] [--user]
 	 */
 	public function generate_and_import( $args, $assoc_args ) {
 		list( $directory ) = $args;
