@@ -1,7 +1,12 @@
 # WP Function Reference
 ## Requirements
 * PHP 5.3+
+* [Composer](https://getcomposer.org/)
 * [WP CLI](http://wp-cli.org/)
+
+After cloning from Git set up dependencies via:
+
+    composer install --no-dev
 
 ## Running
 Note: ensure the plugin is enabled first.
