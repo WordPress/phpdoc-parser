@@ -9,6 +9,11 @@
 
 namespace WPFuncRef;
 
+if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+	require __DIR__ . '/vendor/autoload.php';
+}
+
+require_once __DIR__ . '/lib/WP/runner.php';
 require_once __DIR__ . '/template.php';
 
 if ( defined('WP_CLI') && WP_CLI ) {

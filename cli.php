@@ -25,7 +25,6 @@ class Command extends WP_CLI_Command {
 		}
 
 		$directory = realpath( $directory );
-		$this->_load_libs();
 		WP_CLI::line();
 
 		// Get data from the PHPDoc
@@ -49,7 +48,6 @@ class Command extends WP_CLI_Command {
 	 */
 	public function import( $args, $assoc_args ) {
 		list( $file ) = $args;
-		$this->_load_libs();
 		WP_CLI::line();
 
 		// Get the data from the <file>, and check it's valid.
@@ -87,50 +85,10 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		$this->_load_libs();
 		WP_CLI::line();
 
 		// Import data
 		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ), isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
-	}
-
-
-	/**
-	 * Loads required libraries from WP-Parser project
-	 *
-	 * @see https://github.com/rmccue/WP-Parser/
-	 */
-	protected function _load_libs() {
-		spl_autoload_register( __CLASS__ . '::autoloader' );
-		require_once __DIR__ . "/lib/WP/runner.php";
-	}
-
-	public static function autoloader( $class ) {
-		$vendorDir = __DIR__ . '/vendor';
-		$map = array(
-			'phpDocumentor' => array(
-				$vendorDir . '/phpdocumentor/reflection-docblock/src',
-				$vendorDir . '/phpdocumentor/reflection/src',
-				$vendorDir . '/phpdocumentor/reflection/tests/unit',
-				$vendorDir . '/phpdocumentor/reflection/tests/mocks'
-			),
-			'dflydev\\markdown' => $vendorDir . '/dflydev/markdown/src',
-			'WP' => __DIR__ . '/lib',
-			'PHPParser' => $vendorDir . '/nikic/php-parser/lib',
-		);
-
-		foreach ( $map as $prefix => $paths ) {
-			foreach ( (array) $paths as $path ) {
-				if ( strpos( $class, $prefix ) !== 0 ) {
-					continue;
-				}
-
-				$file = $path . DIRECTORY_SEPARATOR . str_replace( array( '_', '\\' ), DIRECTORY_SEPARATOR, $class ) . '.php';
-
-				if (file_exists($file))
-					include_once $file;
-			}
-		}
 	}
 
 	/**
