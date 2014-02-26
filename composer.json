@@ -4,6 +4,7 @@
 	"keywords"   : ["wordpress"],
 	"type"       : "wordpress-plugin",
 	"homepage"   : "https://github.com/rmccue/WP-Parser",
+	"license"    : "GPL-2.0+",
 	"authors"    : [
 		{
 			"name"    : "Ryan McCue",
