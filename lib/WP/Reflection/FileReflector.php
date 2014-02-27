@@ -75,6 +75,9 @@ class WP_Reflection_FileReflector extends FileReflector {
 	}
 
 	public function leaveNode(PHPParser_Node $node) {
+
+		parent::leaveNode( $node );
+
 		switch ($node->getType()) {
 			case 'Stmt_Class':
 			case 'Stmt_ClassMethod':
