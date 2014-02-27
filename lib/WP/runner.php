@@ -158,7 +158,7 @@ function export_properties(array $properties) {
 			'name' => $property->getName(),
 			'line' => $property->getLineNumber(),
 			'default' => $property->getDefault(),
-			'final' => $property->isFinal(),
+//			'final' => $property->isFinal(),
 			'static' => $property->isStatic(),
 			'visibililty' => $property->getVisibility(),
 		);
