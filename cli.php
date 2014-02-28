@@ -1,6 +1,6 @@
 <?php
 
-namespace WPFuncRef;
+namespace WP_Parser;
 
 use phpDocumentor\Reflection\FileReflector;
 use WP_CLI;

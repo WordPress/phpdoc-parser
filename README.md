@@ -1,4 +1,5 @@
-# WP Function Reference
+# WP Parser
+
 ## Requirements
 * PHP 5.3+
 * [Composer](https://getcomposer.org/)
@@ -22,4 +23,4 @@ on the fly by the `expand_content` function.
 To use your own theming instead, simply add the following to
 your `functions.php`:
 
-	remove_filter( 'the_content', 'WPFuncRef\\expand_content' );
+	remove_filter( 'the_content', 'WP_Parser\\expand_content' );

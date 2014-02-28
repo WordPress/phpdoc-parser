@@ -7,7 +7,7 @@
  * Version: 1.0
  */
 
-namespace WPFuncRef;
+namespace WP_Parser;
 
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require __DIR__ . '/vendor/autoload.php';
