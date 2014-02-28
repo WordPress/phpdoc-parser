@@ -1,5 +1,7 @@
 <?php
 
+use WP_Parser\File_Reflector;
+
 function get_wp_files($directory) {
 	$iterableFiles =  new RecursiveIteratorIterator(
 		new RecursiveDirectoryIterator($directory)
@@ -24,7 +26,7 @@ function parse_files($files, $root) {
 	$output = array();
 
 	foreach ($files as $filename) {
-		$file = new WP_Reflection_FileReflector($filename);
+		$file = new File_Reflector($filename);
 
 		$path = ltrim(substr($filename, strlen($root)), DIRECTORY_SEPARATOR);
 		$file->setFilename($path);
