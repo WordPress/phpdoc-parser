@@ -33,20 +33,52 @@ class WP_Reflection_HookReflector extends BaseReflector {
 			case 'do_action_ref_array':
 				$type = 'action_reference';
 				break;
+			case 'apply_filters_ref_array':
+				$type = 'filter_reference';
+				break;
 		}
 
 		return $type;
 	}
 
 	public function getArgs() {
-		$printer = new WP_PrettyPrinter;
 		$args = array();
-		foreach ($this->node->args as $arg) {
-			$args[] = $printer->prettyPrintArg($arg);
+
+		if ( ! is_array( $this->node->args ) ) {
+			return $args;
 		}
 
-		// Skip the filter name
-		array_shift($args);
+		$params = array();
+		$docblock = $this->getDocBlock();
+
+		if ( $docblock instanceof phpDocumentor\Reflection\DocBlock ) {
+			$params = $docblock->getTagsByName( 'param' );
+		}
+
+		$_args = $this->node->args;
+
+		// Skip the filter name.
+		array_shift( $_args );
+
+		$type = $this->getType();
+		if (
+			isset( $_args[0] )
+			&& ( 'action_reference' == $type || 'filter_reference' == $type )
+			&& $_args[0]->value instanceof PHPParser_Node_Expr_Array
+		) {
+			$_args = $_args[0]->value->items;
+		}
+
+		foreach ( $_args as $index => $arg ) {
+			$reflector = new WP_Reflection_HookArgumentReflector( $arg, $this->context );
+
+			if ( isset( $params[ $index ] ) ) {
+				$reflector->setParamTag( $params[ $index ] );
+			}
+
+			$args[] = $reflector;
+		}
+
 		return $args;
 	}
 }

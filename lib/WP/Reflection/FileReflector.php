@@ -94,7 +94,7 @@ class WP_Reflection_FileReflector extends FileReflector {
 			return false;
 
 		$calling = (string) $node->name;
-		return ( $calling === 'apply_filters' || $calling === 'do_action' || $calling === 'do_action_ref_array' );
+		return ( $calling === 'apply_filters' || $calling === 'do_action' || $calling === 'do_action_ref_array' || $calling === 'apply_filters_ref_array' );
 	}
 
 	protected function getLocation() {
