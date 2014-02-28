@@ -15,7 +15,7 @@ class File_Reflector extends FileReflector {
 	/**
 	 * List of hooks defined in global scope in this file.
 	 *
-	 * @var \WP_Reflection_HookReflector[]
+	 * @var \WP_Parser\Hook_Reflector[]
 	 */
 	public $hooks = array();
 
@@ -63,7 +63,7 @@ class File_Reflector extends FileReflector {
 						$node->setAttribute( 'comments', array( $this->last_doc ) );
 						$this->last_doc = null;
 					}
-					$hook                         = new \WP_Reflection_HookReflector( $node, $this->context );
+					$hook                         = new \WP_Parser\Hook_Reflector( $node, $this->context );
 					$this->getLocation()->hooks[] = $hook;
 				}
 				break;

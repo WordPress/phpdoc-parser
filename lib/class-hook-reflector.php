@@ -1,16 +1,21 @@
 <?php
 
-use phpDocumentor\Reflection\BaseReflector;
+namespace WP_Parser;
 
-class WP_Reflection_HookReflector extends BaseReflector {
+use phpDocumentor\Reflection\BaseReflector;
+use PHPParser_PrettyPrinter_Default;
+use WP_PrettyPrinter;
+
+class Hook_Reflector extends BaseReflector {
+
 	public function getName() {
-		$name = '';
+		$name   = '';
 		$filter = $this->node->args[0]->value;
-		switch ($filter->getType()) {
+		switch ( $filter->getType() ) {
 			case 'Expr_Concat':
 			case 'Scalar_Encapsed':
 				$printer = new PHPParser_PrettyPrinter_Default;
-				$name = $printer->prettyPrintExpr($filter);
+				$name    = $printer->prettyPrintExpr( $filter );
 				break;
 			case 'Scalar_String':
 				$name = "'" . $filter->value . "'";
@@ -26,7 +31,7 @@ class WP_Reflection_HookReflector extends BaseReflector {
 
 	public function getType() {
 		$type = 'filter';
-		switch ((string) $this->node->name) {
+		switch ( (string) $this->node->name ) {
 			case 'do_action':
 				$type = 'action';
 				break;
@@ -40,13 +45,14 @@ class WP_Reflection_HookReflector extends BaseReflector {
 
 	public function getArgs() {
 		$printer = new WP_PrettyPrinter;
-		$args = array();
-		foreach ($this->node->args as $arg) {
-			$args[] = $printer->prettyPrintArg($arg);
+		$args    = array();
+		foreach ( $this->node->args as $arg ) {
+			$args[] = $printer->prettyPrintArg( $arg );
 		}
 
 		// Skip the filter name
-		array_shift($args);
+		array_shift( $args );
+
 		return $args;
 	}
 }
