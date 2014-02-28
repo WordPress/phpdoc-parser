@@ -17,7 +17,6 @@ require_once __DIR__ . '/lib/WP/runner.php';
 require_once __DIR__ . '/template.php';
 
 if ( defined('WP_CLI') && WP_CLI ) {
-	require_once __DIR__ . '/importer.php';
 	require_once __DIR__ . '/cli.php';
 }
 
