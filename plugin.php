@@ -16,8 +16,8 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 require_once __DIR__ . '/lib/WP/runner.php';
 require_once __DIR__ . '/template.php';
 
-if ( defined('WP_CLI') && WP_CLI ) {
-	require_once __DIR__ . '/cli.php';
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	\WP_CLI::add_command( 'funcref', __NAMESPACE__ . '\\Command' );
 }
 
 add_action( 'init', __NAMESPACE__ . '\\register_post_types' );

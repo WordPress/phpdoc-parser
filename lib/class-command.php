@@ -2,7 +2,6 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\FileReflector;
 use WP_CLI;
 use WP_CLI_Command;
 
@@ -197,5 +196,3 @@ class Command extends WP_CLI_Command {
 		WP_CLI::line();
 	}
 }
-
-WP_CLI::add_command( 'funcref', __NAMESPACE__ . '\\Command' );
