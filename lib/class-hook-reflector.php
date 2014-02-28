@@ -4,7 +4,7 @@ namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
 use PHPParser_PrettyPrinter_Default;
-use WP_PrettyPrinter;
+use WP_Parser\Pretty_Printer;
 
 class Hook_Reflector extends BaseReflector {
 
@@ -44,7 +44,7 @@ class Hook_Reflector extends BaseReflector {
 	}
 
 	public function getArgs() {
-		$printer = new WP_PrettyPrinter;
+		$printer = new Pretty_Printer;
 		$args    = array();
 		foreach ( $this->node->args as $arg ) {
 			$args[] = $printer->prettyPrintArg( $arg );
