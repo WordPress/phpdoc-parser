@@ -22,8 +22,6 @@
 		"erusev/parsedown"        : "~0.9"
 	},
 	"autoload"   : {
-		"psr-0": {
-			"WP": "lib/"
-		}
+		"classmap": ["lib"]
 	}
 }
