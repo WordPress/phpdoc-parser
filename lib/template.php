@@ -1,11 +1,13 @@
 <?php
 
+namespace WP_Parser;
+
 /**
  * Get the current function's return types
  *
  * @return array
  */
-function wpfuncref_return_type() {
+function get_return_type() {
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$return_type   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
@@ -17,16 +19,16 @@ function wpfuncref_return_type() {
 		$return_type = array( 'void' );
 	}
 
-	return apply_filters( 'wpfuncref_return_type', $return_type );
+	return apply_filters( 'wp_parser_return_type', $return_type );
 }
 
 /**
  * Print the current function's return type
  *
- * @see wpfuncref_return_type
+ * @see return_type
  */
-function wpfuncref_the_return_type() {
-	echo implode( '|', wpfuncref_return_type() );
+function the_return_type() {
+	echo implode( '|', get_return_type() );
 }
 
 /**
@@ -34,7 +36,7 @@ function wpfuncref_the_return_type() {
  *
  * @return string
  */
-function wpfuncref_return_desc() {
+function get_return_desc() {
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$return_desc   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
@@ -46,14 +48,14 @@ function wpfuncref_return_desc() {
 		$return_desc = '';
 	}
 
-	return apply_filters( 'wpfuncref_return_desc', $return_desc );
+	return apply_filters( 'wp_parser_return_desc', $return_desc );
 }
 
 /**
  * Print the current function's return description
  */
-function wpfuncref_the_return_desc() {
-	echo wpfuncref_return_desc();
+function the_return_desc() {
+	echo get_return_desc();
 }
 
 /**
@@ -61,10 +63,10 @@ function wpfuncref_the_return_desc() {
  *
  * @return bool
  */
-function wpfuncref_arguments_have_default_values() {
+function arguments_have_default_values() {
 	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wpapi_args', true ), array( 'name' => 'default' ) );
 
-	return apply_filters( 'wpfuncref_arguments_have_default_values', ! empty( $retval ) );
+	return apply_filters( 'wp_parser_arguments_have_default_values', ! empty( $retval ) );
 }
 
 /**
@@ -72,10 +74,10 @@ function wpfuncref_arguments_have_default_values() {
  *
  * @return bool
  */
-function wpfuncref_is_function_deprecated() {
+function is_function_deprecated() {
 	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wpapi_tags', true ), array( 'name' => 'deprecated' ) );
 
-	return apply_filters( 'wpfuncref_is_function_deprecated', ! empty( $retval ) );
+	return apply_filters( 'wp_parser_is_function_deprecated', ! empty( $retval ) );
 }
 
 /**
@@ -83,7 +85,7 @@ function wpfuncref_is_function_deprecated() {
  *
  * @return array array( [0] => array( 'name' => '', 'type' => '', 'desc' => '' ), ... )
  */
-function wpfuncref_get_the_arguments() {
+function get_arguments() {
 	$args_data     = get_post_meta( get_the_ID(), '_wpapi_args', true );
 	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
 	$params        = wp_list_filter( $function_data, array( 'name' => 'param' ) );
@@ -119,21 +121,21 @@ function wpfuncref_get_the_arguments() {
 		}
 	}
 
-	return apply_filters( 'wpfuncref_get_the_arguments', $return_args );
+	return apply_filters( 'wp_parser_get_arguments', $return_args );
 }
 
 /**
  * Retrieve the function's prototype as HTML
  *
- * Use the wpfuncref_prototype filter to change the content of this.
+ * Use the wp_parser_prototype filter to change the content of this.
  *
  * @return string Prototype HTML
  */
-function wpfuncref_prototype() {
-	$type = wpfuncref_return_type();
+function get_prototype() {
+	$type = get_return_type();
 
 	$friendly_args = array();
-	$args          = wpfuncref_get_the_arguments();
+	$args          = get_arguments();
 	foreach ( $args as $arg ) {
 		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
 		if ( ! empty( $arg['default_value'] ) ) {
@@ -146,18 +148,18 @@ function wpfuncref_prototype() {
 
 	$name = get_the_title();
 
-	$prototype = sprintf( '<p class="wpfuncref-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', implode( '|', $type ), $name, $friendly_args );
+	$prototype = sprintf( '<p class="wp-parser-prototype"><code><span class="type">%s</span> %s ( %s )</code></p>', implode( '|', $type ), $name, $friendly_args );
 
-	return apply_filters( 'wpfuncref_prototype', $prototype );
+	return apply_filters( 'wp_parser_prototype', $prototype );
 }
 
 /**
  * Print the function's prototype
  *
- * @see wpfuncref_prototype
+ * @see get_prototype
  */
-function wpfuncref_the_prototype() {
-	echo wpfuncref_prototype();
+function the_prototype() {
+	echo get_prototype();
 }
 
 
@@ -166,8 +168,8 @@ function wpfuncref_the_prototype() {
  *
  * @return string
  */
-function wpfuncref_source_link() {
-	$trac_url = apply_filters( 'wpfuncref_source_link_base', false );
+function get_source_link() {
+	$trac_url = apply_filters( 'wp_parser_source_link_base', false );
 	if ( empty( $trac_url ) ) {
 		return '';
 	}
@@ -179,7 +181,7 @@ function wpfuncref_source_link() {
 		$line_num = (int) get_post_meta( get_the_ID(), '_wpapi_line_num', true );
 
 		// The format here takes the base URL, the term name, and the line number
-		$format = apply_filters( 'wpfuncref_source_link_format', '%s%s#L%d' );
+		$format = apply_filters( 'wp_parser_source_link_format', '%s%s#L%d' );
 		// Link to the specific file name and the line number on trac
 		$trac_url = sprintf( $format, $trac_url, $term->name, $line_num );
 	}

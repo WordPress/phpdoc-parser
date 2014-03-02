@@ -1,6 +1,6 @@
 <?php
 
-use WP_Parser\File_Reflector;
+namespace WP_Parser;
 
 function get_wp_files( $directory ) {
 	$iterableFiles = new RecursiveIteratorIterator(
