@@ -1,6 +1,7 @@
 <?php
 
 namespace WP_Parser;
+
 use PHPParser_Node_Arg;
 use PHPParser_PrettyPrinter_Default;
 

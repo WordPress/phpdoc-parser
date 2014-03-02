@@ -71,14 +71,17 @@ class Importer {
 	 */
 	public function __construct( array $args = array() ) {
 
-		$r = wp_parse_args( $args, array(
-			'post_type_class'        => 'wpapi-class',
-			'post_type_function'     => 'wpapi-function',
-			'post_type_hook'         => 'wpapi-hook',
-			'taxonomy_file'          => 'wpapi-source-file',
-			'taxonomy_package'       => 'wpapi-package',
-			'taxonomy_since_version' => 'wpapi-since',
-		) );
+		$r = wp_parse_args(
+			$args,
+			array(
+				'post_type_class'        => 'wpapi-class',
+				'post_type_function'     => 'wpapi-function',
+				'post_type_hook'         => 'wpapi-hook',
+				'taxonomy_file'          => 'wpapi-source-file',
+				'taxonomy_package'       => 'wpapi-package',
+				'taxonomy_since_version' => 'wpapi-since',
+			)
+		);
 
 		foreach ( $r as $property_name => $value ) {
 			$this->{$property_name} = $value;
@@ -89,19 +92,22 @@ class Importer {
 	 * For a specific file, go through and import the file, functions, and classes.
 	 *
 	 * @param array $file
-	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool $import_internal Optional; defaults to false. If true, functions and classes marked @internal will be imported.
+	 * @param bool  $skip_sleep      Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions and classes marked @internal will be imported.
 	 */
 	public function import_file( array $file, $skip_sleep = false, $import_internal = false ) {
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
 		$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
+
 		if ( ! $term ) {
 
 			$term = wp_insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
+
 			if ( is_wp_error( $term ) ) {
 				$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
+
 				return;
 			}
 
@@ -111,8 +117,8 @@ class Importer {
 
 		// Store file meta for later use
 		$this->file_meta = array(
-			'docblock' => $file['file'],  // File docblock
-			'term_id'  => $term['name'],  // File's term item in the file taxonomy
+			'docblock' => $file['file'], // File docblock
+			'term_id'  => $term['name'], // File's term item in the file taxonomy
 		);
 
 		// Functions
@@ -121,11 +127,12 @@ class Importer {
 
 			foreach ( $file['functions'] as $function ) {
 				$this->import_function( $function, 0, $import_internal );
-				$i++;
+				$i ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 )
+				if ( ! $skip_sleep && $i % 10 == 0 ) {
 					sleep( 3 );
+				}
 			}
 		}
 
@@ -135,11 +142,12 @@ class Importer {
 
 			foreach ( $file['classes'] as $class ) {
 				$this->import_class( $class, $import_internal );
-				$i++;
+				$i ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 )
+				if ( ! $skip_sleep && $i % 10 == 0 ) {
 					sleep( 3 );
+				}
 			}
 		}
 
@@ -148,11 +156,12 @@ class Importer {
 
 			foreach ( $file['hooks'] as $hook ) {
 				$this->import_hook( $hook, 0, $import_internal );
-				$i++;
+				$i ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 )
+				if ( ! $skip_sleep && $i % 10 == 0 ) {
 					sleep( 3 );
+				}
 			}
 		}
 	}
@@ -160,24 +169,27 @@ class Importer {
 	/**
 	 * Create a post for a function
 	 *
-	 * @param array $data Function
-	 * @param int $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param array $data            Function
+	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 *
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
 	public function import_function( array $data, $parent_post_id = 0, $import_internal = false ) {
 		$function_id = $this->import_item( $data, $parent_post_id, $import_internal );
 
-		foreach ( $data['hooks'] as $hook )
+		foreach ( $data['hooks'] as $hook ) {
 			$this->import_hook( $hook, $function_id, $import_internal );
+		}
 	}
 
 	/**
 	 * Create a post for a hook
 	 *
-	 * @param array $data Hook
-	 * @param int $parent_post_id Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool $import_internal Optional; defaults to false. If true, hooks marked @internal will be imported.
+	 * @param array $data            Hook
+	 * @param int   $parent_post_id  Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_internal Optional; defaults to false. If true, hooks marked @internal will be imported.
+	 *
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
 	public function import_hook( array $data, $parent_post_id = 0, $import_internal = false ) {
@@ -187,23 +199,25 @@ class Importer {
 	/**
 	 * Create a post for a class
 	 *
-	 * @param array $data Class
-	 * @param bool $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param array $data            Class
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 *
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
 	protected function import_class( array $data, $import_internal = false ) {
-		global $wpdb;
 
 		// Insert this class
 		$class_id = $this->import_item( $data, 0, $import_internal, array( 'post_type' => $this->post_type_class ) );
-		if ( ! $class_id )
+
+		if ( ! $class_id ) {
 			return false;
+		}
 
 		// Set class-specific meta
-		update_post_meta( $class_id, '_wpapi_final',      (bool) $data['final'] );
-		update_post_meta( $class_id, '_wpapi_abstract',   (bool) $data['abstract'] );
-		update_post_meta( $class_id, '_wpapi_static',     (bool) $data['static'] );
-		update_post_meta( $class_id, '_wpapi_visibility',        $data['visibility'] );
+		update_post_meta( $class_id, '_wpapi_final', (bool) $data['final'] );
+		update_post_meta( $class_id, '_wpapi_abstract', (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wpapi_static', (bool) $data['static'] );
+		update_post_meta( $class_id, '_wpapi_visibility', $data['visibility'] );
 
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
@@ -221,39 +235,46 @@ class Importer {
 	 * Anything that needs to be dealt identically for functions or methods should go in this function.
 	 * Anything more specific should go in either import_function() or import_class() as appropriate.
 	 *
-	 * @param array $data Data
-	 * @param int $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool $import_internal Optional; defaults to false. If true, functions or classes marked @internal will be imported.
-	 * @param array $arg_overrides Optional; array of parameters that override the defaults passed to wp_update_post().
+	 * @param array $data            Data
+	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked @internal will be imported.
+	 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
+	 *
 	 * @return bool|int Post ID of this item, false if any failure.
 	 */
 	public function import_item( array $data, $parent_post_id = 0, $import_internal = false, array $arg_overrides = array() ) {
+
+		/** @var \wpdb $wpdb */
 		global $wpdb;
 
 		// Don't import items marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
 		if ( ! $import_internal && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
 
-			if ( $post_data['post_type'] === $this->post_type_class )
+			if ( $post_data['post_type'] === $this->post_type_class ) {
 				WP_CLI::line( sprintf( "\tSkipped importing @internal class \"%1\$s\"", $data['name'] ) );
-			elseif ( $parent_post_id )
+			} elseif ( $parent_post_id ) {
 				WP_CLI::line( sprintf( "\t\tSkipped importing @internal method \"%1\$s\"", $data['name'] ) );
-			else
+			} else {
 				WP_CLI::line( sprintf( "\tSkipped importing @internal function \"%1\$s\"", $data['name'] ) );
+			}
 
 			return false;
 		}
 
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
-		$post_data   = wp_parse_args( $arg_overrides, array(
-			'post_content' => $data['doc']['long_description'],
-			'post_excerpt' => $data['doc']['description'],
-			'post_name'    => $slug,
-			'post_parent'  => (int) $parent_post_id,
-			'post_status'  => 'publish',
-			'post_title'   => $data['name'],
-			'post_type'    => $this->post_type_function,
-		) );
+		$post_data   = wp_parse_args(
+			$arg_overrides,
+			array(
+				'post_content' => $data['doc']['long_description'],
+				'post_excerpt' => $data['doc']['description'],
+				'post_name'    => $slug,
+				'post_parent'  => (int) $parent_post_id,
+				'post_status'  => 'publish',
+				'post_title'   => $data['name'],
+				'post_type'    => $this->post_type_function,
+			)
+		);
 
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1", $slug, $post_data['post_type'], (int) $parent_post_id ) );
@@ -270,12 +291,13 @@ class Importer {
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
 
-			if ( $post_data['post_type'] === $this->post_type_class )
+			if ( $post_data['post_type'] === $this->post_type_class ) {
 				$this->errors[] = sprintf( "\tProblem inserting/updating post for class \"%1\$s\"", $data['name'], $ID->get_error_message() );
-			elseif ( $parent_post_id )
+			} elseif ( $parent_post_id ) {
 				$this->errors[] = sprintf( "\t\tProblem inserting/updating post for method \"%1\$s\"", $data['name'], $ID->get_error_message() );
-			else
+			} else {
 				$this->errors[] = sprintf( "\tProblem inserting/updating post for function \"%1\$s\"", $data['name'], $ID->get_error_message() );
+			}
 
 			return false;
 		}
@@ -288,14 +310,16 @@ class Importer {
 			$since_version = $since_version['content'];
 			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
 
-			if ( ! $since_term )
+			if ( ! $since_term ) {
 				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
+			}
 
 			// Assign the tax item to the post
-			if ( ! is_wp_error( $since_term ) )
+			if ( ! is_wp_error( $since_term ) ) {
 				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
-			else
+			} else {
 				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
+			}
 		}
 
 		$packages = array(
@@ -304,52 +328,59 @@ class Importer {
 		);
 
 		// If the @package/@subpackage is not set by the individual function or class, get it from the file scope
-		if ( empty( $packages['main'] ) )
+		if ( empty( $packages['main'] ) ) {
 			$packages['main'] = wp_list_filter( $this->file_meta['docblock']['tags'], array( 'name' => 'package' ) );
+		}
 
-		if ( empty( $packages['sub'] ) )
+		if ( empty( $packages['sub'] ) ) {
 			$packages['sub'] = wp_list_filter( $this->file_meta['docblock']['tags'], array( 'name' => 'subpackage' ) );
+		}
 
 		$main_package_id   = false;
 		$package_term_args = array();
 
 		// If the item has any @package/@subpackage markup (or has inherited it from file scope), assign the taxonomy.
 		foreach ( $packages as $pack_name => $pack_value ) {
-			if ( empty( $pack_value ) )
+
+			if ( empty( $pack_value ) ) {
 				continue;
+			}
 
 			$pack_value = array_shift( $pack_value );
 			$pack_value = $pack_value['content'];
 
 			// Set the parent term_id to look for, as the package taxonomy is hierarchical.
-			if ( $pack_name === 'sub' && is_int( $main_package_id ) )
+			if ( $pack_name === 'sub' && is_int( $main_package_id ) ) {
 				$package_term_args = array( 'parent' => $main_package_id );
-			else
+			} else {
 				$package_term_args = array( 'parent' => 0 );
+			}
 
 			// If the package doesn't already exist in the taxonomy, add it
 			$package_term = term_exists( $pack_value, $this->taxonomy_package, $package_term_args['parent'] );
-			if ( ! $package_term )
+			if ( ! $package_term ) {
 				$package_term = wp_insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
+			}
 
-			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) )
+			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) ) {
 				$main_package_id = (int) $package_term['term_id'];
+			}
 
 			// Assign the tax item to the post
-			if ( ! is_wp_error( $package_term ) )
+			if ( ! is_wp_error( $package_term ) ) {
 				wp_set_object_terms( $ID, (int) $package_term['term_id'], $this->taxonomy_package );
-
-			elseif ( is_int( $main_package_id ) )
+			} elseif ( is_int( $main_package_id ) ) {
 				WP_CLI::warning( "\tCannot set @subpackage term: " . $package_term->get_error_message() );
-			else
+			} else {
 				WP_CLI::warning( "\tCannot set @package term: " . $package_term->get_error_message() );
+			}
 		}
 
 		// Set other taxonomy and post meta to use in the theme templates
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
-		update_post_meta( $ID, '_wpapi_args',     $data['arguments'] );
+		update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
-		update_post_meta( $ID, '_wpapi_tags',     $data['doc']['tags'] );
+		update_post_meta( $ID, '_wpapi_tags', $data['doc']['tags'] );
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {

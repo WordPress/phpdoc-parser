@@ -19,6 +19,7 @@ class Command extends WP_CLI_Command {
 		$directory = $args[0];
 
 		$output_file = 'phpdoc.json';
+
 		if ( ! empty( $args[1] ) ) {
 			$output_file = $args[1];
 		}
@@ -31,6 +32,7 @@ class Command extends WP_CLI_Command {
 
 		// Write to $output_file
 		$error = ! file_put_contents( $output_file, $json );
+
 		if ( $error ) {
 			WP_CLI::error( sprintf( 'Problem writing %1$s bytes of data to %2$s', strlen( $json ), $output_file ) );
 			exit;
@@ -51,8 +53,10 @@ class Command extends WP_CLI_Command {
 
 		// Get the data from the <file>, and check it's valid.
 		$phpdoc = false;
-		if ( is_readable( $file ) )
+
+		if ( is_readable( $file ) ) {
 			$phpdoc = file_get_contents( $file );
+		}
 
 		if ( ! $phpdoc ) {
 			WP_CLI::error( sprintf( "Can't read %1\$s. Does the file exist?", $file ) );
@@ -73,7 +77,7 @@ class Command extends WP_CLI_Command {
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
 	 * @subcommand generate-and-import
-	 * @synopsis <directory> [--quick] [--import-internal] [--user]
+	 * @synopsis   <directory> [--quick] [--import-internal] [--user]
 	 */
 	public function generate_and_import( $args, $assoc_args ) {
 		list( $directory ) = $args;
@@ -93,8 +97,9 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate the data from the PHPDoc markup.
 	 *
-	 * @param string $path Directory to scan for PHPDoc
+	 * @param string $path   Directory to scan for PHPDoc
 	 * @param string $format Optional. What format the data is returned in: [json*|array].
+	 *
 	 * @return string
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json' ) {
@@ -119,8 +124,9 @@ class Command extends WP_CLI_Command {
 		// Extract PHPDoc
 		$output = parse_files( $files, $path );
 
-		if ( $format == 'json' )
+		if ( $format == 'json' ) {
 			$output = json_encode( $output );
+		}
 
 		return $output;
 	}
@@ -129,8 +135,8 @@ class Command extends WP_CLI_Command {
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
 	 * @param array $data
-	 * @param bool $skip_sleep Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool  $skip_sleep                Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
 	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
 
@@ -165,8 +171,8 @@ class Command extends WP_CLI_Command {
 		}
 
 		foreach ( $data as $file ) {
-			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ) , number_format_i18n( $num_of_files ) ) );
-			$file_number++;
+			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ) ) );
+			$file_number ++;
 
 			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
 		}
@@ -189,8 +195,10 @@ class Command extends WP_CLI_Command {
 
 		} else {
 			WP_CLI::line( 'Import complete, but some errors were found:' );
-			foreach ( $importer->errors as $error )
+
+			foreach ( $importer->errors as $error ) {
 				WP_CLI::warning( $error );
+			}
 		}
 
 		WP_CLI::line();

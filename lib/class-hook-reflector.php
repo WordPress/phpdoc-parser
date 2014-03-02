@@ -4,13 +4,13 @@ namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
 use PHPParser_PrettyPrinter_Default;
-use WP_Parser\Pretty_Printer;
 
 class Hook_Reflector extends BaseReflector {
 
 	public function getName() {
 		$name   = '';
 		$filter = $this->node->args[0]->value;
+
 		switch ( $filter->getType() ) {
 			case 'Expr_Concat':
 			case 'Scalar_Encapsed':
