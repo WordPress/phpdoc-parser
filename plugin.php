@@ -45,7 +45,7 @@ function register_post_types() {
 		'wpapi-function',
 		array(
 			'has_archive' => 'functions',
-			'label'       => __( 'Functions', 'wpfuncref' ),
+			'label'       => __( 'Functions', 'wp-parser' ),
 			'public'      => true,
 			'rewrite'     => array(
 				'feeds'      => false,
@@ -64,7 +64,7 @@ function register_post_types() {
 		'wpapi-class',
 		array(
 			'has_archive' => 'classes',
-			'label'       => __( 'Classes', 'wpfuncref' ),
+			'label'       => __( 'Classes', 'wp-parser' ),
 			'public'      => true,
 			'rewrite'     => array(
 				'feeds'      => false,
@@ -80,7 +80,7 @@ function register_post_types() {
 		'wpapi-hook',
 		array(
 			'has_archive' => 'hooks',
-			'label'       => __( 'Hooks', 'wpfuncref' ),
+			'label'       => __( 'Hooks', 'wp-parser' ),
 			'public'      => true,
 			'rewrite'     => array(
 				'feeds'      => false,
@@ -101,7 +101,7 @@ function register_taxonomies() {
 		'wpapi-source-file',
 		array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ),
 		array(
-			'label'                 => __( 'Files', 'wpfuncref' ),
+			'label'                 => __( 'Files', 'wp-parser' ),
 			'public'                => true,
 			'rewrite'               => array( 'slug' => 'files' ),
 			'sort'                  => false,
@@ -129,7 +129,7 @@ function register_taxonomies() {
 		array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ),
 		array(
 			'hierarchical'          => true,
-			'label'                 => __( '@since', 'wpfuncref' ),
+			'label'                 => __( '@since', 'wp-parser' ),
 			'public'                => true,
 			'rewrite'               => array( 'slug' => 'since' ),
 			'sort'                  => false,
@@ -196,7 +196,7 @@ function make_args_safe( $args ) {
  * @return string
  */
 function humanize_separator( $type ) {
-	return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wpfuncref' ) . '</span>', $type );
+	return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
 }
 
 /**
