@@ -213,7 +213,11 @@ function expand_content( $content ) {
 		return $content;
 	}
 
-	$before_content = get_prototype();
+	if ( 'wpapi-hook' === $post->post_type ) {
+		$before_content = get_hook_prototype();
+	} else {
+		$before_content = get_prototype();
+	}
 
 	$before_content .= '<p class="wpfuncref-description">' . get_the_excerpt() . '</p>';
 	$before_content .= '<div class="wpfuncref-longdesc">';
@@ -221,7 +225,12 @@ function expand_content( $content ) {
 	$after_content = '</div>';
 
 	$after_content .= '<div class="wpfuncref-arguments"><h3>Arguments</h3>';
-	$args = get_arguments();
+
+	if ( 'wpapi-hook' === $post->post_type ) {
+		$args = get_hook_arguments();
+	} else {
+		$args = get_arguments();
+	}
 
 	foreach ( $args as $arg ) {
 		$after_content .= '<div class="wpfuncref-arg">';

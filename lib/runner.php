@@ -142,7 +142,7 @@ function export_hooks( array $hooks ) {
 			'name'      => $hook->getName(),
 			'line'      => $hook->getLineNumber(),
 			'type'      => $hook->getType(),
-			'arguments' => implode( ', ', $hook->getArgs() ),
+			'arguments' => $hook->getArgs(),
 			'doc'       => export_docblock( $hook ),
 		);
 	}
