@@ -160,7 +160,7 @@ class Command extends WP_CLI_Command {
 
 		// Sanity check -- do the required post types exist?
 		if ( ! post_type_exists( $importer->post_type_class ) || ! post_type_exists( $importer->post_type_function ) || ! post_type_exists( $importer->post_type_hook ) ) {
-			WP_CLI::error( sprintf( 'Missing post type; check that "%1$s" and "%2$s" are registered.', $importer->post_type_class, $importer->post_type_function ) );
+			WP_CLI::error( sprintf( 'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $importer->post_type_class, $importer->post_type_function, $importer->post_type_hook ) );
 			exit;
 		}
 
