@@ -135,7 +135,7 @@ function get_hook_arguments() {
 	$params    = wp_list_filter( $hook_data, array( 'name' => 'param' ) );
 
 	$return_args = array();
-//var_log( $params );
+
 	if ( ! empty( $args_data ) ) {
 		foreach ( $args_data as $arg ) {
 			$param_tag = array_shift( $params );
