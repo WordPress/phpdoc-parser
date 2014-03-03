@@ -93,7 +93,7 @@ class Importer {
 	 *
 	 * @param array $file
 	 * @param bool  $skip_sleep      Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions and classes marked @internal will be imported.
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions and classes marked `@internal` will be imported.
 	 */
 	public function import_file( array $file, $skip_sleep = false, $import_internal = false ) {
 
@@ -171,7 +171,7 @@ class Importer {
 	 *
 	 * @param array $data            Function
 	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked `@internal` will be imported.
 	 *
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
@@ -188,7 +188,7 @@ class Importer {
 	 *
 	 * @param array $data            Hook
 	 * @param int   $parent_post_id  Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, hooks marked @internal will be imported.
+	 * @param bool  $import_internal Optional; defaults to false. If true, hooks marked `@internal` will be imported.
 	 *
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
@@ -200,7 +200,7 @@ class Importer {
 	 * Create a post for a class
 	 *
 	 * @param array $data            Class
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked `@internal` will be imported.
 	 *
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
@@ -237,7 +237,7 @@ class Importer {
 	 *
 	 * @param array $data            Data
 	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked @internal will be imported.
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
 	 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
 	 *
 	 * @return bool|int Post ID of this item, false if any failure.
@@ -247,7 +247,7 @@ class Importer {
 		/** @var \wpdb $wpdb */
 		global $wpdb;
 
-		// Don't import items marked @internal unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
+		// Don't import items marked `@internal` unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
 		if ( ! $import_internal && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
 
 			if ( $post_data['post_type'] === $this->post_type_class ) {
