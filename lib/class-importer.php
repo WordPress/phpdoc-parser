@@ -378,7 +378,9 @@ class Importer {
 
 		// Set other taxonomy and post meta to use in the theme templates
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
-		update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
+		if ( $post_data['post_type'] !== $this->post_type_class ) {
+			update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
+		}
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
 		update_post_meta( $ID, '_wpapi_tags', $data['doc']['tags'] );
 
