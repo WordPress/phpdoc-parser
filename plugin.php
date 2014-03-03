@@ -19,8 +19,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 add_action( 'init', __NAMESPACE__ . '\\register_post_types' );
 add_action( 'init', __NAMESPACE__ . '\\register_taxonomies' );
-add_filter( 'wpfuncref_get_the_arguments', __NAMESPACE__ . '\\make_args_safe' );
-add_filter( 'wpfuncref_the_return_type', __NAMESPACE__ . '\\humanize_separator' );
+add_filter( 'wp_parser_get_arguments', __NAMESPACE__ . '\\make_args_safe' );
+add_filter( 'wp_parser_return_type', __NAMESPACE__ . '\\humanize_separator' );
 
 add_filter( 'the_content', __NAMESPACE__ . '\\expand_content' );
 add_filter( 'the_content', __NAMESPACE__ . '\\autop_for_non_funcref' );
@@ -185,7 +185,7 @@ function make_args_safe( $args ) {
 		}
 	}
 
-	return apply_filters( 'wpfuncref_make_args_safe', $args );
+	return apply_filters( 'wp_parser_make_args_safe', $args );
 }
 
 /**
@@ -240,8 +240,8 @@ function expand_content( $content ) {
 		$after_content .= '<a href="' . $source . '">Source</a>';
 	}
 
-	$before_content = apply_filters( 'wpfuncref_before_content', $before_content );
-	$after_content  = apply_filters( 'wpfuncref_after_content', $after_content );
+	$before_content = apply_filters( 'wp_parser_before_content', $before_content );
+	$after_content  = apply_filters( 'wp_parser_after_content', $after_content );
 
 	return $before_content . $content . $after_content;
 }
