@@ -223,7 +223,13 @@ class Importer {
 		foreach ( $data['methods'] as $method ) {
 			// Namespace method names with the class name
 			$method['name'] = $data['name'] . '-' . $method['name'];
-			$this->import_item( $method, $class_id, $import_internal );
+			$method_id = $this->import_item( $method, $class_id, $import_internal );
+
+			if ( ! empty( $data['hooks'] ) ) {
+				foreach ( $data['hooks'] as $hook ) {
+					$this->import_hook( $hook, $method_id, $import_internal );
+				}
+			}
 		}
 
 		return $class_id;
