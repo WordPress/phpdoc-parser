@@ -216,6 +216,9 @@ class Importer {
 		// Set class-specific meta
 		update_post_meta( $class_id, '_wpapi_final', (bool) $data['final'] );
 		update_post_meta( $class_id, '_wpapi_abstract', (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wpapi_extends', $data['extends'] );
+		update_post_meta( $class_id, '_wpapi_implements', $data['implements'] );
+		update_post_meta( $class_id, '_wpapi_properties', $data['properties'] );
 
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
