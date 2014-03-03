@@ -20,9 +20,23 @@ class File_Reflector extends FileReflector {
 	public $hooks = array();
 
 	/**
+	 * List of hooks defined in the current node scope.
+	 *
+	 * @var \WP_Parser\Hook_Reflector[]
+	 */
+	protected $hooks_queue = array();
+
+	/**
+	 * List of hooks defined in the current class scope, indexed by method.
+	 *
+	 * @var \WP_Parser\Hook_Reflector[]
+	 */
+	protected $method_hooks_queue = array();
+
+	/**
 	 * Stack of classes/methods/functions currently being parsed.
 	 *
-	 * @see WP_Reflection_FileReflector::getLocation()
+	 * @see \WP_Parser\FileReflector::getLocation()
 	 * @var \phpDocumentor\Reflection\BaseReflector[]
 	 */
 	protected $location = array();
@@ -34,37 +48,52 @@ class File_Reflector extends FileReflector {
 	 */
 	protected $last_doc = null;
 
+	/**
+	 * Add hooks to the queue and update the node stack when we enter a node.
+	 *
+	 * If we are entering a class, function or method, we push it to the location
+	 * stack. This is just so that we know whether we are in the file scope or not,
+	 * so that hooks in the main file scope can be added to the file.
+	 *
+	 * We also check function calls to see if there are any actions or hooks. If
+	 * there are, they are added to the file's hooks if in the global scope, or if
+	 * we are in a function/method, they are added to the queue. They will be
+	 * assinged to the function by leaveNode().
+	 *
+	 * Finally, we pick up any docblocks for nodes that usually aren't documentable,
+	 * so they can be assigned to the hooks to which they may belong.
+	 */
 	public function enterNode( \PHPParser_Node $node ) {
 		parent::enterNode( $node );
 
 		switch ( $node->getType() ) {
 			// Add classes, functions, and methods to the current location stack
 			case 'Stmt_Class':
-				array_push( $this->location, end( $this->classes ) );
-				break;
 			case 'Stmt_Function':
-				array_push( $this->location, end( $this->functions ) );
-				break;
 			case 'Stmt_ClassMethod':
-				$method = $this->findMethodReflector( $this->getLocation(), $node );
-				if ( $method ) {
-					array_push( $this->location, $method );
-				} else {
-					// Repeat the current location so that leaveNode() doesn't
-					// pop it off
-					array_push( $this->location, $this->getLocation() );
-				}
+				array_push( $this->location, $node );
 				break;
 
-			// Parse out hook definitions and add them to the current location
+			// Parse out hook definitions and add them to the queue.
 			case 'Expr_FuncCall':
 				if ( $this->isFilter( $node ) ) {
 					if ( $this->last_doc && ! $node->getDocComment() ) {
 						$node->setAttribute( 'comments', array( $this->last_doc ) );
 						$this->last_doc = null;
 					}
-					$hook                         = new \WP_Parser\Hook_Reflector( $node, $this->context );
-					$this->getLocation()->hooks[] = $hook;
+
+					$hook = new \WP_Parser\Hook_Reflector( $node, $this->context );
+
+					/*
+					 * If the hook is in the global scope, add it to the file's
+					 * hooks. Otherwise, add it to the queue so it can be added to
+					 * the correct node when we leave it.
+					 */
+					if ( $this === $this->getLocation() ) {
+						$this->hooks[] = $hook;
+					} else {
+						$this->hooks_queue[] = $hook;
+					}
 				}
 				break;
 		}
@@ -76,15 +105,42 @@ class File_Reflector extends FileReflector {
 		}
 	}
 
+	/**
+	 * Assign queued hooks to functions and update the node stack on leaving a node.
+	 *
+	 * We can now access the function/method reflectors, so we can assign any queued
+	 * hooks to them. The reflector for a node isn't created until the node is left.
+	 */
 	public function leaveNode( \PHPParser_Node $node ) {
 
 		parent::leaveNode( $node );
 
 		switch ( $node->getType() ) {
 			case 'Stmt_Class':
-			case 'Stmt_ClassMethod':
+				$class = end( $this->classes );
+				if ( ! empty( $this->method_hooks_queue ) ) {
+					foreach ( $class->getMethods() as $method ) {
+						if ( isset( $this->method_hooks_queue[ $method->getName() ] ) ) {
+							$method->hooks = $this->method_hooks_queue[ $method->getName() ];
+						}
+					}
+				}
+
+				$this->method_hooks_queue = array();
+				array_pop( $this->location );
+				break;
+
 			case 'Stmt_Function':
-			case 'Stmt_Interface':
+				end( $this->functions )->hooks = $this->hooks_queue;
+				$this->hooks_queue = array();
+				array_pop( $this->location );
+				break;
+
+			case 'Stmt_ClassMethod':
+				if ( ! empty( $this->hooks_queue ) ) {
+					$this->method_hooks_queue[ $node->name ] = $this->hooks_queue;
+					$this->hooks_queue = array();
+				}
 				array_pop( $this->location );
 				break;
 		}
@@ -103,38 +159,6 @@ class File_Reflector extends FileReflector {
 
 	protected function getLocation() {
 		return empty( $this->location ) ? $this : end( $this->location );
-	}
-
-	/**
-	 * Find the MethodReflector in a ClassReflector that matches the
-	 * given Stmt_ClassMethod node.
-	 *
-	 * @param \phpDocumentor\Reflection\ClassReflector $class Class to search in
-	 * @param \PHPParser_Node_Stmt_ClassMethod         $node  AST node to match with
-	 *
-	 * @return \phpDocumentor\Reflection\MethodReflector|bool
-	 */
-	protected function findMethodReflector( $class, \PHPParser_Node_Stmt_ClassMethod $node ) {
-		if ( ! $class instanceof Reflection\ClassReflector ) {
-			return false;
-		}
-
-		$found  = false;
-		$method = new Reflection\ClassReflector\MethodReflector( $node, $this->context );
-
-		foreach ( $class->getMethods() as $poss_method ) {
-			if ( $method->getName() === $poss_method->getName()
-				&& $method->getVisibility() === $poss_method->getVisibility()
-				&& $method->isAbstract() === $poss_method->isAbstract()
-				&& $method->isStatic() === $poss_method->isStatic()
-				&& $method->isFinal() === $poss_method->isFinal()
-			) {
-				$found = $poss_method;
-				break;
-			}
-		}
-
-		return $found;
 	}
 
 	protected function isNodeDocumentable( \PHPParser_Node $node ) {
