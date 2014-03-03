@@ -226,7 +226,9 @@ function expand_content( $content ) {
 	foreach ( $args as $arg ) {
 		$after_content .= '<div class="wpfuncref-arg">';
 		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
-		$after_content .= wpautop( $arg['desc'], false );
+		if ( ! empty( $arg['desc'] ) ) {
+			$after_content .= wpautop( $arg['desc'], false );
+		}
 		$after_content .= '</div>';
 	}
 
