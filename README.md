@@ -1,5 +1,11 @@
 # WP Parser
 
+WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](http://developer.wordpress.org/reference). It parses the inline documentation and produces custom post types in WordPress.
+
+We are currently looking for contributors to help us complete the work on the parser.
+
+There is a guide to developing for developer.wordpress.org in the [WordPress documentation handbook](http://make.wordpress.org/docs/handbook/projects/devhub/)
+
 ## Requirements
 * PHP 5.3+
 * [Composer](https://getcomposer.org/)
