@@ -1,6 +1,6 @@
 # WP Parser
 
-WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](http://developer.wordpress.org/reference). It parses the inline documentation and produces custom post types in WordPress.
+WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](http://developer.wordpress.org/reference). It parses the inline documentation and produces custom post type entries in WordPress.
 
 We are currently looking for contributors to help us complete the work on the parser.
 
