@@ -125,6 +125,9 @@ function export_docblock( $element ) {
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$t['variable'] = $tag->getVariableName();
 		}
+		if ( method_exists( $tag, 'getReference' ) ) {
+			$t['refers'] = $tag->getReference();
+		}
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
 			$t['content'] = $tag->getVersion();
 		}
