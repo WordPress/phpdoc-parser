@@ -64,6 +64,7 @@ function parse_files( $files, $root ) {
 			$func = array(
 				'name'      => $function->getShortName(),
 				'line'      => $function->getLineNumber(),
+				'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 				'arguments' => export_arguments( $function->getArguments() ),
 				'doc'       => export_docblock( $function ),
 				'hooks'     => array(),
@@ -80,6 +81,7 @@ function parse_files( $files, $root ) {
 			$cl = array(
 				'name'       => $class->getShortName(),
 				'line'       => $class->getLineNumber(),
+				'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
 				'final'      => $class->isFinal(),
 				'abstract'   => $class->isAbstract(),
 				'extends'    => $class->getParentClass(),
@@ -141,6 +143,7 @@ function export_hooks( array $hooks ) {
 		$out[] = array(
 			'name'      => $hook->getName(),
 			'line'      => $hook->getLineNumber(),
+			'end_line'  => $hook->getNode()->getAttribute( 'endLine' ),
 			'type'      => $hook->getType(),
 			'arguments' => implode( ', ', $hook->getArgs() ),
 			'doc'       => export_docblock( $hook ),
@@ -171,6 +174,7 @@ function export_properties( array $properties ) {
 		$prop = array(
 			'name'        => $property->getName(),
 			'line'        => $property->getLineNumber(),
+			'end_line'    => $property->getNode()->getAttribute( 'endLine' ),
 			'default'     => $property->getDefault(),
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
@@ -196,6 +200,7 @@ function export_methods( array $methods ) {
 		$meth = array(
 			'name'       => $method->getShortName(),
 			'line'       => $method->getLineNumber(),
+			'end_line'   => $method->getNode()->getAttribute( 'endLine' ),
 			'final'      => $method->isFinal(),
 			'abstract'   => $method->isAbstract(),
 			'static'     => $method->isStatic(),
