@@ -3,8 +3,8 @@
 namespace WP_Parser;
 
 function get_wp_files( $directory ) {
-	$iterableFiles = new RecursiveIteratorIterator(
-		new RecursiveDirectoryIterator( $directory )
+	$iterableFiles = new \RecursiveIteratorIterator(
+		new \RecursiveDirectoryIterator( $directory )
 	);
 	$files         = array();
 
@@ -16,7 +16,7 @@ function get_wp_files( $directory ) {
 
 			$files[] = $file->getPathname();
 		}
-	} catch ( UnexpectedValueException $e ) {
+	} catch ( \UnexpectedValueException $e ) {
 		printf( 'Directory [%s] contained a directory we can not recurse into', $directory );
 	}
 
