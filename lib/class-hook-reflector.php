@@ -8,21 +8,8 @@ use PHPParser_PrettyPrinter_Default;
 class Hook_Reflector extends BaseReflector {
 
 	public function getName() {
-		$name   = '';
-		$filter = $this->node->args[0]->value;
-
-		switch ( $filter->getType() ) {
-			case 'Expr_Concat':
-			case 'Scalar_Encapsed':
-				$printer = new PHPParser_PrettyPrinter_Default;
-				$name    = $printer->prettyPrintExpr( $filter );
-				break;
-			case 'Scalar_String':
-				$name = "'" . $filter->value . "'";
-				break;
-		}
-
-		return $name ? $name : false;
+		$printer = new PHPParser_PrettyPrinter_Default;
+		return $printer->prettyPrintExpr( $this->node->args[0]->value );
 	}
 
 	public function getShortName() {
