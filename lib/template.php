@@ -125,6 +125,51 @@ function get_arguments() {
 }
 
 /**
+ * Return the current hook's arguments.
+ *
+ * @return array array( [0] => array( 'name' => '', 'type' => '', 'desc' => '' ), ... )
+ */
+function get_hook_arguments() {
+	$args_data = get_post_meta( get_the_ID(), '_wpapi_args', true );
+	$hook_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
+	$params    = wp_list_filter( $hook_data, array( 'name' => 'param' ) );
+
+	$return_args = array();
+
+	if ( ! empty( $args_data ) ) {
+		foreach ( $args_data as $arg ) {
+			$param_tag = array_shift( $params );
+
+			$param = array();
+
+			if ( ! empty( $param_tag['variable'] ) ) {
+				$param['name'] = $param_tag['variable'];
+			} elseif ( strpos( $arg, '$' ) === 0 ) {
+				$param['name'] = $arg;
+			} else {
+				$param['name'] = '$(unnamed)';
+			}
+
+			if ( ! empty( $param_tag['types'] ) ) {
+				$param['types'] = $param_tag['types'];
+			} else {
+				$param['types'] = array();
+			}
+
+			if ( ! empty( $param_tag['content'] ) ) {
+				$param['desc'] = $param_tag['content'];
+			}
+
+			$param['value'] = $arg;
+
+			$return_args[] = $param;
+		}
+	}
+
+	return apply_filters( 'wp_parser_get_hook_arguments', $return_args );
+}
+
+/**
  * Retrieve the function's prototype as HTML
  *
  * Use the wp_parser_prototype filter to change the content of this.
@@ -162,6 +207,32 @@ function the_prototype() {
 	echo get_prototype();
 }
 
+/**
+ * Retrieve the hook's prototype as HTML.
+ *
+ * Use the wp_parser_hook_prototype filter to change the content of this.
+ *
+ * @return string Prototype HTML
+ */
+function get_hook_prototype() {
+	$friendly_args = array();
+	$args          = get_hook_arguments();
+	foreach ( $args as $arg ) {
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
+		if ( ! empty( $arg['value'] ) && strpos( $arg['value'], '$' ) !== 0 ) {
+			$friendly .= ' <span class="default"> = <span class="value">' . $arg['value'] . '</span></span>';
+		}
+
+		$friendly_args[] = $friendly;
+	}
+	$friendly_args = implode( ', ', $friendly_args );
+
+	$name = get_the_title();
+
+	$prototype = sprintf( '<p class="wp-parser-prototype"><code> %s ( %s )</code></p>', $name, $friendly_args );
+
+	return apply_filters( 'wp_parser_hook_prototype', $prototype );
+}
 
 /**
  * Returns the URL to the current function on the bbP/BP trac.

@@ -148,7 +148,7 @@ function export_hooks( array $hooks ) {
 			'line'      => $hook->getLineNumber(),
 			'end_line'  => $hook->getNode()->getAttribute( 'endLine' ),
 			'type'      => $hook->getType(),
-			'arguments' => implode( ', ', $hook->getArgs() ),
+			'arguments' => $hook->getArgs(),
 			'doc'       => export_docblock( $hook ),
 		);
 	}
