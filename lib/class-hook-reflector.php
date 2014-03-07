@@ -38,6 +38,9 @@ class Hook_Reflector extends BaseReflector {
 			case 'do_action_ref_array':
 				$type = 'action_reference';
 				break;
+			case 'apply_filters_ref_array':
+				$type = 'filter_reference';
+				break;
 		}
 
 		return $type;
