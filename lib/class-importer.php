@@ -216,17 +216,53 @@ class Importer {
 		// Set class-specific meta
 		update_post_meta( $class_id, '_wpapi_final', (bool) $data['final'] );
 		update_post_meta( $class_id, '_wpapi_abstract', (bool) $data['abstract'] );
-		update_post_meta( $class_id, '_wpapi_static', (bool) $data['static'] );
-		update_post_meta( $class_id, '_wpapi_visibility', $data['visibility'] );
+		update_post_meta( $class_id, '_wpapi_extends', $data['extends'] );
+		update_post_meta( $class_id, '_wpapi_implements', $data['implements'] );
+		update_post_meta( $class_id, '_wpapi_properties', $data['properties'] );
 
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
 			// Namespace method names with the class name
 			$method['name'] = $data['name'] . '-' . $method['name'];
-			$this->import_item( $method, $class_id, $import_internal );
+			$this->import_method( $method, $class_id, $import_internal );
 		}
 
 		return $class_id;
+	}
+
+	/**
+	 * Create a post for a class method.
+	 *
+	 * @param array $data            Method.
+	 * @param int   $parent_post_id  Optional; post ID of the parent (class) this
+	 *                               method belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_internal Optional; defaults to false. If true, functions
+	 *                               marked `@internal` will be imported.
+	 * @return bool|int Post ID of this function, false if any failure.
+	 */
+	protected function import_method( array $data, $parent_post_id = 0, $import_internal = false ) {
+
+		// Insert this method.
+		$method_id = $this->import_item( $data, $parent_post_id, $import_internal );
+
+		if ( ! $method_id ) {
+			return false;
+		}
+
+		// Set method-specific meta.
+		update_post_meta( $method_id, '_wpapi_final', (bool) $data['final'] );
+		update_post_meta( $method_id, '_wpapi_abstract', (bool) $data['abstract'] );
+		update_post_meta( $method_id, '_wpapi_static', (bool) $data['static'] );
+		update_post_meta( $method_id, '_wpapi_visibility', $data['visibility'] );
+
+		// Now add the hooks.
+		if ( ! empty( $data['hooks'] ) ) {
+			foreach ( $data['hooks'] as $hook ) {
+				$this->import_hook( $hook, $method_id, $import_internal );
+			}
+		}
+
+		return $method_id;
 	}
 
 	/**
@@ -378,7 +414,9 @@ class Importer {
 
 		// Set other taxonomy and post meta to use in the theme templates
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
-		update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
+		if ( $post_data['post_type'] !== $this->post_type_class ) {
+			update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
+		}
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
 		update_post_meta( $ID, '_wpapi_tags', $data['doc']['tags'] );
 
