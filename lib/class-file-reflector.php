@@ -154,7 +154,14 @@ class File_Reflector extends FileReflector {
 
 		$calling = (string) $node->name;
 
-		return ( $calling === 'apply_filters' || $calling === 'do_action' || $calling === 'do_action_ref_array' || $calling === 'apply_filters_ref_array' );
+		$functions = array(
+			'apply_filters',
+			'apply_filters_ref_array',
+			'do_action',
+			'do_action_ref_array',
+		);
+
+		return in_array( $calling, $functions );
 	}
 
 	protected function getLocation() {
