@@ -27,74 +27,80 @@ function parse_files( $files, $root ) {
 	$output = array();
 
 	foreach ( $files as $filename ) {
-		$file = new File_Reflector( $filename );
 
-		$path = ltrim( substr( $filename, strlen( $root ) ), DIRECTORY_SEPARATOR );
-		$file->setFilename( $path );
+		// Ignore anything in wp-content as it's not core.
+		if( ! stristr($filename, 'wp-content') ){
 
-		$file->process();
+			$file = new File_Reflector( $filename );
 
-		// TODO proper exporter
-		$out = array(
-			'file' => export_docblock( $file ),
-			'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
-		);
+			$path = ltrim( substr( $filename, strlen( $root ) ), DIRECTORY_SEPARATOR );
+			$file->setFilename( $path );
 
-		foreach ( $file->getIncludes() as $include ) {
-			$out['includes'][] = array(
-				'name' => $include->getName(),
-				'line' => $include->getLineNumber(),
-				'type' => $include->getType(),
-			);
-		}
+			$file->process();
 
-		foreach ( $file->getConstants() as $constant ) {
-			$out['constants'][] = array(
-				'name'  => $constant->getShortName(),
-				'line'  => $constant->getLineNumber(),
-				'value' => $constant->getValue(),
-			);
-		}
-
-		if ( ! empty( $file->hooks ) ) {
-			$out['hooks'] = export_hooks( $file->hooks );
-		}
-
-		foreach ( $file->getFunctions() as $function ) {
-			$func = array(
-				'name'      => $function->getShortName(),
-				'line'      => $function->getLineNumber(),
-				'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
-				'arguments' => export_arguments( $function->getArguments() ),
-				'doc'       => export_docblock( $function ),
-				'hooks'     => array(),
+			// TODO proper exporter
+			$out = array(
+				'file' => export_docblock( $file ),
+				'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
 			);
 
-			if ( ! empty( $function->hooks ) ) {
-				$func['hooks'] = export_hooks( $function->hooks );
+			foreach ( $file->getIncludes() as $include ) {
+				$out['includes'][] = array(
+					'name' => $include->getName(),
+					'line' => $include->getLineNumber(),
+					'type' => $include->getType(),
+				);
 			}
 
-			$out['functions'][] = $func;
+			foreach ( $file->getConstants() as $constant ) {
+				$out['constants'][] = array(
+					'name'  => $constant->getShortName(),
+					'line'  => $constant->getLineNumber(),
+					'value' => $constant->getValue(),
+				);
+			}
+
+			if ( ! empty( $file->hooks ) ) {
+				$out['hooks'] = export_hooks( $file->hooks );
+			}
+
+			foreach ( $file->getFunctions() as $function ) {
+				$func = array(
+					'name'      => $function->getShortName(),
+					'line'      => $function->getLineNumber(),
+					'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
+					'arguments' => export_arguments( $function->getArguments() ),
+					'doc'       => export_docblock( $function ),
+					'hooks'     => array(),
+				);
+
+				if ( ! empty( $function->hooks ) ) {
+					$func['hooks'] = export_hooks( $function->hooks );
+				}
+
+				$out['functions'][] = $func;
+			}
+
+			foreach ( $file->getClasses() as $class ) {
+				$cl = array(
+					'name'       => $class->getShortName(),
+					'line'       => $class->getLineNumber(),
+					'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
+					'final'      => $class->isFinal(),
+					'abstract'   => $class->isAbstract(),
+					'extends'    => $class->getParentClass(),
+					'implements' => $class->getInterfaces(),
+					'properties' => export_properties( $class->getProperties() ),
+					'methods'    => export_methods( $class->getMethods() ),
+					'doc'        => export_docblock( $class ),
+				);
+
+				$out['classes'][] = $cl;
+			}
+
+			$output[] = $out;
 		}
 
-		foreach ( $file->getClasses() as $class ) {
-			$cl = array(
-				'name'       => $class->getShortName(),
-				'line'       => $class->getLineNumber(),
-				'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
-				'final'      => $class->isFinal(),
-				'abstract'   => $class->isAbstract(),
-				'extends'    => $class->getParentClass(),
-				'implements' => $class->getInterfaces(),
-				'properties' => export_properties( $class->getProperties() ),
-				'methods'    => export_methods( $class->getMethods() ),
-				'doc'        => export_docblock( $class ),
-			);
-
-			$out['classes'][] = $cl;
-		}
-
-		$output[] = $out;
 	}
 
 	return $output;
