@@ -28,8 +28,25 @@ function parse_files( $files, $root ) {
 
 	foreach ( $files as $filename ) {
 
-		// Ignore anything in wp-content as it's not core.
-		if( ! stristr($filename, 'wp-content') ){
+		// Let's assume this file isn't in wp-content.
+		$is_wp_config_file = false;
+
+		// Cut out all the directories into an array.
+		$file_path = explode('/', $filename);
+
+		if( is_array($file_path) ){
+			foreach($file_path as $path){
+
+				// If one of the path's is wp-content, flag this file as a file
+				// in /wp-content which we don't want to process.
+				if('wp-content' == $path){
+					$is_wp_config_file = true;
+				}
+			}
+		}
+
+		// Only process file that aren't in /wp-content
+		if( ! $is_wp_config_file ){
 
 			$file = new File_Reflector( $filename );
 
