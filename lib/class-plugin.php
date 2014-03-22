@@ -201,7 +201,14 @@ class Plugin {
 	public function expand_content( $content ) {
 		$post = get_post();
 
-		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+		if (
+			! $post
+			|| (
+				$post->post_type !== 'wpapi-class'
+				&& $post->post_type !== 'wpapi-function'
+				&& $post->post_type !== 'wpapi-hook'
+			)
+		) {
 			return $content;
 		}
 
@@ -260,7 +267,14 @@ class Plugin {
 	public function autop_for_non_funcref( $content ) {
 		$post = get_post();
 
-		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+		if (
+			! $post
+			|| (
+				$post->post_type !== 'wpapi-class'
+				&& $post->post_type !== 'wpapi-function'
+				&& $post->post_type !== 'wpapi-hook'
+			)
+		) {
 			$content = wpautop( $content );
 		}
 
