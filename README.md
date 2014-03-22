@@ -29,4 +29,7 @@ on the fly by the `expand_content` function.
 To use your own theming instead, simply add the following to
 your `functions.php`:
 
-	remove_filter( 'the_content', 'WP_Parser\\expand_content' );
+```php
+	global $wp_parser;
+	remove_filter( 'the_content', array( $wp_parser, 'expand_content' ) );
+```
