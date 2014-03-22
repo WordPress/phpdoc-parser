@@ -23,7 +23,7 @@ class Plugin {
 	/**
 	 * Register the function and class post types
 	 */
-	function register_post_types() {
+	public function register_post_types() {
 
 		$supports = array(
 			'comments',
@@ -89,7 +89,7 @@ class Plugin {
 	/**
 	 * Register the file and @since taxonomies
 	 */
-	function register_taxonomies() {
+	public function register_taxonomies() {
 		// Files
 		register_taxonomy(
 			'wpapi-source-file',
@@ -132,7 +132,7 @@ class Plugin {
 		);
 	}
 
-	function method_permalink( $link, $post ) {
+	public function method_permalink( $link, $post ) {
 
 		if ( $post->post_type !== 'wpapi-function' || $post->post_parent == 0 ) {
 			return $link;
@@ -151,7 +151,7 @@ class Plugin {
 	 *
 	 * @return array
 	 */
-	function make_args_safe( $args ) {
+	public function make_args_safe( $args ) {
 
 		$filters = array(
 			'wp_filter_kses',
@@ -187,7 +187,7 @@ class Plugin {
 	 *
 	 * @return string
 	 */
-	function humanize_separator( $type ) {
+	public function humanize_separator( $type ) {
 		return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
 	}
 
@@ -198,7 +198,7 @@ class Plugin {
 	 *
 	 * @return string Content with Function reference pieces added
 	 */
-	function expand_content( $content ) {
+	public function expand_content( $content ) {
 		$post = get_post();
 
 		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
@@ -257,7 +257,7 @@ class Plugin {
 	 *
 	 * @return string Autopeed content
 	 */
-	function autop_for_non_funcref( $content ) {
+	public function autop_for_non_funcref( $content ) {
 		$post = get_post();
 
 		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
