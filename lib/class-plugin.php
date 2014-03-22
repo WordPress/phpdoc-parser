@@ -6,7 +6,7 @@ class Plugin {
 	public function on_load() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			\WP_CLI::add_command( 'funcref', __NAMESPACE__ . '\\Command' );
+			\WP_CLI::add_command( 'parser', __NAMESPACE__ . '\\Command' );
 		}
 
 		add_action( 'init', array( $this, 'register_post_types' ) );
