@@ -15,7 +15,7 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @synopsis <directory> [<output_file>]
 	 */
-	public function generate( $args ) {
+	public function export( $args ) {
 		$directory = $args[0];
 
 		$output_file = 'phpdoc.json';
@@ -76,10 +76,10 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
-	 * @subcommand generate-and-import
+	 * @subcommand create
 	 * @synopsis   <directory> [--quick] [--import-internal] [--user]
 	 */
-	public function generate_and_import( $args, $assoc_args ) {
+	public function create( $args, $assoc_args ) {
 		list( $directory ) = $args;
 		$directory = realpath( $directory );
 
