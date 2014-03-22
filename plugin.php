@@ -219,12 +219,12 @@ function expand_content( $content ) {
 		$before_content = get_prototype();
 	}
 
-	$before_content .= '<p class="wpfuncref-description">' . get_the_excerpt() . '</p>';
-	$before_content .= '<div class="wpfuncref-longdesc">';
+	$before_content .= '<p class="wp-parser-description">' . get_the_excerpt() . '</p>';
+	$before_content .= '<div class="wp-parser-longdesc">';
 
 	$after_content = '</div>';
 
-	$after_content .= '<div class="wpfuncref-arguments"><h3>Arguments</h3>';
+	$after_content .= '<div class="wp-parser-arguments"><h3>Arguments</h3>';
 
 	if ( 'wpapi-hook' === $post->post_type ) {
 		$args = get_hook_arguments();
@@ -233,7 +233,7 @@ function expand_content( $content ) {
 	}
 
 	foreach ( $args as $arg ) {
-		$after_content .= '<div class="wpfuncref-arg">';
+		$after_content .= '<div class="wp-parser-arg">';
 		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
 		if ( ! empty( $arg['desc'] ) ) {
 			$after_content .= wpautop( $arg['desc'], false );
