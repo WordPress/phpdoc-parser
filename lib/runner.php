@@ -40,6 +40,10 @@ function parse_files( $files, $root ) {
 			'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
 		);
 
+		if ( ! empty( $file->uses ) ) {
+			$out['uses'] = export_uses( $file->uses );
+		}
+
 		foreach ( $file->getIncludes() as $include ) {
 			$out['includes'][] = array(
 				'name' => $include->getName(),
@@ -56,8 +60,8 @@ function parse_files( $files, $root ) {
 			);
 		}
 
-		if ( ! empty( $file->hooks ) ) {
-			$out['hooks'] = export_hooks( $file->hooks );
+		if ( ! empty( $file->uses['hooks'] ) ) {
+			$out['hooks'] = export_hooks( $file->uses['hooks'] );
 		}
 
 		foreach ( $file->getFunctions() as $function ) {
@@ -70,8 +74,12 @@ function parse_files( $files, $root ) {
 				'hooks'     => array(),
 			);
 
-			if ( ! empty( $function->hooks ) ) {
-				$func['hooks'] = export_hooks( $function->hooks );
+			if ( ! empty( $function->uses ) ) {
+				$func['uses'] = export_uses( $function->uses );
+
+				if ( ! empty( $function->uses['hooks'] ) ) {
+					$func['hooks'] = export_hooks( $function->uses['hooks'] );
+				}
 			}
 
 			$out['functions'][] = $func;
@@ -212,11 +220,43 @@ function export_methods( array $methods ) {
 			'doc'        => export_docblock( $method ),
 		);
 
-		if ( ! empty( $method->hooks ) ) {
-			$meth['hooks'] = export_hooks( $method->hooks );
+		if ( ! empty( $method->uses ) ) {
+			$meth['uses'] = export_uses( $method->uses );
+
+			if ( ! empty( $method->uses['hooks'] ) ) {
+				$meth['hooks'] = export_hooks( $method->uses['hooks'] );
+			}
 		}
 
 		$out[] = $meth;
+	}
+
+	return $out;
+}
+
+/**
+ * Export the list of elements used by a file or structure.
+ *
+ * @param array $uses {
+ *        @type Function_Call_Reflector[] $functions The functions called.
+ * }
+ *
+ * @return array
+ */
+function export_uses( array $uses ) {
+	$out = array();
+
+	// Ignore hooks here, they are exported separately.
+	unset( $uses['hooks'] );
+
+	foreach ( $uses as $type => $used_elements ) {
+		foreach ( $used_elements as $element ) {
+			$out[ $type ][] = array(
+				'name'       => $element->getName(),
+				'line'       => $element->getLineNumber(),
+				'end_line'   => $element->getNode()->getAttribute( 'endLine' ),
+			);
+		}
 	}
 
 	return $out;
