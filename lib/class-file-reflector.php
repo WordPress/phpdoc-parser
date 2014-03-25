@@ -61,7 +61,7 @@ class File_Reflector extends FileReflector {
 	 * We also check function calls to see if there are any actions or hooks. If
 	 * there are, they are added to the file's hooks if in the global scope, or if
 	 * we are in a function/method, they are added to the queue. They will be
-	 * assinged to the function by leaveNode(). We also check for any other function
+	 * assigned to the function by leaveNode(). We also check for any other function
 	 * calls and treat them similarly, so that we can export a list of functions
 	 * used by each element.
 	 *
