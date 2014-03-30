@@ -51,7 +51,21 @@ class Plugin {
 		);
 
 		// Methods
-		add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-function&name=$matches[1]-$matches[2]', 'top' );
+		add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-method&name=$matches[1]-$matches[2]', 'top' );
+		register_post_type(
+			'wpapi-method',
+			array(
+				'has_archive' => 'methods',
+				'label'       => __( 'Methods', 'wp-parser' ),
+				'public'      => true,
+				'rewrite'     => array(
+					'feeds'      => false,
+					'slug'       => 'method',
+					'with_front' => false,
+				),
+				'supports'    => $supports,
+			)
+		);
 
 		// Classes
 		register_post_type(
@@ -93,7 +107,7 @@ class Plugin {
 		// Files
 		register_taxonomy(
 			'wpapi-source-file',
-			array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ),
+			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
 			array(
 				'label'                 => __( 'Files', 'wp-parser' ),
 				'public'                => true,
@@ -106,7 +120,7 @@ class Plugin {
 		// Package
 		register_taxonomy(
 			'wpapi-package',
-			array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ),
+			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
 			array(
 				'hierarchical'          => true,
 				'label'                 => '@package',
@@ -120,7 +134,7 @@ class Plugin {
 		// @since
 		register_taxonomy(
 			'wpapi-since',
-			array( 'wpapi-class', 'wpapi-function', 'wpapi-hook' ),
+			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
 			array(
 				'hierarchical'          => true,
 				'label'                 => __( '@since', 'wp-parser' ),
@@ -134,7 +148,7 @@ class Plugin {
 
 	public function method_permalink( $link, $post ) {
 
-		if ( $post->post_type !== 'wpapi-function' || $post->post_parent == 0 ) {
+		if ( $post->post_type !== 'wpapi-method' || $post->post_parent == 0 ) {
 			return $link;
 		}
 
@@ -205,7 +219,7 @@ class Plugin {
 			return $content;
 		}
 
-		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-method' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
 			return $content;
 		}
 
@@ -268,7 +282,7 @@ class Plugin {
 			return $content;
 		}
 
-		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-method' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
 			$content = wpautop( $content );
 		}
 
