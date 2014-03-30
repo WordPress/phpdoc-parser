@@ -215,8 +215,14 @@ class Plugin {
 			$before_content = get_prototype();
 		}
 
+		// Don't create an infinite loop when get_the_excerpt() calls 'the_content'.
+		remove_filter( 'the_content', array( $this, 'expand_content' ) );
+
 		$before_content .= '<p class="wp-parser-description">' . get_the_excerpt() . '</p>';
 		$before_content .= '<div class="wp-parser-longdesc">';
+
+		// Add the filter back.
+		add_filter( 'the_content', array( $this, 'expand_content' ) );
 
 		$after_content = '</div>';
 
