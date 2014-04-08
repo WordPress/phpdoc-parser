@@ -454,6 +454,7 @@ class Importer {
 			update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
 		}
 		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
+		update_post_meta( $ID, '_wpapi_end_line_num', $data['end_line'] );
 		update_post_meta( $ID, '_wpapi_tags', $data['doc']['tags'] );
 
 		// Everything worked! Woo hoo!
