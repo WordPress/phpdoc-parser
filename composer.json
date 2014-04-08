@@ -16,7 +16,7 @@
 		"source": "https://github.com/rmccue/WP-Parser"
 	},
 	"require"    : {
-		"php"                     : ">=5.3.3",
+		"php"                     : ">=5.3.6",
 		"composer/installers"     : "~1.0",
 		"phpdocumentor/reflection": "~1.0",
 		"erusev/parsedown"        : "~0.9"
