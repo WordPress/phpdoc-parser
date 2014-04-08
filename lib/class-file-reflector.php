@@ -13,25 +13,28 @@ use phpDocumentor\Reflection\FileReflector;
  */
 class File_Reflector extends FileReflector {
 	/**
-	 * List of hooks defined in global scope in this file.
+	 * List of elements used in global scope in this file, indexed by element type.
 	 *
-	 * @var \WP_Parser\Hook_Reflector[]
+	 * @var array {
+	 *      @type \WP_Parser\Hook_Reflector[]          $hooks     The action and filters.
+	 *      @type \WP_Parser\Function_Call_Reflector[] $functions The functions called.
+	 * }
 	 */
-	public $hooks = array();
+	public $uses = array();
 
 	/**
-	 * List of hooks defined in the current node scope.
+	 * List of elements used in the current node scope, indexed by element type.
 	 *
-	 * @var \WP_Parser\Hook_Reflector[]
+	 * @var array {@see \WP_Parser\File_Reflector::$uses}
 	 */
-	protected $hooks_queue = array();
+	protected $uses_queue = array();
 
 	/**
-	 * List of hooks defined in the current class scope, indexed by method.
+	 * List of elements used in the current class scope, indexed by method.
 	 *
-	 * @var \WP_Parser\Hook_Reflector[]
+	 * @var array[][] {@see \WP_Parser\File_Reflector::$uses}
 	 */
-	protected $method_hooks_queue = array();
+	protected $method_uses_queue = array();
 
 	/**
 	 * Stack of classes/methods/functions currently being parsed.
@@ -58,7 +61,9 @@ class File_Reflector extends FileReflector {
 	 * We also check function calls to see if there are any actions or hooks. If
 	 * there are, they are added to the file's hooks if in the global scope, or if
 	 * we are in a function/method, they are added to the queue. They will be
-	 * assinged to the function by leaveNode().
+	 * assigned to the function by leaveNode(). We also check for any other function
+	 * calls and treat them similarly, so that we can export a list of functions
+	 * used by each element.
 	 *
 	 * Finally, we pick up any docblocks for nodes that usually aren't documentable,
 	 * so they can be assigned to the hooks to which they may belong.
@@ -74,8 +79,21 @@ class File_Reflector extends FileReflector {
 				array_push( $this->location, $node );
 				break;
 
-			// Parse out hook definitions and add them to the queue.
+			// Parse out hook definitions and function calls and add them to the queue.
 			case 'Expr_FuncCall':
+				$function = new \WP_Parser\Function_Call_Reflector( $node, $this->context );
+
+				/*
+				 * If the function call is in the global scope, add it to the
+				 * file's function calls. Otherwise, add it to the queue so it
+				 * can be added to the correct node when we leave it.
+				 */
+				if ( $this === $this->getLocation() ) {
+					$this->uses['functions'][] = $function;
+				} else {
+					$this->uses_queue['functions'][] = $function;
+				}
+
 				if ( $this->isFilter( $node ) ) {
 					if ( $this->last_doc && ! $node->getDocComment() ) {
 						$node->setAttribute( 'comments', array( $this->last_doc ) );
@@ -90,9 +108,9 @@ class File_Reflector extends FileReflector {
 					 * the correct node when we leave it.
 					 */
 					if ( $this === $this->getLocation() ) {
-						$this->hooks[] = $hook;
+						$this->uses['hooks'][] = $hook;
 					} else {
-						$this->hooks_queue[] = $hook;
+						$this->uses_queue['hooks'][] = $hook;
 					}
 				}
 				break;
@@ -118,29 +136,34 @@ class File_Reflector extends FileReflector {
 		switch ( $node->getType() ) {
 			case 'Stmt_Class':
 				$class = end( $this->classes );
-				if ( ! empty( $this->method_hooks_queue ) ) {
+				if ( ! empty( $this->method_uses_queue ) ) {
 					foreach ( $class->getMethods() as $method ) {
-						if ( isset( $this->method_hooks_queue[ $method->getName() ] ) ) {
-							$method->hooks = $this->method_hooks_queue[ $method->getName() ];
+						if ( isset( $this->method_uses_queue[ $method->getName() ] ) ) {
+							$method->uses = $this->method_uses_queue[ $method->getName() ];
 						}
 					}
 				}
 
-				$this->method_hooks_queue = array();
+				$this->method_uses_queue = array();
 				array_pop( $this->location );
 				break;
 
 			case 'Stmt_Function':
-				end( $this->functions )->hooks = $this->hooks_queue;
-				$this->hooks_queue = array();
+				end( $this->functions )->uses = $this->uses_queue;
+				$this->uses_queue = array();
 				array_pop( $this->location );
 				break;
 
 			case 'Stmt_ClassMethod':
-				if ( ! empty( $this->hooks_queue ) ) {
-					$this->method_hooks_queue[ $node->name ] = $this->hooks_queue;
-					$this->hooks_queue = array();
+				/*
+				 * Store the list of elements used by this method in the queue. We'll
+				 * assign them to the method upon leaving the class (see above).
+				 */
+				if ( ! empty( $this->uses_queue ) ) {
+					$this->method_uses_queue[ $node->name ] = $this->uses_queue;
+					$this->uses_queue = array();
 				}
+
 				array_pop( $this->location );
 				break;
 		}
