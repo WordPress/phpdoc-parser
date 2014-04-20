@@ -9,8 +9,8 @@ class Plugin {
 			\WP_CLI::add_command( 'parser', __NAMESPACE__ . '\\Command' );
 		}
 
-		add_action( 'init', array( $this, 'register_post_types' ) );
-		add_action( 'init', array( $this, 'register_taxonomies' ) );
+		add_action( 'init', array( $this, 'register_post_types' ), 11 );
+		add_action( 'init', array( $this, 'register_taxonomies' ), 11 );
 		add_filter( 'wp_parser_get_arguments', array( $this, 'make_args_safe' ) );
 		add_filter( 'wp_parser_return_type', array( $this, 'humanize_separator' ) );
 
