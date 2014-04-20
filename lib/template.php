@@ -3,6 +3,60 @@
 namespace WP_Parser;
 
 /**
+ * Parser post's content with function reference pieces.
+ */
+function the_content() {
+
+	$post    = get_post();
+	$content = get_the_content();
+
+	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-method' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+		return $content;
+	}
+
+	if ( 'wpapi-hook' === $post->post_type ) {
+		$before_content = get_hook_prototype();
+	} else {
+		$before_content = get_prototype();
+	}
+
+	$before_content .= '<p class="wp-parser-description">' . get_the_excerpt() . '</p>';
+	$before_content .= '<div class="wp-parser-longdesc">';
+
+	$after_content = '</div>';
+
+	$after_content .= '<div class="wp-parser-arguments"><h3>Arguments</h3>';
+
+	if ( 'wpapi-hook' === $post->post_type ) {
+		$args = get_hook_arguments();
+	} else {
+		$args = get_arguments();
+	}
+
+	foreach ( $args as $arg ) {
+		$after_content .= '<div class="wp-parser-arg">';
+		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
+		if ( ! empty( $arg['desc'] ) ) {
+			$after_content .= wpautop( $arg['desc'], false );
+		}
+		$after_content .= '</div>';
+	}
+
+	$after_content .= '</div>';
+
+	$source = get_source_link();
+
+	if ( $source ) {
+		$after_content .= '<a href="' . $source . '">Source</a>';
+	}
+
+	$before_content = apply_filters( 'wp_parser_before_content', $before_content );
+	$after_content  = apply_filters( 'wp_parser_after_content', $after_content );
+
+	echo $before_content . $content . $after_content;
+}
+
+/**
  * Get the current function's return types
  *
  * @return array
