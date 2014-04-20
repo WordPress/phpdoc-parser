@@ -201,28 +201,4 @@ class Plugin {
 	public function humanize_separator( $type ) {
 		return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
 	}
-
-	/**
-	 * Re-enable autopee for the non-funcref posts
-	 *
-	 * We can't selectively filter the_content for wpautop, so we remove it and
-	 * readd this to check instead.
-	 *
-	 * @param string $content Unfiltered content
-	 *
-	 * @return string Autopeed content
-	 */
-	public function autop_for_non_funcref( $content ) {
-		$post = get_post();
-
-		if ( empty( $post ) ) {
-			return $content;
-		}
-
-		if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-method' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
-			$content = wpautop( $content );
-		}
-
-		return $content;
-	}
 }
