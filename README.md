@@ -11,9 +11,9 @@ There is a guide to developing for developer.wordpress.org in the [WordPress doc
 * [Composer](https://getcomposer.org/)
 * [WP CLI](http://wp-cli.org/)
 
-After cloning from Git set up dependencies via:
+Install via Composer into your WordPress plugins directory:
 
-    composer install --no-dev
+    composer create-project rmccue/wp-parser:dev-master --no-dev
 
 ## Running
 Note: ensure the plugin is enabled first.
