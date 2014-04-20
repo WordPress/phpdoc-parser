@@ -14,9 +14,6 @@ class Plugin {
 		add_filter( 'wp_parser_get_arguments', array( $this, 'make_args_safe' ) );
 		add_filter( 'wp_parser_return_type', array( $this, 'humanize_separator' ) );
 
-		add_filter( 'the_content', array( $this, 'expand_content' ) );
-		add_filter( 'the_content', array( $this, 'autop_for_non_funcref' ) );
-		remove_filter( 'the_content', 'wpautop' );
 		add_filter( 'post_type_link', array( $this, 'method_permalink' ), 10, 2 );
 	}
 
