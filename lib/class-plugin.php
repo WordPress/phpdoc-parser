@@ -112,46 +112,54 @@ class Plugin {
 	 * Register the file and @since taxonomies
 	 */
 	public function register_taxonomies() {
-		// Files
-		register_taxonomy(
-			'wpapi-source-file',
-			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
-			array(
-				'label'                 => __( 'Files', 'wp-parser' ),
-				'public'                => true,
-				'rewrite'               => array( 'slug' => 'files' ),
-				'sort'                  => false,
-				'update_count_callback' => '_update_post_term_count',
-			)
-		);
 
-		// Package
-		register_taxonomy(
-			'wpapi-package',
-			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
-			array(
-				'hierarchical'          => true,
-				'label'                 => '@package',
-				'public'                => true,
-				'rewrite'               => array( 'slug' => 'package' ),
-				'sort'                  => false,
-				'update_count_callback' => '_update_post_term_count',
-			)
-		);
 
-		// @since
-		register_taxonomy(
-			'wpapi-since',
-			array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
-			array(
-				'hierarchical'          => true,
-				'label'                 => __( '@since', 'wp-parser' ),
-				'public'                => true,
-				'rewrite'               => array( 'slug' => 'since' ),
-				'sort'                  => false,
-				'update_count_callback' => '_update_post_term_count',
-			)
-		);
+		if ( ! taxonomy_exists( 'wpapi-source-file' ) ) {
+
+			register_taxonomy(
+				'wpapi-source-file',
+				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				array(
+					'label'                 => __( 'Files', 'wp-parser' ),
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'files' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
+
+		if ( ! taxonomy_exists( 'wpapi-package' ) ) {
+
+			register_taxonomy(
+				'wpapi-package',
+				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				array(
+					'hierarchical'          => true,
+					'label'                 => '@package',
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'package' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
+
+		if ( ! taxonomy_exists( 'wpapi-since' ) ) {
+
+			register_taxonomy(
+				'wpapi-since',
+				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				array(
+					'hierarchical'          => true,
+					'label'                 => __( '@since', 'wp-parser' ),
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'since' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
 	}
 
 	public function method_permalink( $link, $post ) {
