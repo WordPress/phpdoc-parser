@@ -113,12 +113,13 @@ class Plugin {
 	 */
 	public function register_taxonomies() {
 
+		$object_types = array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' );
 
 		if ( ! taxonomy_exists( 'wpapi-source-file' ) ) {
 
 			register_taxonomy(
 				'wpapi-source-file',
-				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				$object_types,
 				array(
 					'label'                 => __( 'Files', 'wp-parser' ),
 					'public'                => true,
@@ -133,7 +134,7 @@ class Plugin {
 
 			register_taxonomy(
 				'wpapi-package',
-				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				$object_types,
 				array(
 					'hierarchical'          => true,
 					'label'                 => '@package',
@@ -149,7 +150,7 @@ class Plugin {
 
 			register_taxonomy(
 				'wpapi-since',
-				array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' ),
+				$object_types,
 				array(
 					'hierarchical'          => true,
 					'label'                 => __( '@since', 'wp-parser' ),
