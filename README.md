@@ -7,7 +7,7 @@ We are currently looking for contributors to help us complete the work on the pa
 There is a guide to developing for developer.wordpress.org in the [WordPress documentation handbook](http://make.wordpress.org/docs/handbook/projects/devhub/)
 
 ## Requirements
-* PHP 5.3+
+* PHP 5.3.6+
 * [Composer](https://getcomposer.org/)
 * [WP CLI](http://wp-cli.org/)
 
