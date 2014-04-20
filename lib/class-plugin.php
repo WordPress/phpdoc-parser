@@ -31,70 +31,81 @@ class Plugin {
 			'title',
 		);
 
-		// Functions
-		register_post_type(
-			'wpapi-function',
-			array(
-				'has_archive' => 'functions',
-				'label'       => __( 'Functions', 'wp-parser' ),
-				'public'      => true,
-				'rewrite'     => array(
-					'feeds'      => false,
-					'slug'       => 'function',
-					'with_front' => false,
-				),
-				'supports'    => $supports,
-			)
-		);
+		if ( ! post_type_exists( 'wpapi-function' ) ) {
 
-		// Methods
-		add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-method&name=$matches[1]-$matches[2]', 'top' );
-		register_post_type(
-			'wpapi-method',
-			array(
-				'has_archive' => 'methods',
-				'label'       => __( 'Methods', 'wp-parser' ),
-				'public'      => true,
-				'rewrite'     => array(
-					'feeds'      => false,
-					'slug'       => 'method',
-					'with_front' => false,
-				),
-				'supports'    => $supports,
-			)
-		);
+			register_post_type(
+				'wpapi-function',
+				array(
+					'has_archive' => 'functions',
+					'label'       => __( 'Functions', 'wp-parser' ),
+					'public'      => true,
+					'rewrite'     => array(
+						'feeds'      => false,
+						'slug'       => 'function',
+						'with_front' => false,
+					),
+					'supports'    => $supports,
+				)
+			);
+		}
 
-		// Classes
-		register_post_type(
-			'wpapi-class',
-			array(
-				'has_archive' => 'classes',
-				'label'       => __( 'Classes', 'wp-parser' ),
-				'public'      => true,
-				'rewrite'     => array(
-					'feeds'      => false,
-					'slug'       => 'class',
-					'with_front' => false,
-				),
-				'supports'    => $supports,
-			)
-		);
 
-		// Hooks
-		register_post_type(
-			'wpapi-hook',
-			array(
-				'has_archive' => 'hooks',
-				'label'       => __( 'Hooks', 'wp-parser' ),
-				'public'      => true,
-				'rewrite'     => array(
-					'feeds'      => false,
-					'slug'       => 'hook',
-					'with_front' => false,
-				),
-				'supports'    => $supports,
-			)
-		);
+		if ( ! post_type_exists( 'wpapi-method' ) ) {
+
+			add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-method&name=$matches[1]-$matches[2]', 'top' );
+
+			register_post_type(
+				'wpapi-method',
+				array(
+					'has_archive' => 'methods',
+					'label'       => __( 'Methods', 'wp-parser' ),
+					'public'      => true,
+					'rewrite'     => array(
+						'feeds'      => false,
+						'slug'       => 'method',
+						'with_front' => false,
+					),
+					'supports'    => $supports,
+				)
+			);
+		}
+
+
+		if ( ! post_type_exists( 'wpapi-class' ) ) {
+
+			register_post_type(
+				'wpapi-class',
+				array(
+					'has_archive' => 'classes',
+					'label'       => __( 'Classes', 'wp-parser' ),
+					'public'      => true,
+					'rewrite'     => array(
+						'feeds'      => false,
+						'slug'       => 'class',
+						'with_front' => false,
+					),
+					'supports'    => $supports,
+				)
+			);
+		}
+
+		if ( ! post_type_exists( 'wpapi-hook' ) ) {
+
+			register_post_type(
+				'wpapi-hook',
+				array(
+					'has_archive' => 'hooks',
+					'label'       => __( 'Hooks', 'wp-parser' ),
+					'public'      => true,
+					'rewrite'     => array(
+						'feeds'      => false,
+						'slug'       => 'hook',
+						'with_front' => false,
+					),
+					'supports'    => $supports,
+				)
+			);
+		}
 	}
 
 	/**
