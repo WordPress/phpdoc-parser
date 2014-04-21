@@ -10,11 +10,11 @@ function the_content() {
 	$post    = get_post();
 	$content = get_the_content();
 
-	if ( $post->post_type !== 'wpapi-class' && $post->post_type !== 'wpapi-method' && $post->post_type !== 'wpapi-function' && $post->post_type !== 'wpapi-hook' ) {
+	if ( $post->post_type !== 'wp-parser-class' && $post->post_type !== 'wp-parser-method' && $post->post_type !== 'wp-parser-function' && $post->post_type !== 'wp-parser-hook' ) {
 		return $content;
 	}
 
-	if ( 'wpapi-hook' === $post->post_type ) {
+	if ( 'wp-parser-hook' === $post->post_type ) {
 		$before_content = get_hook_prototype();
 	} else {
 		$before_content = get_prototype();
@@ -27,7 +27,7 @@ function the_content() {
 
 	$after_content .= '<div class="wp-parser-arguments"><h3>Arguments</h3>';
 
-	if ( 'wpapi-hook' === $post->post_type ) {
+	if ( 'wp-parser-hook' === $post->post_type ) {
 		$args = get_hook_arguments();
 	} else {
 		$args = get_arguments();
@@ -62,7 +62,7 @@ function the_content() {
  * @return array
  */
 function get_return_type() {
-	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
+	$function_data = get_post_meta( get_the_ID(), '_wp-parser_tags', true );
 	$return_type   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
 	if ( ! empty( $return_type ) ) {
@@ -91,7 +91,7 @@ function the_return_type() {
  * @return string
  */
 function get_return_desc() {
-	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
+	$function_data = get_post_meta( get_the_ID(), '_wp-parser_tags', true );
 	$return_desc   = wp_list_filter( $function_data, array( 'name' => 'return' ) );
 
 	if ( ! empty( $return_desc ) ) {
@@ -118,7 +118,7 @@ function the_return_desc() {
  * @return bool
  */
 function arguments_have_default_values() {
-	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wpapi_args', true ), array( 'name' => 'default' ) );
+	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_args', true ), array( 'name' => 'default' ) );
 
 	return apply_filters( 'wp_parser_arguments_have_default_values', ! empty( $retval ) );
 }
@@ -129,7 +129,7 @@ function arguments_have_default_values() {
  * @return bool
  */
 function is_function_deprecated() {
-	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wpapi_tags', true ), array( 'name' => 'deprecated' ) );
+	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_tags', true ), array( 'name' => 'deprecated' ) );
 
 	return apply_filters( 'wp_parser_is_function_deprecated', ! empty( $retval ) );
 }
@@ -140,8 +140,8 @@ function is_function_deprecated() {
  * @return array array( [0] => array( 'name' => '', 'type' => '', 'desc' => '' ), ... )
  */
 function get_arguments() {
-	$args_data     = get_post_meta( get_the_ID(), '_wpapi_args', true );
-	$function_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
+	$args_data     = get_post_meta( get_the_ID(), '_wp-parser_args', true );
+	$function_data = get_post_meta( get_the_ID(), '_wp-parser_tags', true );
 	$params        = wp_list_filter( $function_data, array( 'name' => 'param' ) );
 
 	$return_args = array();
@@ -184,8 +184,8 @@ function get_arguments() {
  * @return array array( [0] => array( 'name' => '', 'type' => '', 'desc' => '' ), ... )
  */
 function get_hook_arguments() {
-	$args_data = get_post_meta( get_the_ID(), '_wpapi_args', true );
-	$hook_data = get_post_meta( get_the_ID(), '_wpapi_tags', true );
+	$args_data = get_post_meta( get_the_ID(), '_wp-parser_args', true );
+	$hook_data = get_post_meta( get_the_ID(), '_wp-parser_tags', true );
 	$params    = wp_list_filter( $hook_data, array( 'name' => 'param' ) );
 
 	$return_args = array();
@@ -299,11 +299,11 @@ function get_source_link() {
 		return '';
 	}
 
-	// Find the current post in the wpapi-source-file term
-	$term = get_the_terms( get_the_ID(), 'wpapi-source-file' );
+	// Find the current post in the wp-parser-source-file term
+	$term = get_the_terms( get_the_ID(), 'wp-parser-source-file' );
 	if ( ! empty( $term ) && ! is_wp_error( $term ) ) {
 		$term     = array_shift( $term );
-		$line_num = (int) get_post_meta( get_the_ID(), '_wpapi_line_num', true );
+		$line_num = (int) get_post_meta( get_the_ID(), '_wp-parser_line_num', true );
 
 		// The format here takes the base URL, the term name, and the line number
 		$format = apply_filters( 'wp_parser_source_link_format', '%s%s#L%d' );

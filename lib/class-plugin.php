@@ -31,10 +31,10 @@ class Plugin {
 			'title',
 		);
 
-		if ( ! post_type_exists( 'wpapi-function' ) ) {
+		if ( ! post_type_exists( 'wp-parser-function' ) ) {
 
 			register_post_type(
-				'wpapi-function',
+				'wp-parser-function',
 				array(
 					'has_archive' => 'functions',
 					'label'       => __( 'Functions', 'wp-parser' ),
@@ -50,12 +50,12 @@ class Plugin {
 		}
 
 
-		if ( ! post_type_exists( 'wpapi-method' ) ) {
+		if ( ! post_type_exists( 'wp-parser-method' ) ) {
 
-			add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wpapi-method&name=$matches[1]-$matches[2]', 'top' );
+			add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wp-parser-method&name=$matches[1]-$matches[2]', 'top' );
 
 			register_post_type(
-				'wpapi-method',
+				'wp-parser-method',
 				array(
 					'has_archive' => 'methods',
 					'label'       => __( 'Methods', 'wp-parser' ),
@@ -71,10 +71,10 @@ class Plugin {
 		}
 
 
-		if ( ! post_type_exists( 'wpapi-class' ) ) {
+		if ( ! post_type_exists( 'wp-parser-class' ) ) {
 
 			register_post_type(
-				'wpapi-class',
+				'wp-parser-class',
 				array(
 					'has_archive' => 'classes',
 					'label'       => __( 'Classes', 'wp-parser' ),
@@ -89,10 +89,10 @@ class Plugin {
 			);
 		}
 
-		if ( ! post_type_exists( 'wpapi-hook' ) ) {
+		if ( ! post_type_exists( 'wp-parser-hook' ) ) {
 
 			register_post_type(
-				'wpapi-hook',
+				'wp-parser-hook',
 				array(
 					'has_archive' => 'hooks',
 					'label'       => __( 'Hooks', 'wp-parser' ),
@@ -113,12 +113,12 @@ class Plugin {
 	 */
 	public function register_taxonomies() {
 
-		$object_types = array( 'wpapi-class', 'wpapi-method', 'wpapi-function', 'wpapi-hook' );
+		$object_types = array( 'wp-parser-class', 'wp-parser-method', 'wp-parser-function', 'wp-parser-hook' );
 
-		if ( ! taxonomy_exists( 'wpapi-source-file' ) ) {
+		if ( ! taxonomy_exists( 'wp-parser-source-file' ) ) {
 
 			register_taxonomy(
-				'wpapi-source-file',
+				'wp-parser-source-file',
 				$object_types,
 				array(
 					'label'                 => __( 'Files', 'wp-parser' ),
@@ -130,10 +130,10 @@ class Plugin {
 			);
 		}
 
-		if ( ! taxonomy_exists( 'wpapi-package' ) ) {
+		if ( ! taxonomy_exists( 'wp-parser-package' ) ) {
 
 			register_taxonomy(
-				'wpapi-package',
+				'wp-parser-package',
 				$object_types,
 				array(
 					'hierarchical'          => true,
@@ -146,10 +146,10 @@ class Plugin {
 			);
 		}
 
-		if ( ! taxonomy_exists( 'wpapi-since' ) ) {
+		if ( ! taxonomy_exists( 'wp-parser-since' ) ) {
 
 			register_taxonomy(
-				'wpapi-since',
+				'wp-parser-since',
 				$object_types,
 				array(
 					'hierarchical'          => true,
@@ -165,7 +165,7 @@ class Plugin {
 
 	public function method_permalink( $link, $post ) {
 
-		if ( $post->post_type !== 'wpapi-method' || $post->post_parent == 0 ) {
+		if ( $post->post_type !== 'wp-parser-method' || $post->post_parent == 0 ) {
 			return $link;
 		}
 
@@ -219,6 +219,6 @@ class Plugin {
 	 * @return string
 	 */
 	public function humanize_separator( $type ) {
-		return str_replace( '|', '<span class="wpapi-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
+		return str_replace( '|', '<span class="wp-parser-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
 	}
 }

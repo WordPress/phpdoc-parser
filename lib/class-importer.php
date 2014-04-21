@@ -81,13 +81,13 @@ class Importer {
 		$r = wp_parse_args(
 			$args,
 			array(
-				'post_type_class'        => 'wpapi-class',
-				'post_type_method'       => 'wpapi-method',
-				'post_type_function'     => 'wpapi-function',
-				'post_type_hook'         => 'wpapi-hook',
-				'taxonomy_file'          => 'wpapi-source-file',
-				'taxonomy_package'       => 'wpapi-package',
-				'taxonomy_since_version' => 'wpapi-since',
+				'post_type_class'        => 'wp-parser-class',
+				'post_type_method'       => 'wp-parser-method',
+				'post_type_function'     => 'wp-parser-function',
+				'post_type_hook'         => 'wp-parser-hook',
+				'taxonomy_file'          => 'wp-parser-source-file',
+				'taxonomy_package'       => 'wp-parser-package',
+				'taxonomy_since_version' => 'wp-parser-since',
 			)
 		);
 
@@ -207,7 +207,7 @@ class Importer {
 			return false;
 		}
 
-		update_post_meta( $hook_id, '_wpapi_hook_type', $data['type'] );
+		update_post_meta( $hook_id, '_wp-parser_hook_type', $data['type'] );
 
 		return $hook_id;
 	}
@@ -230,11 +230,11 @@ class Importer {
 		}
 
 		// Set class-specific meta
-		update_post_meta( $class_id, '_wpapi_final', (bool) $data['final'] );
-		update_post_meta( $class_id, '_wpapi_abstract', (bool) $data['abstract'] );
-		update_post_meta( $class_id, '_wpapi_extends', $data['extends'] );
-		update_post_meta( $class_id, '_wpapi_implements', $data['implements'] );
-		update_post_meta( $class_id, '_wpapi_properties', $data['properties'] );
+		update_post_meta( $class_id, '_wp-parser_final', (bool) $data['final'] );
+		update_post_meta( $class_id, '_wp-parser_abstract', (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] );
+		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] );
+		update_post_meta( $class_id, '_wp-parser_properties', $data['properties'] );
 
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
@@ -266,10 +266,10 @@ class Importer {
 		}
 
 		// Set method-specific meta.
-		update_post_meta( $method_id, '_wpapi_final', (bool) $data['final'] );
-		update_post_meta( $method_id, '_wpapi_abstract', (bool) $data['abstract'] );
-		update_post_meta( $method_id, '_wpapi_static', (bool) $data['static'] );
-		update_post_meta( $method_id, '_wpapi_visibility', $data['visibility'] );
+		update_post_meta( $method_id, '_wp-parser_final', (bool) $data['final'] );
+		update_post_meta( $method_id, '_wp-parser_abstract', (bool) $data['abstract'] );
+		update_post_meta( $method_id, '_wp-parser_static', (bool) $data['static'] );
+		update_post_meta( $method_id, '_wp-parser_visibility', $data['visibility'] );
 
 		// Now add the hooks.
 		if ( ! empty( $data['hooks'] ) ) {
@@ -458,11 +458,11 @@ class Importer {
 		// Set other taxonomy and post meta to use in the theme templates
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
 		if ( $post_data['post_type'] !== $this->post_type_class ) {
-			update_post_meta( $ID, '_wpapi_args', $data['arguments'] );
+			update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
 		}
-		update_post_meta( $ID, '_wpapi_line_num', $data['line'] );
-		update_post_meta( $ID, '_wpapi_end_line_num', $data['end_line'] );
-		update_post_meta( $ID, '_wpapi_tags', $data['doc']['tags'] );
+		update_post_meta( $ID, '_wp-parser_line_num', $data['line'] );
+		update_post_meta( $ID, '_wp-parser_end_line_num', $data['end_line'] );
+		update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {
