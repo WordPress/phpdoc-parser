@@ -7,7 +7,6 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
-use phpDocumentor\Reflection\DocBlock\Context;
 
 /**
  * A reflection of a function call expression.
@@ -24,6 +23,24 @@ class Function_Call_Reflector extends BaseReflector {
 			return '\\'.implode('\\', $this->node->namespacedName->parts);
 		}
 
-		return (string) $this->getShortName();
+		$shortName = $this->getShortName();
+
+		if ( ! is_a( $shortName, 'PHPParser_Node_Name' ) ) {
+
+			/** @var \PHPParser_Node_Expr_ArrayDimFetch $shortName */
+			if ( is_a( $shortName, 'PHPParser_Node_Expr_ArrayDimFetch' ) ) {
+				$var = $shortName->var->name;
+				$dim = $shortName->dim->name->parts[0];
+
+				return "\${$var}[{$dim}]";
+			}
+
+			/** @var \PHPParser_Node_Expr_Variable $shortName */
+			if ( is_a( $shortName, 'PHPParser_Node_Expr_Variable' ) ) {
+				return $shortName->name;
+			}
+		}
+
+		return (string) $shortName;
 	}
 }
