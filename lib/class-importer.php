@@ -304,20 +304,20 @@ class Importer {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					WP_CLI::line( "\t" . sprintf( 'Skipped importing @internal class "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Skipped importing @internal class "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_method:
-					WP_CLI::line( "\t\t" . sprintf( 'Skipped importing @internal method "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t\t" . sprintf( 'Skipped importing @internal method "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					WP_CLI::line( $indent . sprintf( 'Skipped importing @internal hook "%1$s"', $data['name'] ) );
+					WP_CLI::log( $indent . sprintf( 'Skipped importing @internal hook "%1$s"', $data['name'] ) );
 					break;
 
 				default:
-					WP_CLI::line( "\t" . sprintf( 'Skipped importing @internal function "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Skipped importing @internal function "%1$s"', $data['name'] ) );
 			}
 
 			return false;
@@ -468,38 +468,38 @@ class Importer {
 		if ( $is_new_post ) {
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					WP_CLI::line( "\t" . sprintf( 'Imported class "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Imported class "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					WP_CLI::line( $indent . sprintf( 'Imported hook "%1$s"', $data['name'] ) );
+					WP_CLI::log( $indent . sprintf( 'Imported hook "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_method:
-					WP_CLI::line( "\t\t" . sprintf( 'Imported method "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t\t" . sprintf( 'Imported method "%1$s"', $data['name'] ) );
 					break;
 
 				default:
-					WP_CLI::line( "\t" . sprintf( 'Imported function "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Imported function "%1$s"', $data['name'] ) );
 			}
 		} else {
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					WP_CLI::line( "\t" . sprintf( 'Updated class "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Updated class "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					WP_CLI::line( $indent . sprintf( 'Updated hook "%1$s"', $data['name'] ) );
+					WP_CLI::log( $indent . sprintf( 'Updated hook "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_method:
-					WP_CLI::line( "\t\t" . sprintf( 'Updated method "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t\t" . sprintf( 'Updated method "%1$s"', $data['name'] ) );
 					break;
 
 				default:
-					WP_CLI::line( "\t" . sprintf( 'Updated function "%1$s"', $data['name'] ) );
+					WP_CLI::log( "\t" . sprintf( 'Updated function "%1$s"', $data['name'] ) );
 			}
 		}
 
