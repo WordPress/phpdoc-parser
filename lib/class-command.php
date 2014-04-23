@@ -139,7 +139,8 @@ class Command extends WP_CLI_Command {
 	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
 	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
-
+		$time_start = microtime(true);
+		
 		// Make sure a current user is set
 		if ( ! wp_get_current_user()->exists() ) {
 			WP_CLI::error( 'Please specify a valid user: --user=<id|login>' );
@@ -152,6 +153,7 @@ class Command extends WP_CLI_Command {
 		$num_of_files = count( $data );
 
 		// Defer term counting for performance
+		wp_suspend_cache_invalidation( true );
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
@@ -187,8 +189,15 @@ class Command extends WP_CLI_Command {
 		delete_option( "{$importer->taxonomy_since_version}_children" );
 
 		// Start counting again
+		wp_suspend_cache_invalidation( false );
+		wp_cache_flush();
 		wp_defer_term_counting( false );
 		wp_defer_comment_counting( false );
+
+		$time_end = microtime(true);
+		$time = $time_end - $time_start;
+		
+		WP_CLI::line( 'Time: '.$time );
 
 		if ( empty( $importer->errors ) ) {
 			WP_CLI::success( 'Import complete!' );
