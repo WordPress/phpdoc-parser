@@ -139,6 +139,8 @@ class Command extends WP_CLI_Command {
 	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
 	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
+		global $wpdb;
+
 		$time_start = microtime(true);
 		
 		// Make sure a current user is set
@@ -156,6 +158,9 @@ class Command extends WP_CLI_Command {
 		wp_suspend_cache_invalidation( true );
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
+
+		// turn off autocommit, for speed
+		$wpdb->query('SET autocommit = 0');
 
 		// Run the importer
 		$importer = new Importer;
@@ -187,6 +192,10 @@ class Command extends WP_CLI_Command {
 		 */
 		delete_option( "{$importer->taxonomy_package}_children" );
 		delete_option( "{$importer->taxonomy_since_version}_children" );
+
+		// commit the changes, turn autocommit back on
+		$wpdb->query('COMMIT');
+		$wpdb->query('SET autocommit = 1');
 
 		// Start counting again
 		wp_suspend_cache_invalidation( false );
