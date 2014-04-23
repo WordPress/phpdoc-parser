@@ -139,7 +139,10 @@ function export_docblock( $element ) {
 			$t['refers'] = $tag->getReference();
 		}
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
-			$t['content'] = $tag->getVersion();
+			$version = $tag->getVersion();
+			if ( !empty( $version ) ) {
+				$t['content'] = $version;
+			}
 		}
 		$output['tags'][] = $t;
 	}
