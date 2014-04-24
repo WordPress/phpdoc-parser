@@ -22,7 +22,7 @@ class Plugin {
 	 */
 	public function register_post_types() {
 
-		$supports = array( 'custom-fields', 'editor', 'excerpt', 'revisions', 'title', );
+		$supports = array( 'custom-fields', 'editor', 'excerpt', 'revisions', 'title' );
 
 		// Function post type.
 		$function_args = array(
