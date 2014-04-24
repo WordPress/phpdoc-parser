@@ -178,7 +178,7 @@ class Command extends WP_CLI_Command {
 		}
 
 		foreach ( $data as $file ) {
-			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ) ) );
+			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
 			$file_number ++;
 
 			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
