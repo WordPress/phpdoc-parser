@@ -218,7 +218,7 @@ class Plugin {
 			'wp-parser-package',
 			$object_types,
 			/** This filter is documented in lib/class-plugin.php */
-			apply_filters( 'wp_parser_taxonomy_args', $package_tax_args, 'wp-parser-package' );
+			apply_filters( 'wp_parser_taxonomy_args', $package_tax_args, 'wp-parser-package' )
 		);
 
 		// Since tag taxonomy.
@@ -235,7 +235,7 @@ class Plugin {
 			'wp-parser-since',
 			$object_types,
 			/** This filter is documented in lib/class-plugin.php */
-			apply_filters( 'wp_parser_taxonomy_args', $since_tax_args, 'wp-parser-since' );
+			apply_filters( 'wp_parser_taxonomy_args', $since_tax_args, 'wp-parser-since' )
 		);
 	}
 
