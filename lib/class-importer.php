@@ -128,26 +128,18 @@ class Importer {
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
-		$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
 
-		if ( ! $term ) {
+		$term = $this->insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
 
-			$term = wp_insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
-
-			if ( is_wp_error( $term ) ) {
-				$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
-
-				return;
-			}
-
-			// Grab the full term object
-			$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
+		if ( is_wp_error( $term ) ) {
+			$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
+			return;
 		}
 
 		// Store file meta for later use
 		$this->file_meta = array(
 			'docblock' => $file['file'], // File docblock
-			'term_id'  => $term['name'], // File's term item in the file taxonomy
+			'term_id'  => $file['path'], // Term name in the file taxonomy is the file name
 		);
 
 		// Functions
@@ -423,15 +415,16 @@ class Importer {
 
 			$since_version = array_shift( $since_version );
 			$since_version = $since_version['content'];
-			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
 
-			if ( ! $since_term ) {
-				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
-			}
+			$since_term = $this->insert_term( $since_version, $this->taxonomy_since_version );
 
 			// Assign the tax item to the post
 			if ( ! is_wp_error( $since_term ) ) {
+				$added_term_relationship = did_action( 'added_term_relationship' );
 				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+				if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+					$anything_updated[] = true;
+				}
 			} else {
 				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
 			}
@@ -452,7 +445,7 @@ class Importer {
 		}
 
 		$main_package_id   = false;
-		$package_term_args = array();
+		$package_term_ids = array();
 
 		// If the item has any @package/@subpackage markup (or has inherited it from file scope), assign the taxonomy.
 		foreach ( $packages as $pack_name => $pack_value ) {
@@ -472,33 +465,45 @@ class Importer {
 			}
 
 			// If the package doesn't already exist in the taxonomy, add it
-			$package_term = term_exists( $pack_value, $this->taxonomy_package, $package_term_args['parent'] );
-			if ( ! $package_term ) {
-				$package_term = wp_insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
-			}
+			$package_term = $this->insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
+			$package_term_ids[] = (int) $package_term['term_id'];
 
 			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) ) {
 				$main_package_id = (int) $package_term['term_id'];
 			}
 
-			// Assign the tax item to the post
-			if ( ! is_wp_error( $package_term ) ) {
-				wp_set_object_terms( $ID, (int) $package_term['term_id'], $this->taxonomy_package );
-			} elseif ( is_int( $main_package_id ) ) {
-				WP_CLI::warning( "\tCannot set @subpackage term: " . $package_term->get_error_message() );
-			} else {
-				WP_CLI::warning( "\tCannot set @package term: " . $package_term->get_error_message() );
+			if ( is_wp_error( $package_term ) ) {
+				if ( is_int( $main_package_id ) ) {
+					WP_CLI::warning( "\tCannot create @subpackage term: " . $package_term->get_error_message() );
+				} else {
+					WP_CLI::warning( "\tCannot create @package term: " . $package_term->get_error_message() );
+				}
 			}
+		}
+		$added_term_relationship = did_action( 'added_term_relationship' );
+		wp_set_object_terms( $ID, $package_term_ids, $this->taxonomy_package );
+		if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+			$anything_updated[] = true;
 		}
 
 		// Set other taxonomy and post meta to use in the theme templates
+		$added_item = did_action( 'added_term_relationship' );
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
-		if ( $post_data['post_type'] !== $this->post_type_class ) {
-			update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
+		if ( did_action( 'added_term_relationship' ) > $added_item ) {
+			$anything_updated[] = true;
 		}
-		update_post_meta( $ID, '_wp-parser_line_num', $data['line'] );
-		update_post_meta( $ID, '_wp-parser_end_line_num', $data['end_line'] );
-		update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
+
+		if ( $post_data['post_type'] !== $this->post_type_class ) {
+			$anything_updated[] = update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
+		}
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_line_num', (string) $data['line'] );
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_end_line_num', (string) $data['end_line'] );
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
+
+		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
+		if ( ! $is_new_post && ! $post_needed_update && array_filter( $anything_updated ) ) {
+			wp_update_post( wp_slash( $post_data ), true );
+		}
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {
