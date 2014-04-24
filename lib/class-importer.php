@@ -247,7 +247,7 @@ class Importer {
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
 			// Namespace method names with the class name
-			$method['name'] = $data['name'] . '-' . $method['name'];
+			$method['name'] = $data['name'] . '::' . $method['name'];
 			$this->import_method( $method, $class_id, $import_internal );
 		}
 
