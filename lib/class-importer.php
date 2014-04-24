@@ -384,12 +384,15 @@ class Importer {
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
 			$is_new_post     = false;
-			$post_data['ID'] = (int) $existing_post_id;
-			$ID              = wp_update_post( $post_data, true );
-
+			$ID = $post_data['ID'] = (int) $existing_post_id;
+			$post_needed_update = array_diff_assoc( sanitize_post( $post_data, 'db' ), get_post( $existing_post_id, ARRAY_A, 'db' ) );
+			if ( $post_needed_update ) {
+				$ID = wp_update_post( wp_slash( $post_data ), true );
+			}
 		} else {
-			$ID = wp_insert_post( $post_data, true );
+			$ID = wp_insert_post( wp_slash( $post_data ), true );
 		}
+		$anything_updated = array();
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
 
