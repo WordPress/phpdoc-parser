@@ -352,9 +352,9 @@ class Importer {
 
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type = %s AND post_parent = %d LIMIT 1",
-				$data['name'],
+			$q = $wpdb->prepare(
+				"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
+				$slug,
 				$post_data['post_type'],
 				(int) $parent_post_id
 			)
