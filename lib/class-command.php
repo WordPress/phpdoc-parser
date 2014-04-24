@@ -162,6 +162,10 @@ class Command extends WP_CLI_Command {
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
 
+		// Remove actions for performance
+		remove_action( 'transition_post_status', '_update_blog_date_on_post_publish', 10 );
+		remove_action( 'transition_post_status', '__clear_multi_author_cache', 10 );
+
 		// Run the importer
 		$importer = new Importer;
 
