@@ -70,6 +70,10 @@ class Importer {
 	 */
 	public $errors = array();
 
+	/**
+	 * @var array Cached items of inserted terms
+	 */
+	protected $inserted_terms = array();
 
 	/**
 	 * Constructor. Sets up post type/taxonomy names.
@@ -94,6 +98,23 @@ class Importer {
 		foreach ( $r as $property_name => $value ) {
 			$this->{$property_name} = $value;
 		}
+	}
+
+	protected function insert_term( $term, $taxonomy, $args = array() ) {
+		if ( isset( $this->inserted_terms[ $taxonomy ][ $term ] ) ) {
+			return $this->inserted_terms[ $taxonomy ][ $term ];
+		}
+
+		$parent = isset( $args['parent'] ) ? $args['parent'] : 0;
+		if ( ! $inserted_term = term_exists( $term, $taxonomy, $parent ) ) {
+			$inserted_term = wp_insert_term( $term, $taxonomy, $args );
+		}
+
+		if ( ! is_wp_error( $inserted_term ) ) {
+			$this->inserted_terms[ $taxonomy ][ $term ] = $inserted_term;
+		}
+
+		return $inserted_term;
 	}
 
 	/**
