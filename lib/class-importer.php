@@ -331,6 +331,10 @@ class Importer {
 			return false;
 		}
 
+		if ( wp_list_filter( $data['doc']['tags'], array( 'name' => 'ignore' ) ) ) {
+			return false;
+		}
+
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = wp_parse_args(
