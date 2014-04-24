@@ -238,8 +238,8 @@ class Importer {
 		}
 
 		// Set class-specific meta
-		update_post_meta( $class_id, '_wp-parser_final', (bool) $data['final'] );
-		update_post_meta( $class_id, '_wp-parser_abstract', (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wp-parser_final', (string) $data['final'] );
+		update_post_meta( $class_id, '_wp-parser_abstract', (string) $data['abstract'] );
 		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] );
 		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] );
 		update_post_meta( $class_id, '_wp-parser_properties', $data['properties'] );
@@ -274,9 +274,9 @@ class Importer {
 		}
 
 		// Set method-specific meta.
-		update_post_meta( $method_id, '_wp-parser_final', (bool) $data['final'] );
-		update_post_meta( $method_id, '_wp-parser_abstract', (bool) $data['abstract'] );
-		update_post_meta( $method_id, '_wp-parser_static', (bool) $data['static'] );
+		update_post_meta( $method_id, '_wp-parser_final', (string) $data['final'] );
+		update_post_meta( $method_id, '_wp-parser_abstract', (string) $data['abstract'] );
+		update_post_meta( $method_id, '_wp-parser_static', (string) $data['static'] );
 		update_post_meta( $method_id, '_wp-parser_visibility', $data['visibility'] );
 
 		// Now add the hooks.
