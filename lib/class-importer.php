@@ -70,6 +70,10 @@ class Importer {
 	 */
 	public $errors = array();
 
+	/**
+	 * @var array Cached items of inserted terms
+	 */
+	protected $inserted_terms = array();
 
 	/**
 	 * Constructor. Sets up post type/taxonomy names.
@@ -96,6 +100,23 @@ class Importer {
 		}
 	}
 
+	protected function insert_term( $term, $taxonomy, $args = array() ) {
+		if ( isset( $this->inserted_terms[ $taxonomy ][ $term ] ) ) {
+			return $this->inserted_terms[ $taxonomy ][ $term ];
+		}
+
+		$parent = isset( $args['parent'] ) ? $args['parent'] : 0;
+		if ( ! $inserted_term = term_exists( $term, $taxonomy, $parent ) ) {
+			$inserted_term = wp_insert_term( $term, $taxonomy, $args );
+		}
+
+		if ( ! is_wp_error( $inserted_term ) ) {
+			$this->inserted_terms[ $taxonomy ][ $term ] = $inserted_term;
+		}
+
+		return $inserted_term;
+	}
+
 	/**
 	 * For a specific file, go through and import the file, functions, and classes.
 	 *
@@ -107,26 +128,18 @@ class Importer {
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
-		$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
 
-		if ( ! $term ) {
+		$term = $this->insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
 
-			$term = wp_insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
-
-			if ( is_wp_error( $term ) ) {
-				$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
-
-				return;
-			}
-
-			// Grab the full term object
-			$term = get_term_by( 'slug', $slug, $this->taxonomy_file, ARRAY_A );
+		if ( is_wp_error( $term ) ) {
+			$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
+			return;
 		}
 
 		// Store file meta for later use
 		$this->file_meta = array(
 			'docblock' => $file['file'], // File docblock
-			'term_id'  => $term['name'], // File's term item in the file taxonomy
+			'term_id'  => $file['path'], // Term name in the file taxonomy is the file name
 		);
 
 		// Functions
@@ -201,6 +214,14 @@ class Importer {
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
 	public function import_hook( array $data, $parent_post_id = 0, $import_internal = false ) {
+		if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
+			return false;
+		} elseif ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
+			return false;
+		} elseif ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+			return false;
+		}
+
 		$hook_id = $this->import_item( $data, $parent_post_id, $import_internal, array( 'post_type' => $this->post_type_hook ) );
 
 		if ( ! $hook_id ) {
@@ -230,8 +251,8 @@ class Importer {
 		}
 
 		// Set class-specific meta
-		update_post_meta( $class_id, '_wp-parser_final', (bool) $data['final'] );
-		update_post_meta( $class_id, '_wp-parser_abstract', (bool) $data['abstract'] );
+		update_post_meta( $class_id, '_wp-parser_final', (string) $data['final'] );
+		update_post_meta( $class_id, '_wp-parser_abstract', (string) $data['abstract'] );
 		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] );
 		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] );
 		update_post_meta( $class_id, '_wp-parser_properties', $data['properties'] );
@@ -239,7 +260,7 @@ class Importer {
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
 			// Namespace method names with the class name
-			$method['name'] = $data['name'] . '-' . $method['name'];
+			$method['name'] = $data['name'] . '::' . $method['name'];
 			$this->import_method( $method, $class_id, $import_internal );
 		}
 
@@ -266,9 +287,9 @@ class Importer {
 		}
 
 		// Set method-specific meta.
-		update_post_meta( $method_id, '_wp-parser_final', (bool) $data['final'] );
-		update_post_meta( $method_id, '_wp-parser_abstract', (bool) $data['abstract'] );
-		update_post_meta( $method_id, '_wp-parser_static', (bool) $data['static'] );
+		update_post_meta( $method_id, '_wp-parser_final', (string) $data['final'] );
+		update_post_meta( $method_id, '_wp-parser_abstract', (string) $data['abstract'] );
+		update_post_meta( $method_id, '_wp-parser_static', (string) $data['static'] );
 		update_post_meta( $method_id, '_wp-parser_visibility', $data['visibility'] );
 
 		// Now add the hooks.
@@ -323,6 +344,10 @@ class Importer {
 			return false;
 		}
 
+		if ( wp_list_filter( $data['doc']['tags'], array( 'name' => 'ignore' ) ) ) {
+			return false;
+		}
+
 		$is_new_post = true;
 		$slug        = sanitize_title( $data['name'] );
 		$post_data   = wp_parse_args(
@@ -340,9 +365,9 @@ class Importer {
 
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type = %s AND post_parent = %d LIMIT 1",
-				$data['name'],
+			$q = $wpdb->prepare(
+				"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
+				$slug,
 				$post_data['post_type'],
 				(int) $parent_post_id
 			)
@@ -351,12 +376,15 @@ class Importer {
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
 			$is_new_post     = false;
-			$post_data['ID'] = (int) $existing_post_id;
-			$ID              = wp_update_post( $post_data, true );
-
+			$ID = $post_data['ID'] = (int) $existing_post_id;
+			$post_needed_update = array_diff_assoc( sanitize_post( $post_data, 'db' ), get_post( $existing_post_id, ARRAY_A, 'db' ) );
+			if ( $post_needed_update ) {
+				$ID = wp_update_post( wp_slash( $post_data ), true );
+			}
 		} else {
-			$ID = wp_insert_post( $post_data, true );
+			$ID = wp_insert_post( wp_slash( $post_data ), true );
 		}
+		$anything_updated = array();
 
 		if ( ! $ID || is_wp_error( $ID ) ) {
 
@@ -387,15 +415,16 @@ class Importer {
 
 			$since_version = array_shift( $since_version );
 			$since_version = $since_version['content'];
-			$since_term    = term_exists( $since_version, $this->taxonomy_since_version );
 
-			if ( ! $since_term ) {
-				$since_term = wp_insert_term( $since_version, $this->taxonomy_since_version );
-			}
+			$since_term = $this->insert_term( $since_version, $this->taxonomy_since_version );
 
 			// Assign the tax item to the post
 			if ( ! is_wp_error( $since_term ) ) {
+				$added_term_relationship = did_action( 'added_term_relationship' );
 				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
+				if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+					$anything_updated[] = true;
+				}
 			} else {
 				WP_CLI::warning( "\tCannot set @since term: " . $since_term->get_error_message() );
 			}
@@ -416,7 +445,7 @@ class Importer {
 		}
 
 		$main_package_id   = false;
-		$package_term_args = array();
+		$package_term_ids = array();
 
 		// If the item has any @package/@subpackage markup (or has inherited it from file scope), assign the taxonomy.
 		foreach ( $packages as $pack_name => $pack_value ) {
@@ -436,33 +465,45 @@ class Importer {
 			}
 
 			// If the package doesn't already exist in the taxonomy, add it
-			$package_term = term_exists( $pack_value, $this->taxonomy_package, $package_term_args['parent'] );
-			if ( ! $package_term ) {
-				$package_term = wp_insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
-			}
+			$package_term = $this->insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
+			$package_term_ids[] = (int) $package_term['term_id'];
 
 			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) ) {
 				$main_package_id = (int) $package_term['term_id'];
 			}
 
-			// Assign the tax item to the post
-			if ( ! is_wp_error( $package_term ) ) {
-				wp_set_object_terms( $ID, (int) $package_term['term_id'], $this->taxonomy_package );
-			} elseif ( is_int( $main_package_id ) ) {
-				WP_CLI::warning( "\tCannot set @subpackage term: " . $package_term->get_error_message() );
-			} else {
-				WP_CLI::warning( "\tCannot set @package term: " . $package_term->get_error_message() );
+			if ( is_wp_error( $package_term ) ) {
+				if ( is_int( $main_package_id ) ) {
+					WP_CLI::warning( "\tCannot create @subpackage term: " . $package_term->get_error_message() );
+				} else {
+					WP_CLI::warning( "\tCannot create @package term: " . $package_term->get_error_message() );
+				}
 			}
+		}
+		$added_term_relationship = did_action( 'added_term_relationship' );
+		wp_set_object_terms( $ID, $package_term_ids, $this->taxonomy_package );
+		if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+			$anything_updated[] = true;
 		}
 
 		// Set other taxonomy and post meta to use in the theme templates
+		$added_item = did_action( 'added_term_relationship' );
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
-		if ( $post_data['post_type'] !== $this->post_type_class ) {
-			update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
+		if ( did_action( 'added_term_relationship' ) > $added_item ) {
+			$anything_updated[] = true;
 		}
-		update_post_meta( $ID, '_wp-parser_line_num', $data['line'] );
-		update_post_meta( $ID, '_wp-parser_end_line_num', $data['end_line'] );
-		update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
+
+		if ( $post_data['post_type'] !== $this->post_type_class ) {
+			$anything_updated[] = update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
+		}
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_line_num', (string) $data['line'] );
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_end_line_num', (string) $data['end_line'] );
+		$anything_updated[] = update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
+
+		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
+		if ( ! $is_new_post && ! $post_needed_update && array_filter( $anything_updated ) ) {
+			wp_update_post( wp_slash( $post_data ), true );
+		}
 
 		// Everything worked! Woo hoo!
 		if ( $is_new_post ) {

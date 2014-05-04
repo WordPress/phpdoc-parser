@@ -139,6 +139,10 @@ class Command extends WP_CLI_Command {
 	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
 	 */
 	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
+		global $wpdb;
+
+		$time_start = microtime(true);
+		$num_queries = $wpdb->num_queries;
 
 		// Make sure a current user is set
 		if ( ! wp_get_current_user()->exists() ) {
@@ -151,9 +155,16 @@ class Command extends WP_CLI_Command {
 		$file_number  = 1;
 		$num_of_files = count( $data );
 
+		do_action( 'wp_parser_starting_import' );
+
 		// Defer term counting for performance
+		wp_suspend_cache_invalidation( true );
 		wp_defer_term_counting( true );
 		wp_defer_comment_counting( true );
+
+		// Remove actions for performance
+		remove_action( 'transition_post_status', '_update_blog_date_on_post_publish', 10 );
+		remove_action( 'transition_post_status', '__clear_multi_author_cache', 10 );
 
 		// Run the importer
 		$importer = new Importer;
@@ -171,7 +182,7 @@ class Command extends WP_CLI_Command {
 		}
 
 		foreach ( $data as $file ) {
-			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s.', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ) ) );
+			WP_CLI::line( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
 			$file_number ++;
 
 			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
@@ -188,8 +199,17 @@ class Command extends WP_CLI_Command {
 
 		// Start counting again
 		wp_defer_term_counting( false );
+		wp_suspend_cache_invalidation( false );
+		wp_cache_flush();
 		wp_defer_comment_counting( false );
 
+		do_action( 'wp_parser_ending_import' );
+
+		$time_end = microtime(true);
+		$time = $time_end - $time_start;
+		
+		WP_CLI::line( 'Time: '.$time );
+		WP_CLI::line( 'Queries: ' . ( $wpdb->num_queries - $num_queries ) );
 		if ( empty( $importer->errors ) ) {
 			WP_CLI::success( 'Import complete!' );
 
