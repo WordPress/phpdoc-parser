@@ -320,6 +320,22 @@ class Importer {
 		/** @var \wpdb $wpdb */
 		global $wpdb;
 
+		$is_new_post = true;
+		$slug        = sanitize_title( str_replace( '::', '-', $data['name'] ) );
+		
+		$post_data   = wp_parse_args(
+			$arg_overrides,
+			array(
+				'post_content' => $data['doc']['long_description'],
+				'post_excerpt' => $data['doc']['description'],
+				'post_name'    => $slug,
+				'post_parent'  => (int) $parent_post_id,
+				'post_status'  => 'publish',
+				'post_title'   => $data['name'],
+				'post_type'    => $this->post_type_function,
+			)
+		);
+
 		// Don't import items marked `@internal` unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
 		if ( ! $import_internal && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
 
@@ -347,21 +363,6 @@ class Importer {
 		if ( wp_list_filter( $data['doc']['tags'], array( 'name' => 'ignore' ) ) ) {
 			return false;
 		}
-
-		$is_new_post = true;
-		$slug        = sanitize_title( $data['name'] );
-		$post_data   = wp_parse_args(
-			$arg_overrides,
-			array(
-				'post_content' => $data['doc']['long_description'],
-				'post_excerpt' => $data['doc']['description'],
-				'post_name'    => $slug,
-				'post_parent'  => (int) $parent_post_id,
-				'post_status'  => 'publish',
-				'post_title'   => $data['name'],
-				'post_type'    => $this->post_type_function,
-			)
-		);
 
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
