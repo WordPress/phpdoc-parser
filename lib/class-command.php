@@ -166,6 +166,8 @@ class Command extends WP_CLI_Command {
 		remove_action( 'transition_post_status', '_update_blog_date_on_post_publish', 10 );
 		remove_action( 'transition_post_status', '__clear_multi_author_cache', 10 );
 
+		delete_option('wp_parser_imported_wp_version');
+
 		// Run the importer
 		$importer = new Importer;
 
@@ -207,7 +209,7 @@ class Command extends WP_CLI_Command {
 
 		$time_end = microtime(true);
 		$time = $time_end - $time_start;
-		
+
 		WP_CLI::line( 'Time: '.$time );
 		WP_CLI::line( 'Queries: ' . ( $wpdb->num_queries - $num_queries ) );
 		if ( empty( $importer->errors ) ) {

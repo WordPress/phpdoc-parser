@@ -185,6 +185,10 @@ class Importer {
 				}
 			}
 		}
+
+		if ( 'wp-includes/version.php' === $file['path'] ) {
+			$this->import_version( $file );
+		}
 	}
 
 	/**
@@ -303,6 +307,32 @@ class Importer {
 	}
 
 	/**
+	 * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
+	 * 
+	 * @param array   $data Data
+	 */
+	protected function import_version( $data ) {
+
+		$version_path =  $data['root'] . '/' . $data['path'];
+
+		if( !is_readable( $version_path ) ) {
+			return;
+		}
+
+		// version.php should not contain functions, classes or hooks.
+		if ( 0 < count( array_filter( array( $data[ 'functions' ], $data[ 'classes' ], $data[ 'hooks' ] ) ) ) ) {
+			return;
+		}
+
+		include $version_path;
+
+		if ( isset( $wp_version ) && $wp_version ) {
+			update_option( 'wp_parser_imported_wp_version', $wp_version );
+			WP_CLI::log( "\t" . sprintf( 'Updated option wp_parser_imported_wp_version to "%1$s"', $wp_version ) );
+		}
+	}
+
+	/**
 	 * Create a post for an item (a class or a function).
 	 *
 	 * Anything that needs to be dealt identically for functions or methods should go in this function.
@@ -322,7 +352,7 @@ class Importer {
 
 		$is_new_post = true;
 		$slug        = sanitize_title( str_replace( '::', '-', $data['name'] ) );
-		
+
 		$post_data   = wp_parse_args(
 			$arg_overrides,
 			array(

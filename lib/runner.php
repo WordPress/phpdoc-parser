@@ -38,6 +38,7 @@ function parse_files( $files, $root ) {
 		$out = array(
 			'file' => export_docblock( $file ),
 			'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
+			'root' => $root,
 		);
 
 		if ( ! empty( $file->uses ) ) {
