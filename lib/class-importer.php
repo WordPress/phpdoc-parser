@@ -311,7 +311,7 @@ class Importer {
 	 * 
 	 * @param array   $data Data
 	 */
-	function import_version( $data ) {
+	protected function import_version( $data ) {
 
 		$version_path =  $data['root'] . '/' . $data['path'];
 
