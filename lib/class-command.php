@@ -202,8 +202,10 @@ class Command extends WP_CLI_Command {
 		}
 
 		$last_import = time();
+		$import_date = date_i18n( get_option('date_format'), $last_import );
+		$import_time = date_i18n( get_option('time_format'), $last_import );
 		update_option( 'wp_parser_last_import', $last_import );
-		WP_CLI::line( 'Updated option wp_parser_last_import: ' . $last_import );
+		WP_CLI::line( sprintf( 'Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time ) );
 
 		$wp_version = get_option( 'wp_parser_imported_wp_version' );
 		if( $wp_version ) {
