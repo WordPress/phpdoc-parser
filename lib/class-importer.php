@@ -320,7 +320,7 @@ class Importer {
 		}
 
 		// version.php should not contain functions, classes or hooks.
-		if ( 0 < count( array_filter( array( $data[ 'functions' ], $data[ 'classes' ], $data[ 'hooks' ] ) ) ) ) {
+		if ( isset( $data['functions'] ) || isset ( $data['classes'] ) ||  isset( $data['hooks'] ) ) {
 			return;
 		}
 
