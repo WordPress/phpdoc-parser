@@ -394,6 +394,21 @@ class Importer {
 			return false;
 		}
 
+		/**
+		 * Filter item data for a prospective import item
+		 *
+		 * @param array $data            Data
+		 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+		 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
+		 * @param array $arg_overrides Optional; array of parameters that override the defaults passed to wp_update_post().
+		 *
+		 * @return array|bool Returns the filtered $data array. Returning an empty array or false will bail out of the creation of this item.
+		 */
+		$data = apply_filters( 'wp_parser_pre_import_item', $data, $parent_post_id, $import_internal, $arg_overrides );
+		if ( empty( $data ) ) {
+			return false;
+		}
+
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
 			$q = $wpdb->prepare(
