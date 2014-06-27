@@ -394,6 +394,20 @@ class Importer {
 			return false;
 		}
 
+		/**
+		 * Filter whether to proceed with adding/updating a prospective import item.
+		 *
+		 * Returning a falsey value to the filter will short-circuit addition of the import item.
+		 *
+		 * @param bool  $display         Whether to proceed with adding/updating the import item. Default true.
+		 * @param array $data            Data
+		 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+		 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
+		 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
+		 */
+		if ( ! apply_filters( 'wp_parser_pre_import_item', true, $data, $parent_post_id, $import_internal, $arg_overrides ) )
+			return;
+
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
 			$q = $wpdb->prepare(
@@ -574,6 +588,14 @@ class Importer {
 					WP_CLI::log( "\t" . sprintf( 'Updated function "%1$s"', $data['name'] ) );
 			}
 		}
+
+		/**
+		 * Action at the end of importing an item.
+		 *
+		 * @param int   $ID   Optional; post ID of the inserted or updated item.
+		 * @param array $data Data
+		 */
+		do_action( 'wp_parser_import_item', $ID, $data );
 
 		return $ID;
 	}
