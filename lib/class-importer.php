@@ -592,10 +592,10 @@ class Importer {
 		/**
 		 * Action at the end of importing an item.
 		 *
-		 * @param int $ID     Optional; post ID of the inserted or updated item.
+		 * @param int   $ID   Optional; post ID of the inserted or updated item.
 		 * @param array $data Data
 		 */
-		do_action( 'wp_parser_post_import_item', $ID, $data );
+		do_action( 'wp_parser_import_item', $ID, $data );
 
 		return $ID;
 	}
