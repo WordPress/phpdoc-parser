@@ -15,14 +15,24 @@
 		"issues": "https://github.com/rmccue/WP-Parser/issues",
 		"source": "https://github.com/rmccue/WP-Parser"
 	},
+	"minimum-stability": "dev",
 	"require"    : {
 		"php"                     : ">=5.3.6",
 		"composer/installers"     : "~1.0",
 		"phpdocumentor/reflection": "~1.0",
-		"erusev/parsedown"        : "~0.9"
+		"erusev/parsedown"        : "~0.9",
+		"scribu/posts-to-posts"   : "dev-master"
 	},
 	"autoload"   : {
 		"classmap": ["lib"],
 		"files"   : ["lib/runner.php", "lib/template.php"]
+	},
+	"repositories": [
+		{ "type": "vcs", "url":  "https://github.com/scribu/wp-posts-to-posts.git" }
+	],
+	"extra": {
+		"installer-paths": {
+			"vendor/scribu/posts-to-posts": ["scribu/posts-to-posts"]
+		}
 	}
 }
