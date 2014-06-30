@@ -221,13 +221,13 @@ class Command extends WP_CLI_Command {
 		delete_option( "{$importer->taxonomy_package}_children" );
 		delete_option( "{$importer->taxonomy_since_version}_children" );
 
+		do_action( 'wp_parser_ending_import' );
+
 		// Start counting again
 		wp_defer_term_counting( false );
 		wp_suspend_cache_invalidation( false );
 		wp_cache_flush();
 		wp_defer_comment_counting( false );
-
-		do_action( 'wp_parser_ending_import' );
 
 		$time_end = microtime(true);
 		$time = $time_end - $time_start;
