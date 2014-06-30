@@ -3,11 +3,18 @@ namespace WP_Parser;
 
 class Plugin {
 
+	/**
+	 * @var WP_Parser\Relationships
+	 */
+	var $relationships;
+
 	public function on_load() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'parser', __NAMESPACE__ . '\\Command' );
 		}
+
+		$this->relationships = new Relationships;
 
 		add_action( 'init', array( $this, 'register_post_types' ), 11 );
 		add_action( 'init', array( $this, 'register_taxonomies' ), 11 );

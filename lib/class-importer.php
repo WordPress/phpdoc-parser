@@ -308,7 +308,7 @@ class Importer {
 
 	/**
 	 * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
-	 * 
+	 *
 	 * @param array   $data Data
 	 */
 	protected function import_version( $data ) {
@@ -595,7 +595,7 @@ class Importer {
 		 * @param int   $ID   Optional; post ID of the inserted or updated item.
 		 * @param array $data Data
 		 */
-		do_action( 'wp_parser_import_item', $ID, $data );
+		do_action( 'wp_parser_import_item', $ID, $data, $post_data );
 
 		return $ID;
 	}
