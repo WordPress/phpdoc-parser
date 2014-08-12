@@ -418,6 +418,14 @@ class Importer {
 			)
 		);
 
+		/**
+		 * Filter an import item's post data before it is updated or inserted.
+		 *
+		 * @param array       $post_data        Array of post data.
+		 * @param string|null $existing_post_id ID if the post already exists, null otherwise.
+		 */
+		$post_data = apply_filters( 'wp_parser_import_item_post_data', $post_data, $existing_post_id );
+
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
 			$is_new_post     = false;
