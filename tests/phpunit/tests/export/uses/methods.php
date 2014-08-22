@@ -1,15 +1,15 @@
 <?php
 
 /**
- * A test case for
+ * A test case for exporting method use.
  */
 
 namespace WP_Parser\Tests;
 
 /**
- * Test that
+ * Test that module use is exported correctly.
  */
-class Methods extends Export_UnitTestCase {
+class Export_Method_Use extends Export_UnitTestCase {
 
 	/**
 	 * Test that static method use is exported.
