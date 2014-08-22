@@ -23,7 +23,8 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function parse_file() {
 
-		$file = ( new \ReflectionClass( $this ) )->getFileName();
+		$class_reflector = new \ReflectionClass( $this );
+		$file = $class_reflector->getFileName();
 		$file = rtrim( $file, 'php' ) . 'inc';
 		$path = dirname( $file );
 
