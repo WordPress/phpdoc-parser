@@ -16,7 +16,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @var string
 	 */
-	protected static $export_data;
+	protected $export_data;
 
 	/**
 	 * Parse the file for the current testcase.
@@ -30,17 +30,17 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 
 		$export_data = \WP_Parser\parse_files( array( $file ), $path );
 
-		self::$export_data = $export_data[0];
+		$this->export_data = $export_data[0];
 	}
 
 	/**
-	 * Parse the file to get teh exported data before the first test.
+	 * Parse the file to get the exported data before the first test.
 	 */
 	public function setUp() {
 
 		parent::setUp();
 
-		if ( ! self::$export_data ) {
+		if ( ! $this->export_data ) {
 			$this->parse_file();
 		}
 	}
@@ -75,7 +75,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function assertFileUsesMethod( $method ) {
 
-		$this->assertEntityUses( self::$export_data, 'methods', $method );
+		$this->assertEntityUses( $this->export_data, 'methods', $method );
 	}
 
 	/**
@@ -87,7 +87,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	protected function assertFunctionUsesMethod( $function_name, $method ) {
 
 		$function_data = $this->find_entity_data_in(
-			self::$export_data
+			$this->export_data
 			, 'functions'
 			, $function_name
 		);
@@ -106,7 +106,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	protected function assertMethodUsesMethod( $class_name, $method_name, $method ) {
 
 		$class_data = $this->find_entity_data_in(
-			self::$export_data
+			$this->export_data
 			, 'classes'
 			, $class_name
 		);
