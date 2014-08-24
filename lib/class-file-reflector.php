@@ -114,6 +114,38 @@ class File_Reflector extends FileReflector {
 					}
 				}
 				break;
+
+			// Parse out method calls, so we can export where methods are used.
+			case 'Expr_MethodCall':
+				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
+
+				/*
+				 * If the method call is in the global scope, add it to the
+				 * file's method calls. Otherwise, add it to the queue so it
+				 * can be added to the correct node when we leave it.
+				 */
+				if ( $this === $this->getLocation() ) {
+					$this->uses['methods'][] = $method;
+				} else {
+					$this->uses_queue['methods'][] = $method;
+				}
+				break;
+
+			// Parse out method calls, so we can export where methods are used.
+			case 'Expr_StaticCall':
+				$method = new \WP_Parser\Static_Method_Call_Reflector( $node, $this->context );
+
+				/*
+				 * If the method call is in the global scope, add it to the
+				 * file's method calls. Otherwise, add it to the queue so it
+				 * can be added to the correct node when we leave it.
+				 */
+				if ( $this === $this->getLocation() ) {
+					$this->uses['methods'][] = $method;
+				} else {
+					$this->uses_queue['methods'][] = $method;
+				}
+				break;
 		}
 
 		// Pick up DocBlock from non-documentable elements so that it can be assigned
@@ -139,6 +171,16 @@ class File_Reflector extends FileReflector {
 				if ( ! empty( $this->method_uses_queue ) ) {
 					foreach ( $class->getMethods() as $method ) {
 						if ( isset( $this->method_uses_queue[ $method->getName() ] ) ) {
+							if ( isset( $this->method_uses_queue[ $method->getName() ]['methods'] ) ) {
+								/*
+								 * For methods used in a class, set the class on the method call.
+								 * That allows us to later get the correct class name for $this, self, parent.
+								 */
+								foreach ( $this->method_uses_queue[ $method->getName() ]['methods'] as $method_call ) {
+									$method_call->set_class( $class );
+								}
+							}
+
 							$method->uses = $this->method_uses_queue[ $method->getName() ];
 						}
 					}
