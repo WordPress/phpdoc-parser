@@ -6,6 +6,7 @@
  * Author URI: https://github.com/rmccue/WP-Parser/graphs/contributors
  * Plugin URI: https://github.com/rmccue/WP-Parser
  * Version:
+ * Text Domain: wp-parser
  */
 
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
