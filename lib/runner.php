@@ -120,15 +120,15 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => $docblock->getShortDescription(),
-		'long_description' => $docblock->getLongDescription()->getFormattedContents(),
+		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
+		'long_description' => preg_replace( '/[\n\r]+/', ' ', $docblock->getLongDescription()->getFormattedContents() ),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$t = array(
 			'name'    => $tag->getName(),
-			'content' => $tag->getDescription(),
+			'content' => preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$t['types'] = $tag->getTypes();
