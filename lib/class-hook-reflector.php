@@ -11,23 +11,18 @@ class Hook_Reflector extends BaseReflector {
 		$printer = new PHPParser_PrettyPrinter_Default;
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
-	
+
 	private function cleanupName( $name ) {
 		$m = array();
-		
+
 		// quotes on both ends of a string
 		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $m ) ) {
 			return $m[1];
 		}
-		
+
 		// two concatenated things, last one of them a variable
-		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]\s*\.\s*(\$[^\s]*)$/', $name, $m ) ) {
-			return $m[1].'{'.$m[2].'}';
-		}
-		
-		// two concatenated things, first one of them a variable
-		if ( preg_match( '/^(\$[^\s]*)\s*\.\s*[\'"]([^\'"]*)[\'"]$/', $name, $m ) ) {
-			return '{'.$m[1].'}'.$m[2];
+		if ( preg_match( '/(?:[\'"]([^\'"]*)[\'"]\s*\.\s*)?(\$[^\s]*)(?:\s*\.\s*[\'"]([^\'"]*)[\'"])?/', $name, $m ) ) {
+			return $m[1].'{'.$m[2].'}'.$m[3];
 		}
 
 		return $name;
