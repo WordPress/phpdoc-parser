@@ -5,7 +5,7 @@
  */
 
 namespace WP_Parser\Tests;
-include( '/Users/johngrimes/plugins/jds-dev-tools.php' );// TODO
+
 /**
  * Test that docblocks are exported correctly.
  */
