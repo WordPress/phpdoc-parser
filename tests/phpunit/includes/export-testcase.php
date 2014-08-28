@@ -46,6 +46,41 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Assert that an entity contains another entity.
+	 *
+	 * @param array  $entity   The exported entity data.
+	 * @param string $type     The type of thing that this entity should contain.
+	 * @param array  $expected The expcted data for the thing the entity should contain.
+	 */
+	protected function assertEntityContains( $entity, $type, $expected ) {
+
+		$this->assertArrayHasKey( $type, $entity );
+
+		$found = false;
+		foreach ( $entity[ $type ] as $exported ) {
+			if ( $exported['line'] == $expected['line'] ) {
+				foreach ( $expected as $key => $expected_value ) {
+					$this->assertEquals( $expected_value, $exported[ $key ] );
+				}
+
+				return;
+			}
+		}
+
+		$this->markTestFailed( "No matching {$type} contained by {$entity['name']}." );
+	}
+
+	/**
+	 * Assert that a file contains the declaration of a hook.
+	 *
+	 * @param array $hook The expected export data for the hook.
+	 */
+	protected function assertFileContainsHook( $hook ) {
+
+		$this->assertEntityContains( $this->export_data, 'hooks', $hook );
+	}
+
+	/**
 	 * Assert that an entity uses another entity.
 	 *
 	 * @param array  $entity The exported entity data.
