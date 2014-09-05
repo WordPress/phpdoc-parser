@@ -126,6 +126,17 @@ class Importer {
 	 */
 	public function import_file( array $file, $skip_sleep = false, $import_internal = false ) {
 
+		/**
+		 * Filter whether to proceed with importing a prospective file.
+		 *
+		 * Returning a falsey value to the filter will short-circuit processing of the import file.
+		 *
+		 * @param bool  $display         Whether to proceed with importing the file. Default true.
+		 * @param array $file            File data
+		 */
+		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) )
+			return;
+
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
 
