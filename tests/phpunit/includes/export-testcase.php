@@ -159,6 +159,101 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Assert that an entity has a docblock.
+	 *
+	 * @param array  $entity  The exported entity data.
+	 * @param array  $docs    The expcted data for the entity's docblock.
+	 * @param string $doc_key The key in the entity array that should hold the docs.
+	 */
+	protected function assertEntityHasDocs( $entity, $docs, $doc_key = 'doc' ) {
+
+		$this->assertArrayHasKey( $doc_key, $entity );
+
+		$found = false;
+		foreach ( $docs as $key => $expected_value ) {
+			$this->assertEquals( $expected_value, $entity[ $doc_key ][ $key ] );
+		}
+	}
+
+	/**
+	 * Assert that a file has a docblock.
+	 *
+	 * @param array $docs The expected data for the file's docblock.
+	 */
+	protected function assertFileHasDocs( $docs ) {
+
+		$this->assertEntityHasDocs( $this->export_data, $docs, 'file' );
+	}
+
+	/**
+	 * Assert that a function has a docblock.
+	 *
+	 * @param array $func The function name.
+	 * @param array $docs The expected data for the function's docblock.
+	 */
+	protected function assertFunctionHasDocs( $func, $docs ) {
+
+		$func = $this->find_entity_data_in( $this->export_data, 'functions', $func );
+		$this->assertEntityHasDocs( $func, $docs );
+	}
+
+	/**
+	 * Assert that a class has a docblock.
+	 *
+	 * @param array $class The class name.
+	 * @param array $docs  The expected data for the class's docblock.
+	 */
+	protected function assertClassHasDocs( $class, $docs ) {
+
+		$class = $this->find_entity_data_in( $this->export_data, 'classes', $class );
+		$this->assertEntityHasDocs( $class, $docs );
+	}
+
+	/**
+	 * Assert that a method has a docblock.
+	 *
+	 * @param string $class  The name of the class that the method is used in.
+	 * @param string $method The method name.
+	 * @param array  $docs   The expected data for the methods's docblock.
+	 */
+	protected function assertMethodHasDocs( $class, $method, $docs ) {
+
+		$class = $this->find_entity_data_in( $this->export_data, 'classes', $class );
+		$this->assertInternalType( 'array', $class );
+
+		$method = $this->find_entity_data_in( $class, 'methods', $method );
+		$this->assertEntityHasDocs( $method, $docs );
+	}
+
+	/**
+	 * Assert that a property has a docblock.
+	 *
+	 * @param string $class    The name of the class that the method is used in.
+	 * @param string $property The property name.
+	 * @param array  $docs     The expected data for the property's docblock.
+	 */
+	protected function assertPropertyHasDocs( $class, $property, $docs ) {
+
+		$class = $this->find_entity_data_in( $this->export_data, 'classes', $class );
+		$this->assertInternalType( 'array', $class );
+
+		$property = $this->find_entity_data_in( $class, 'properties', $property );
+		$this->assertEntityHasDocs( $property, $docs );
+	}
+
+	/**
+	 * Assert that a hook has a docblock.
+	 *
+	 * @param array $hook The hook name.
+	 * @param array $docs The expected data for the hook's docblock.
+	 */
+	protected function assertHookHasDocs( $hook, $docs ) {
+
+		$hook = $this->find_entity_data_in( $this->export_data, 'hooks', $hook );
+		$this->assertEntityHasDocs( $hook, $docs );
+	}
+
+	/**
 	 * Find the exported data for an entity.
 	 *
 	 * @param array  $data   The data to search in.

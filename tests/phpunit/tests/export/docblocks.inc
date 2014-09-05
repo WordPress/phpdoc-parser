@@ -62,3 +62,29 @@ class Test_Class {
 		return $var;
 	}
 }
+
+/**
+ * A filter.
+ */
+$var = apply_filters( 'test_filter', $var );
+
+/**
+ * A reference array filter.
+ */
+$var = apply_filters_ref_array( 'test_ref_array_filter', array( &$var ) );
+
+/**
+ * A test action.
+ *
+ * @since 3.7.0
+ *
+ * @param WP_Post $post Post object.
+ */
+do_action( 'test_action', $post );
+
+do_action( 'undocumented_hook' );
+
+/**
+ * A reference array action.
+ */
+do_action_ref_array( 'test_ref_array_action', array( &$var ) );
