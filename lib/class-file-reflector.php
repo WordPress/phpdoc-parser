@@ -152,7 +152,7 @@ class File_Reflector extends FileReflector {
 		// to the next hook if necessary. We don't do this for name nodes, since even
 		// though they aren't documentable, they still carry the docblock from their
 		// corresponding class/constant/function/etc. that they are the name of. If
-		// we don't ignnore them, we'll end up picking up docblocks that are already
+		// we don't ignore them, we'll end up picking up docblocks that are already
 		// associated with a named element, and so aren't really from a non-
 		// documentable element after all.
 		if ( ! $this->isNodeDocumentable( $node ) && 'Name' !== $node->getType() && ( $docblock = $node->getDocComment() ) ) {
