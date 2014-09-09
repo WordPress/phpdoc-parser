@@ -170,7 +170,7 @@ class Command extends WP_CLI_Command {
 		delete_option( 'wp_parser_root_import_dir' );
 
 		// Run the importer
-		$importer = new Importer;
+		$importer = new WP_CLI_Importer;
 
 		// Sanity check -- do the required post types exist?
 		if ( ! post_type_exists( $importer->post_type_class ) || ! post_type_exists( $importer->post_type_function ) || ! post_type_exists( $importer->post_type_hook ) ) {
