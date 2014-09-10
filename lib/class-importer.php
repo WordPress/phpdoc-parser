@@ -98,6 +98,112 @@ class Importer {
 		}
 	}
 
+	/**
+	 * Import the PHPDoc $data into WordPress posts and taxonomies
+	 *
+	 * @param array $data
+	 * @param bool  $skip_sleep                Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 */
+	public function import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
+		global $wpdb;
+
+		$time_start = microtime(true);
+		$num_queries = $wpdb->num_queries;
+
+		$this->log( 'Starting import. This will take some time…' );
+
+		$file_number  = 1;
+		$num_of_files = count( $data );
+
+		do_action( 'wp_parser_starting_import' );
+
+		// Defer term counting for performance
+		wp_suspend_cache_invalidation( true );
+		wp_defer_term_counting( true );
+		wp_defer_comment_counting( true );
+
+		// Remove actions for performance
+		remove_action( 'transition_post_status', '_update_blog_date_on_post_publish', 10 );
+		remove_action( 'transition_post_status', '__clear_multi_author_cache', 10 );
+
+		delete_option( 'wp_parser_imported_wp_version' );
+		delete_option( 'wp_parser_root_import_dir' );
+
+		// Sanity check -- do the required post types exist?
+		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) ) {
+			$this->error( sprintf( 'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook ) );
+			exit;
+		}
+
+		// Sanity check -- do the required taxonomies exist?
+		if ( ! taxonomy_exists( $importer->taxonomy_file ) || ! taxonomy_exists( $importer->taxonomy_since_version ) || ! taxonomy_exists( $importer->taxonomy_package ) ) {
+			$this->error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_file ) );
+			exit;
+		}
+
+		$root = '';
+		foreach ( $data as $file ) {
+			$this->log( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
+			$file_number ++;
+
+			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
+
+			if ( empty( $root ) && ( isset( $file['root'] ) && $file['root'] ) ) {
+				$root = $file['root'];
+			}
+		}
+
+		if( ! empty( $root ) ) {
+			update_option( 'wp_parser_root_import_dir', $root );
+			$this->log( 'Updated option wp_parser_root_import_dir: ' . $root );
+		}
+
+		$last_import = time();
+		$import_date = date_i18n( get_option('date_format'), $last_import );
+		$import_time = date_i18n( get_option('time_format'), $last_import );
+		update_option( 'wp_parser_last_import', $last_import );
+		$this->log( sprintf( 'Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time ) );
+
+		$wp_version = get_option( 'wp_parser_imported_wp_version' );
+		if( $wp_version ) {
+			$this->log( 'Updated option wp_parser_imported_wp_version: ' . $wp_version );
+		}
+
+		/**
+		 * Workaround for a WP core bug where hierarchial taxonomy caches are not being cleared
+		 *
+		 * https://core.trac.wordpress.org/ticket/14485
+		 * http://wordpress.stackexchange.com/questions/8357/inserting-terms-in-an-hierarchical-taxonomy
+		 */
+		delete_option( "{$importer->taxonomy_package}_children" );
+		delete_option( "{$importer->taxonomy_since_version}_children" );
+
+		do_action( 'wp_parser_ending_import' );
+
+		// Start counting again
+		wp_defer_term_counting( false );
+		wp_suspend_cache_invalidation( false );
+		wp_cache_flush();
+		wp_defer_comment_counting( false );
+
+		$time_end = microtime(true);
+		$time = $time_end - $time_start;
+
+		$this->log( 'Time: '.$time );
+		$this->log( 'Queries: ' . ( $wpdb->num_queries - $num_queries ) );
+		if ( empty( $importer->errors ) ) {
+			$this->success( 'Import complete!' );
+
+		} else {
+			$this->log( 'Import complete, but some errors were found:' );
+
+			foreach ( $importer->errors as $error ) {
+				$this->warn( $error );
+			}
+		}
+	}
+
 	protected function insert_term( $term, $taxonomy, $args = array() ) {
 		if ( isset( $this->inserted_terms[ $taxonomy ][ $term ] ) ) {
 			return $this->inserted_terms[ $taxonomy ][ $term ];
@@ -612,14 +718,28 @@ class Importer {
 	/**
 	 * Log a messsage.
 	 *
-	 * @param string The message to log.
+	 * @param string $message The message to log.
 	 */
 	public function log( $message ) {}
 
 	/**
 	 * Give a warning.
 	 *
-	 * @param string The warning message.
+	 * @param string $message The warning message.
 	 */
 	public function warn( $message ) {}
+
+	/**
+	 * Give an error.
+	 *
+	 * @param string $message The error message.
+	 */
+	public function error( $message ) {}
+
+	/**
+	 * Give a success message.
+	 *
+	 * @param string $message The success message.
+	 */
+	public function success( $message ) {}
 }

@@ -15,22 +15,20 @@ use WP_CLI;
  */
 class WP_CLI_Importer extends Importer {
 
-	/**
-	 * Log a messsage.
-	 *
-	 * @param string The message to log.
-	 */
 	public function log( $message ) {
 		WP_CLI::log( $message );
 	}
 
-	/**
-	 * Give a warning.
-	 *
-	 * @param string The warning message.
-	 */
 	public function warn( $message ) {
 		WP_CLI::warning( $message );
+	}
+
+	public function error( $message ) {
+		WP_CLI::error( $message );
+	}
+
+	public function success( $message ) {
+		WP_CLI::success( $message );
 	}
 }
 
