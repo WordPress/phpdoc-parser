@@ -137,8 +137,8 @@ class Importer {
 		}
 
 		// Sanity check -- do the required taxonomies exist?
-		if ( ! taxonomy_exists( $importer->taxonomy_file ) || ! taxonomy_exists( $importer->taxonomy_since_version ) || ! taxonomy_exists( $importer->taxonomy_package ) ) {
-			$this->error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $importer->taxonomy_file ) );
+		if ( ! taxonomy_exists( $this->taxonomy_file ) || ! taxonomy_exists( $this->taxonomy_since_version ) || ! taxonomy_exists( $this->taxonomy_package ) ) {
+			$this->error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $this->taxonomy_file ) );
 			exit;
 		}
 
@@ -147,7 +147,7 @@ class Importer {
 			$this->log( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
 			$file_number ++;
 
-			$importer->import_file( $file, $skip_sleep, $import_internal_functions );
+			$this->import_file( $file, $skip_sleep, $import_internal_functions );
 
 			if ( empty( $root ) && ( isset( $file['root'] ) && $file['root'] ) ) {
 				$root = $file['root'];
@@ -176,8 +176,8 @@ class Importer {
 		 * https://core.trac.wordpress.org/ticket/14485
 		 * http://wordpress.stackexchange.com/questions/8357/inserting-terms-in-an-hierarchical-taxonomy
 		 */
-		delete_option( "{$importer->taxonomy_package}_children" );
-		delete_option( "{$importer->taxonomy_since_version}_children" );
+		delete_option( "{$this->taxonomy_package}_children" );
+		delete_option( "{$this->taxonomy_since_version}_children" );
 
 		do_action( 'wp_parser_ending_import' );
 
@@ -192,13 +192,13 @@ class Importer {
 
 		$this->log( 'Time: '.$time );
 		$this->log( 'Queries: ' . ( $wpdb->num_queries - $num_queries ) );
-		if ( empty( $importer->errors ) ) {
+		if ( empty( $this->errors ) ) {
 			$this->success( 'Import complete!' );
 
 		} else {
 			$this->log( 'Import complete, but some errors were found:' );
 
-			foreach ( $importer->errors as $error ) {
+			foreach ( $this->errors as $error ) {
 				$this->warn( $error );
 			}
 		}
