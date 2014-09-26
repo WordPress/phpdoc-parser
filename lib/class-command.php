@@ -147,7 +147,7 @@ class Command extends WP_CLI_Command {
 
 		// Run the importer
 		$importer = new WP_CLI_Importer;
-		$importer->import( compact( 'skip_sleep', 'import_internal_functions' ) );
+		$importer->import( $data, $skip_sleep, $import_internal_functions );
 
 		WP_CLI::line();
 	}
