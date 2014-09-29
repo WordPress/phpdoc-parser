@@ -147,10 +147,30 @@ class Importer {
 			return;
 		}
 
+		// Detect deprecated file
+		$deprecated_file = false;
+		if ( isset( $file['uses']['functions'] ) ) {
+			$first_function = $file['uses']['functions'][0];
+
+			// If the first function in this file is _deprecated_function
+			if ( '_deprecated_file' === $first_function['name'] ) {
+				$contents = file_get_contents( $file['root'] . '/' . $file['path'] );
+				$contents = explode( "\n", $contents );
+				$contents = $contents[ $first_function['line'] - 1 ];
+
+				// Match our version number
+				$contents = preg_match( '#_deprecated_file\(.*, \'(\d\.\d)(\.\d)?\'#', $contents, $matches );
+
+				// Set the deprecated flag to the version number
+				$deprecated_file = $matches[1];
+			}
+		}
+
 		// Store file meta for later use
 		$this->file_meta = array(
-			'docblock' => $file['file'], // File docblock
-			'term_id'  => $file['path'], // Term name in the file taxonomy is the file name
+			'docblock'   => $file['file'], // File docblock
+			'term_id'    => $file['path'], // Term name in the file taxonomy is the file name
+			'deprecated' => $deprecated_file, // Deprecation status
 		);
 
 		// Functions
@@ -319,7 +339,7 @@ class Importer {
 
 	/**
 	 * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
-	 * 
+	 *
 	 * @param array   $data Data
 	 */
 	protected function import_version( $data ) {
@@ -547,6 +567,11 @@ class Importer {
 		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
 		if ( did_action( 'added_term_relationship' ) > $added_item ) {
 			$anything_updated[] = true;
+		}
+
+		// If the file is deprecated do something
+		if ( ! empty( $this->file_meta['deprecated'] ) ) {
+			$data['doc']['tags']['deprecated'] = $this->file_meta['deprecated'];
 		}
 
 		if ( $post_data['post_type'] !== $this->post_type_class ) {
