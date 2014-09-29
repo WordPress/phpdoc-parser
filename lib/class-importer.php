@@ -154,15 +154,9 @@ class Importer {
 
 			// If the first function in this file is _deprecated_function
 			if ( '_deprecated_file' === $first_function['name'] ) {
-				$contents = file_get_contents( $file['root'] . '/' . $file['path'] );
-				$contents = explode( "\n", $contents );
-				$contents = $contents[ $first_function['line'] - 1 ];
-
-				// Match our version number
-				$contents = preg_match( '#_deprecated_file\(.*, \'(\d\.\d)(\.\d)?\'#', $contents, $matches );
 
 				// Set the deprecated flag to the version number
-				$deprecated_file = $matches[1];
+				$deprecated_file = $first_function['deprecation_version'];
 			}
 		}
 
