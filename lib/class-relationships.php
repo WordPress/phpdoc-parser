@@ -35,7 +35,7 @@ class Relationships {
 
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'require_posts_to_posts' ) );
-		add_action( 'p2p_init', array( $this, 'register_post_relationships' ) );
+		add_action( 'wp_loaded', array( $this, 'register_post_relationships' ) );
 
 		add_action( 'wp_parser_import_item', array( $this, 'import_item' ), 10, 3 );
 		add_action( 'wp_parser_starting_import', array( $this, 'wp_parser_starting_import' ) );
@@ -46,9 +46,11 @@ class Relationships {
 	 * Load the posts2posts from the composer package if it is not loaded already.
 	 */
 	public function require_posts_to_posts() {
-		if ( ! function_exists( 'p2p_register_connection_type' ) ) {
-			require dirname( __DIR__ ) . '/vendor/scribu/posts-to-posts/posts-to-posts.php';
-		}
+		// Initializes the database tables
+		\P2P_Storage::init();
+
+		// Initializes the query mechanism
+		\P2P_Query_Post::init();
 	}
 
 	/**
