@@ -169,7 +169,17 @@ class Relationships {
 	public function wp_parser_ending_import() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::line( 'Setting up relationships...' );
+			WP_CLI::log( 'Removing current relationships...' );
+		}
+
+		p2p_delete_connections( 'functions_to_functions' );
+		p2p_delete_connections( 'functions_to_methods' );
+		p2p_delete_connections( 'functions_to_hooks' );
+		p2p_delete_connections( 'methods_to_methods' );
+		p2p_delete_connections( 'methods_to_hooks' );
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			WP_CLI::log( 'Setting up relationships...' );
 		}
 
 		// Iterate over post types being related FROM: functions, methods, and hooks
