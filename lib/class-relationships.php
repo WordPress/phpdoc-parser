@@ -190,7 +190,7 @@ class Relationships {
 				// Iterate over slugs for each post type being related TO
 				foreach ( $to_types as $to_type => $to_slugs ) {
 					// Convert slugs to IDs.
-					$this->relationships[ $from_type ][ $from_id ][ $to_type ] = $this->get_ids_for_slugs( $to_slugs, $this->slugs_to_ids[ $from_type ] );
+					$this->relationships[ $from_type ][ $from_id ][ $to_type ] = $this->get_ids_for_slugs( $to_slugs, $this->slugs_to_ids[ $to_type ] );
 				}
 
 			}
