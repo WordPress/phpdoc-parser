@@ -155,7 +155,7 @@ class Relationships {
 
 			// Functions to Hooks
 			$to_type = $this->post_types['hook'];
-			foreach ( (array) @$data['uses']['hooks'] as $to_hook ) {
+			foreach ( (array) @$data['hooks'] as $to_hook ) {
 				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
 				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_hook_slug;
 			}
