@@ -255,11 +255,29 @@ function export_uses( array $uses ) {
 
 	foreach ( $uses as $type => $used_elements ) {
 		foreach ( $used_elements as $element ) {
-			$out[ $type ][] = array(
-				'name'       => $element->getName(),
-				'line'       => $element->getLineNumber(),
-				'end_line'   => $element->getNode()->getAttribute( 'endLine' ),
-			);
+
+			switch ( $type ) {
+				case 'methods':
+					$out[ $type ][] = array(
+						'name'      => $element->getName(),
+						'called_on' => $element->getCalledOn(),
+						'class'     => $element->getClass(),
+						'static'    => $element->isStatic(),
+						'line'      => $element->getLineNumber(),
+						'end_line'  => $element->getNode()->getAttribute( 'endLine' ),
+					);
+					break;
+
+				default:
+				case 'functions':
+					$out[ $type ][] = array(
+						'name'     => $element->getName(),
+						'line'     => $element->getLineNumber(),
+						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
+					);
+
+					break;
+			}
 		}
 	}
 

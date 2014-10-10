@@ -114,6 +114,24 @@ class File_Reflector extends FileReflector {
 					}
 				}
 				break;
+
+			case 'Expr_StaticCall':
+			case 'Expr_MethodCall':
+				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
+
+				/*
+				* If the method call is in the global scope, add it to the
+				* file's method calls. Otherwise, add it to the queue so it
+				* can be added to the correct node when we leave it.
+				*/
+				if ( $this === $this->getLocation() ) {
+					$this->uses['methods'][] = $method;
+				} else {
+					$this->uses_queue['methods'][] = $method;
+				}
+
+				break;
+
 		}
 
 		// Pick up DocBlock from non-documentable elements so that it can be assigned

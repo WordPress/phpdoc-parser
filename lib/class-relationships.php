@@ -143,13 +143,22 @@ class Relationships {
 			$to_type = $this->post_types['function'];
 			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
 				$to_function_slug = $this->name_to_slug( $to_function['name'] );
+
 				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_function_slug;
 			}
 
 			// Functions to Methods
 			$to_type = $this->post_types['method'];
 			foreach ( (array) @$data['uses']['methods'] as $to_method ) {
-				$to_method_slug = $this->name_to_slug( $to_method['name'] );
+
+				if ( $to_method['static'] || ! empty( $to_method['class'] ) ) {
+					$to_method_slug = $to_method['class'] . '-' . $to_method['name'];
+				} else {
+
+					$to_method_slug = $to_method['name'];
+				}
+				$to_method_slug = $this->name_to_slug( $to_method_slug );
+
 				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_method_slug;
 			}
 
@@ -157,6 +166,7 @@ class Relationships {
 			$to_type = $this->post_types['hook'];
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
 				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
+
 				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_hook_slug;
 			}
 		}
