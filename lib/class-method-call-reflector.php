@@ -71,11 +71,17 @@ class Method_Call_Reflector extends BaseReflector {
 		$called_on = $this->getCalledOn();
 
 		if ( $this->isStatic() ) {
-			$class = $called_on;
+			if ( 'self' === $called_on ) {
+				$class = $this->node->getAttribute( 'containingClass' );
+			} else {
+				$class = $called_on;
+			}
 		} else {
 			$class_mapping = $this->_getClassMapping();
 
-			if ( array_key_exists( $called_on, $class_mapping ) ) {
+			if ( 'this' === $called_on ) {
+				$class = $this->node->getAttribute( 'containingClass' );
+			} else if ( array_key_exists( $called_on, $class_mapping ) ) {
 				$class = $class_mapping[ $called_on ];
 			} else {
 				$class = '';
@@ -121,8 +127,6 @@ class Method_Call_Reflector extends BaseReflector {
 			'wp_widget_factory' => 'WP_Widget_Factory',
 			'wp_xmlrpc_server' => 'wp_xmlrpc_server', // This can be overridden by plugins, for core assume this is ours
 			'wpdb' => 'wpdb',
-
-			'class' => 'CrazyClass',
 		);
 
 		$class_mapping = $wp_globals;

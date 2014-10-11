@@ -119,6 +119,13 @@ class File_Reflector extends FileReflector {
 			case 'Expr_MethodCall':
 				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
 
+				// If we are in a class method we might need the class we are in at this moment
+				if ( 'Stmt_ClassMethod' === $this->getLocation()->getType() ) {
+					$class = $this->location[ count( $this->location ) - 2 ];
+
+					$node->setAttribute( 'containingClass', $class->name );
+				}
+
 				/*
 				* If the method call is in the global scope, add it to the
 				* file's method calls. Otherwise, add it to the queue so it

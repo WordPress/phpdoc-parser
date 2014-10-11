@@ -64,7 +64,9 @@ class Relationships {
 	 */
 	public function register_post_relationships() {
 
-		// Functions <--> Functions
+		/*
+		 * Functions to functions, methods and hooks
+		 */
 		p2p_register_connection_type( array(
 			'name' => 'functions_to_functions',
 			'from' => 'wp-parser-function',
@@ -73,7 +75,6 @@ class Relationships {
 			'title' => array( 'from' => 'Uses Functions', 'to' => 'Used by Functions' ),
 		) );
 
-		// Functions --> Methods
 		p2p_register_connection_type( array(
 			'name' => 'functions_to_methods',
 			'from' => 'wp-parser-function',
@@ -81,7 +82,6 @@ class Relationships {
 			'title' => array( 'from' => 'Uses Methods', 'to' => 'Used by Functions' ),
 		) );
 
-		// Functions <--> Hooks
 		p2p_register_connection_type( array(
 			'name' => 'functions_to_hooks',
 			'from' => 'wp-parser-function',
@@ -89,7 +89,16 @@ class Relationships {
 			'title' => array( 'from' => 'Uses Hooks', 'to' => 'Used by Functions' ),
 		) );
 
-		// Methods <--> Methods
+		/*
+		 * Methods to functions, methods and hooks
+		 */
+		p2p_register_connection_type( array(
+			'name' => 'methods_to_functions',
+			'from' => 'wp-parser-method',
+			'to' => 'wp-parser-function',
+			'title' => array( 'from' => 'Uses Functions', 'to' => 'Used by Methods' ),
+		) );
+
 		p2p_register_connection_type( array(
 			'name' => 'methods_to_methods',
 			'from' => 'wp-parser-method',
@@ -97,7 +106,6 @@ class Relationships {
 			'title' => array( 'from' => 'Uses Methods', 'to' => 'Used by Methods' ),
 		) );
 
-		// Hooks <--> Methods
 		p2p_register_connection_type( array(
 			'name' => 'methods_to_hooks',
 			'from' => 'wp-parser-method',
@@ -154,7 +162,6 @@ class Relationships {
 				if ( $to_method['static'] || ! empty( $to_method['class'] ) ) {
 					$to_method_slug = $to_method['class'] . '-' . $to_method['name'];
 				} else {
-
 					$to_method_slug = $to_method['name'];
 				}
 				$to_method_slug = $this->name_to_slug( $to_method_slug );
@@ -171,6 +178,40 @@ class Relationships {
 			}
 		}
 
+		if ( $this->post_types['method'] === $from_type ) {
+
+			// Methods to Functions
+			$to_type = $this->post_types['function'];
+			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
+				$to_function_slug = $this->name_to_slug( $to_function['name'] );
+
+				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_function_slug;
+			}
+
+			// Methods to Methods
+			$to_type = $this->post_types['method'];
+			foreach ( (array) @$data['uses']['methods'] as $to_method ) {
+				if ( $to_method['static'] || ! empty( $to_method['class'] ) ) {
+					$to_method_slug = $to_method['class'] . '-' . $to_method['name'];
+				} else {
+					$to_method_slug = $to_method['name'];
+				}
+				$to_method_slug = $this->name_to_slug( $to_method_slug );
+
+				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_method_slug;
+			}
+
+			// Methods to Hooks
+			$to_type = $this->post_types['hook'];
+			foreach ( (array) @$data['hooks'] as $to_hook ) {
+				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
+
+				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_hook_slug;
+			}
+		}
+
+		var_dump( $this->relationships );
+
 	}
 
 	/**
@@ -185,6 +226,7 @@ class Relationships {
 		p2p_delete_connections( 'functions_to_functions' );
 		p2p_delete_connections( 'functions_to_methods' );
 		p2p_delete_connections( 'functions_to_hooks' );
+		p2p_delete_connections( 'methods_to_functions' );
 		p2p_delete_connections( 'methods_to_methods' );
 		p2p_delete_connections( 'methods_to_hooks' );
 
@@ -202,7 +244,6 @@ class Relationships {
 					// Convert slugs to IDs.
 					$this->relationships[ $from_type ][ $from_id ][ $to_type ] = $this->get_ids_for_slugs( $to_slugs, $this->slugs_to_ids[ $to_type ] );
 				}
-
 			}
 		}
 
@@ -238,6 +279,43 @@ class Relationships {
 								$to_id = intval( $to_id, 10 );
 								if ( 0 != $to_id ) {
 									p2p_type( 'functions_to_hooks' )->connect( $from_id, $to_id, array( 'date' => current_time( 'mysql' ) ) );
+								}
+							}
+						}
+					}
+				}
+
+				// Connect Methods
+				if ( $from_type === $this->post_types['method'] ) {
+
+					foreach ( $to_types as $to_type => $to_slugs ) {
+
+						// ...to Functions
+						if ( $this->post_types['function'] === $to_type ) {
+							foreach ( $to_slugs as $to_slug => $to_id ) {
+								$to_id = intval( $to_id, 10 );
+								if ( 0 != $to_id ) {
+									p2p_type( 'methods_to_functions' )->connect( $from_id, $to_id, array( 'data' => current_time( 'mysql' ) ) );
+								}
+							}
+						}
+
+						// ...to Methods
+						if ( $this->post_types['method'] === $to_type ) {
+							foreach ( $to_slugs as $to_slug => $to_id ) {
+								$to_id = intval( $to_id, 10 );
+								if ( 0 != $to_id ) {
+									p2p_type( 'methods_to_methods' )->connect( $from_id, $to_id, array( 'data' => current_time( 'mysql' ) ) );
+								}
+							}
+						}
+
+						// ...to Hooks
+						if ( $this->post_types['hook'] === $to_type ) {
+							foreach ( $to_slugs as $to_slug => $to_id ) {
+								$to_id = intval( $to_id, 10 );
+								if ( 0 != $to_id ) {
+									p2p_type( 'methods_to_hooks' )->connect( $from_id, $to_id, array( 'data' => current_time( 'mysql' ) ) );
 								}
 							}
 						}
