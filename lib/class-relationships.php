@@ -210,8 +210,6 @@ class Relationships {
 			}
 		}
 
-		var_dump( $this->relationships );
-
 	}
 
 	/**
@@ -321,7 +319,6 @@ class Relationships {
 						}
 					}
 				}
-
 			}
 		}
 
