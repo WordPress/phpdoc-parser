@@ -9,7 +9,7 @@ namespace WP_Parser\Tests;
 /**
  * Parent test case for data export tests.
  */
-class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
+class Export_UnitTestCase extends \WP_UnitTestCase {
 
 	/**
 	 * The exported data.

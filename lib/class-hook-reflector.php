@@ -21,8 +21,17 @@ class Hook_Reflector extends BaseReflector {
 		}
 
 		// two concatenated things, last one of them a variable
-		if ( preg_match( '/(?:[\'"]([^\'"]*)[\'"]\s*\.\s*)?(\$[^\s]*)(?:\s*\.\s*[\'"]([^\'"]*)[\'"])?/', $name, $m ) ) {
-			return $m[1].'{'.$m[2].'}'.$m[3];
+		if ( preg_match(
+			'/(?:[\'"]([^\'"]*)[\'"]\s*\.\s*)?' . // First filter name string (optional)
+			'(\$[^\s]*)' .                        // Dynamic variable
+			'(?:\s*\.\s*[\'"]([^\'"]*)[\'"])?/',  // Second filter name string (optional)
+			$name, $m ) ) {
+
+			if ( isset( $m[3] ) ) {
+				return $m[1] . '{' . $m[2] . '}' . $m[3];
+			} else {
+				return $m[1] . '{' . $m[2] . '}';
+			}
 		}
 
 		return $name;

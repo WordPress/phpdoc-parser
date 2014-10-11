@@ -263,11 +263,19 @@ function export_uses( array $uses ) {
 
 	foreach ( $uses as $type => $used_elements ) {
 		foreach ( $used_elements as $element ) {
+			$name = $element->getName();
+
 			$out[ $type ][] = array(
-				'name'       => $element->getName(),
+				'name'       => $name,
 				'line'       => $element->getLineNumber(),
 				'end_line'   => $element->getNode()->getAttribute( 'endLine' ),
 			);
+
+			if ( '_deprecated_file' === $name || '_deprecated_function' === $name || '_deprecated_argument' === $name ) {
+				$arguments = $element->getNode()->args;
+
+				$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
+			}
 		}
 	}
 
