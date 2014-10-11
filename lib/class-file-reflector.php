@@ -120,7 +120,7 @@ class File_Reflector extends FileReflector {
 				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
 
 				// If we are in a class method we might need the class we are in at this moment
-				if ( 'Stmt_ClassMethod' === $this->getLocation()->getType() ) {
+				if ( $this !== $this->getLocation()  && 'Stmt_ClassMethod' === $this->getLocation()->getType() ) {
 					$class = $this->location[ count( $this->location ) - 2 ];
 
 					$node->setAttribute( 'containingClass', $class->name );
