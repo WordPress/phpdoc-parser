@@ -103,6 +103,7 @@ class Relationships {
 			'name' => 'methods_to_methods',
 			'from' => 'wp-parser-method',
 			'to' => 'wp-parser-method',
+			'self_connections' => 'true',
 			'title' => array( 'from' => 'Uses Methods', 'to' => 'Used by Methods' ),
 		) );
 
