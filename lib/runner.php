@@ -140,9 +140,17 @@ function export_docblock( $element ) {
 			$t['refers'] = $tag->getReference();
 		}
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
+			// Version string.
 			$version = $tag->getVersion();
 			if ( !empty( $version ) ) {
 				$t['content'] = $version;
+			}
+			// Description string.
+			if ( method_exists( $tag, 'getDescription' ) ) {
+				$description = preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() );
+				if ( ! empty( $description ) ) {
+					$t['description'] = $description;
+				}
 			}
 		}
 		$output['tags'][] = $t;
