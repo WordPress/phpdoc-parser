@@ -55,8 +55,15 @@ class Method_Call_Reflector extends BaseReflector {
 		} else if ( is_a( $this->node, 'PHPParser_Node_Expr_MethodCall' ) ) {
 			$calledOn = $this->node->var;
 
-			// This is actually a variable name
-			$calledOn = $calledOn->name;
+			if ( is_a( $calledOn, 'PHPParser_Node_Expr_FuncCall' ) ) {
+
+				// Add parentheses to signify this is a function call
+				$calledOn = $calledOn->parts[0] . '()';
+			} else {
+
+				// This is actually a variable name
+				$calledOn = $calledOn->name;
+			}
 		}
 
 		return $calledOn;
@@ -127,6 +134,8 @@ class Method_Call_Reflector extends BaseReflector {
 			'wp_widget_factory' => 'WP_Widget_Factory',
 			'wp_xmlrpc_server' => 'wp_xmlrpc_server', // This can be overridden by plugins, for core assume this is ours
 			'wpdb' => 'wpdb',
+
+			'get_screen()' => 'WP_Screen',
 		);
 
 		$class_mapping = $wp_globals;
