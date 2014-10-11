@@ -41,6 +41,11 @@ class Method_Call_Reflector extends BaseReflector {
 			}
 		}
 
+		// If the method call name is string combined with a variable we shouldn't try to relate it.
+		if ( is_a( $shortName, 'PHPParser_Node_Scalar_Encapsed' ) ) {
+			$shortName = '';
+		}
+
 		return (string) $shortName;
 	}
 
