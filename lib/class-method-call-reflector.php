@@ -139,11 +139,15 @@ class Method_Call_Reflector extends BaseReflector {
 			'wp_widget_factory' => 'WP_Widget_Factory',
 			'wp_xmlrpc_server' => 'wp_xmlrpc_server', // This can be overridden by plugins, for core assume this is ours
 			'wpdb' => 'wpdb',
-
-			'get_screen()' => 'WP_Screen',
 		);
 
-		$class_mapping = $wp_globals;
+		$wp_functions = array(
+			'get_current_screen()' => 'WP_Screen',
+			'_get_list_table()' => 'WP_List_Table', // This one differs because there are a lot of different List Tables, assume they all only overwrite existing functions on WP_List_Table
+			'wp_get_theme()' => 'WP_Theme',
+		);
+
+		$class_mapping = array_merge( $wp_globals, $wp_functions );
 
 		return $class_mapping;
 	}
