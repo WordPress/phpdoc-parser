@@ -28,6 +28,10 @@ function relate_function5() {
 	wpdb::relate_method2()->some_function();
 }
 
+function relate_function6() {
+	wp_screen()->relate_method1();
+}
+
 class wpdb {
 
 	public function __construct() {}
@@ -69,4 +73,8 @@ class wpdb {
 
 		$wpdb->relate_method5();
 	}
+}
+
+class WP_Screen {
+	public function relate_method1() {}
 }
