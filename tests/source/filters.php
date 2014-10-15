@@ -107,6 +107,18 @@ $value = apply_filters('missing_param_dynamic_filter_' . $option, $value, $old_v
  */
 $value = apply_filters("missing_param_double_quotes_dynamic_filter_$option", $value, $old_value);
 
+/**
+ * This is a filter with multiple since tags
+ *
+ * @since 1.0
+ * @since 1.9 Added a new parameter to the filter
+ * More description
+ *
+ * @param string $first_parameter
+ * @param string $second_parameter
+ */
+$value = apply_filters( 'multiple_since_tags', $first_parameter, $second_parameter );
+
 $mce_translation = apply_filters('no_doc_static_filter', $mce_translation, $mce_locale);
 
 $value = apply_filters('no_doc_dynamic_filter_' . $option, $value, $old_value);
