@@ -584,23 +584,26 @@ class Importer {
 		}
 
 		// If the item has @since markup, assign the taxonomy
-		$since_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
-		if ( ! empty( $since_version ) ) {
+		$since_versions = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
+		if ( ! empty( $since_versions ) ) {
 
-			$since_version = array_shift( $since_version );
-			$since_version = $since_version['content'];
+			// Loop through all @since versions.
+			foreach ( $since_versions as $since_version ) {
 
-			$since_term = $this->insert_term( $since_version, $this->taxonomy_since_version );
+				if ( ! empty( $since_version['content'] ) ) {
+					$since_term = $this->insert_term( $since_version['content'], $this->taxonomy_since_version );
 
-			// Assign the tax item to the post
-			if ( ! is_wp_error( $since_term ) ) {
-				$added_term_relationship = did_action( 'added_term_relationship' );
-				wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version );
-				if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
-					$anything_updated[] = true;
+					// Assign the tax item to the post
+					if ( ! is_wp_error( $since_term ) ) {
+						$added_term_relationship = did_action( 'added_term_relationship' );
+						wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
+						if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+							$anything_updated[] = true;
+						}
+					} else {
+						$this->warn( "\tCannot set @since term: " . $since_term->get_error_message() );
+					}
 				}
-			} else {
-				$this->warn( "\tCannot set @since term: " . $since_term->get_error_message() );
 			}
 		}
 
