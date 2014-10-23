@@ -149,8 +149,13 @@ class File_Reflector extends FileReflector {
 		}
 
 		// Pick up DocBlock from non-documentable elements so that it can be assigned
-		// to the next hook if necessary.
-		if ( ! $this->isNodeDocumentable( $node ) && ( $docblock = $node->getDocComment() ) ) {
+		// to the next hook if necessary. We don't do this for name nodes, since even
+		// though they aren't documentable, they still carry the docblock from their
+		// corresponding class/constant/function/etc. that they are the name of. If
+		// we don't ignore them, we'll end up picking up docblocks that are already
+		// associated with a named element, and so aren't really from a non-
+		// documentable element after all.
+		if ( ! $this->isNodeDocumentable( $node ) && 'Name' !== $node->getType() && ( $docblock = $node->getDocComment() ) ) {
 			$this->last_doc = $docblock;
 		}
 	}
@@ -235,7 +240,7 @@ class File_Reflector extends FileReflector {
 
 	protected function isNodeDocumentable( \PHPParser_Node $node ) {
 		return parent::isNodeDocumentable( $node )
-		       || ( $node instanceof \PHPParser_Node_Expr_FuncCall
-		            && $this->isFilter( $node ) );
+		|| ( $node instanceof \PHPParser_Node_Expr_FuncCall
+			&& $this->isFilter( $node ) );
 	}
 }
