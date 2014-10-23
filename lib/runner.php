@@ -120,15 +120,15 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => $docblock->getShortDescription(),
-		'long_description' => $docblock->getLongDescription()->getFormattedContents(),
+		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
+		'long_description' => preg_replace( '/[\n\r]+/', ' ', $docblock->getLongDescription()->getFormattedContents() ),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$t = array(
 			'name'    => $tag->getName(),
-			'content' => $tag->getDescription(),
+			'content' => preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$t['types'] = $tag->getTypes();
@@ -140,9 +140,17 @@ function export_docblock( $element ) {
 			$t['refers'] = $tag->getReference();
 		}
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
+			// Version string.
 			$version = $tag->getVersion();
 			if ( !empty( $version ) ) {
 				$t['content'] = $version;
+			}
+			// Description string.
+			if ( method_exists( $tag, 'getDescription' ) ) {
+				$description = preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() );
+				if ( ! empty( $description ) ) {
+					$t['description'] = $description;
+				}
 			}
 		}
 		$output['tags'][] = $t;
@@ -256,25 +264,32 @@ function export_uses( array $uses ) {
 	foreach ( $uses as $type => $used_elements ) {
 		foreach ( $used_elements as $element ) {
 
+			$name = $element->getName();
+
 			switch ( $type ) {
 				case 'methods':
 					$out[ $type ][] = array(
-						'name'      => $element->getName(),
-						'called_on' => $element->getCalledOn(),
-						'class'     => $element->getClass(),
-						'static'    => $element->isStatic(),
-						'line'      => $element->getLineNumber(),
-						'end_line'  => $element->getNode()->getAttribute( 'endLine' ),
+						'name'     => $name[1],
+						'class'    => $name[0],
+						'static'   => $element->isStatic(),
+						'line'     => $element->getLineNumber(),
+						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
 					);
 					break;
 
 				default:
 				case 'functions':
 					$out[ $type ][] = array(
-						'name'     => $element->getName(),
+						'name'     => $name,
 						'line'     => $element->getLineNumber(),
 						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
 					);
+
+					if ( '_deprecated_file' === $name || '_deprecated_function' === $name || '_deprecated_argument' === $name ) {
+						$arguments = $element->getNode()->args;
+
+						$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
+					}
 
 					break;
 			}
