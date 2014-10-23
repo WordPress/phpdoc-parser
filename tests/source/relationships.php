@@ -37,7 +37,7 @@ class wpdb {
 	public function __construct() {}
 
 	public static function relate_method1() {
-		self::method2();
+		self::relate_method2();
 	}
 
 	public static function relate_method2() {
