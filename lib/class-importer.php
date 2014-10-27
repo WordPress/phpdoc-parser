@@ -179,6 +179,9 @@ class Importer {
 		delete_option( "{$this->taxonomy_package}_children" );
 		delete_option( "{$this->taxonomy_since_version}_children" );
 
+		/**
+		 * Action at the end of a complete import
+		 */
 		do_action( 'wp_parser_ending_import' );
 
 		// Start counting again
@@ -738,9 +741,10 @@ class Importer {
 		 * Action at the end of importing an item.
 		 *
 		 * @param int   $ID   Optional; post ID of the inserted or updated item.
-		 * @param array $data Data
+		 * @param array $data PHPDoc data for the item we just imported
+		 * @param array $post_data WordPress data of the post we just inserted or updated
 		 */
-		do_action( 'wp_parser_import_item', $ID, $data );
+		do_action( 'wp_parser_import_item', $ID, $data, $post_data );
 
 		return $ID;
 	}

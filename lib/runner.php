@@ -263,18 +263,35 @@ function export_uses( array $uses ) {
 
 	foreach ( $uses as $type => $used_elements ) {
 		foreach ( $used_elements as $element ) {
+
 			$name = $element->getName();
 
-			$out[ $type ][] = array(
-				'name'       => $name,
-				'line'       => $element->getLineNumber(),
-				'end_line'   => $element->getNode()->getAttribute( 'endLine' ),
-			);
+			switch ( $type ) {
+				case 'methods':
+					$out[ $type ][] = array(
+						'name'     => $name[1],
+						'class'    => $name[0],
+						'static'   => $element->isStatic(),
+						'line'     => $element->getLineNumber(),
+						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
+					);
+					break;
 
-			if ( '_deprecated_file' === $name || '_deprecated_function' === $name || '_deprecated_argument' === $name ) {
-				$arguments = $element->getNode()->args;
+				default:
+				case 'functions':
+					$out[ $type ][] = array(
+						'name'     => $name,
+						'line'     => $element->getLineNumber(),
+						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
+					);
 
-				$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
+					if ( '_deprecated_file' === $name || '_deprecated_function' === $name || '_deprecated_argument' === $name ) {
+						$arguments = $element->getNode()->args;
+
+						$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
+					}
+
+					break;
 			}
 		}
 	}

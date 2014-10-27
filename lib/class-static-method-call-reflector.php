@@ -31,4 +31,9 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 
 		return array( $class, $this->getShortName() );
 	}
+
+
+	public function isStatic() {
+		return true;
+	}
 }
