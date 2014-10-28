@@ -115,7 +115,6 @@ $value = apply_filters("missing_param_double_quotes_dynamic_filter_$option", $va
  *
  * @since 1.0
  * @since 1.9 Added a new parameter to the filter
- * More description
  *
  * @param string $first_parameter
  * @param string $second_parameter
