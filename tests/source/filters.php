@@ -110,6 +110,9 @@ $value = apply_filters("missing_param_double_quotes_dynamic_filter_$option", $va
 /**
  * This is a filter with multiple since tags
  *
+ * Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+ * Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+ *
  * @since 1.0
  * @since 1.9 Added a new parameter to the filter
  * More description
