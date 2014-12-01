@@ -192,6 +192,11 @@ class Relationships {
 			// Methods to Methods
 			$to_type = $this->post_types['method'];
 			foreach ( (array) @$data['uses']['methods'] as $to_method ) {
+
+				if ( ! is_string( $to_method['name'] ) ) { // might contain variable node for dynamic method calls
+					continue;
+				}
+
 				if ( $to_method['static'] || ! empty( $to_method['class'] ) ) {
 					$to_method_slug = $to_method['class'] . '-' . $to_method['name'];
 				} else {
