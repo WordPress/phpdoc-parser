@@ -19,8 +19,8 @@ class Function_Call_Reflector extends BaseReflector {
 	 * @return string
 	 */
 	public function getName() {
-		if (isset($this->node->namespacedName)) {
-			return '\\'.implode('\\', $this->node->namespacedName->parts);
+		if ( isset( $this->node->namespacedName ) ) {
+			return '\\' . implode( '\\', $this->node->namespacedName->parts );
 		}
 
 		$shortName = $this->getShortName();

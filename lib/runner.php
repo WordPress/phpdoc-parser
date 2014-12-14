@@ -10,7 +10,7 @@ function get_wp_files( $directory ) {
 
 	try {
 		foreach ( $iterableFiles as $file ) {
-			if ( $file->getExtension() !== 'php' ) {
+			if ( 'php' !== $file->getExtension() ) {
 				continue;
 			}
 
@@ -142,7 +142,7 @@ function export_docblock( $element ) {
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
 			$version = $tag->getVersion();
-			if ( !empty( $version ) ) {
+			if ( ! empty( $version ) ) {
 				$t['content'] = $version;
 			}
 			// Description string.

@@ -7,10 +7,16 @@ namespace WP_Parser;
  */
 function the_content() {
 
+	static $post_types = array(
+		'wp-parser-class',
+		'wp-parser-method',
+		'wp-parser-function',
+		'wp-parser-hook',
+	);
 	$post    = get_post();
 	$content = get_the_content();
 
-	if ( $post->post_type !== 'wp-parser-class' && $post->post_type !== 'wp-parser-method' && $post->post_type !== 'wp-parser-function' && $post->post_type !== 'wp-parser-hook' ) {
+	if ( ! in_array( $post->post_type, $post_types, true ) ) {
 		return $content;
 	}
 
@@ -198,7 +204,7 @@ function get_hook_arguments() {
 
 			if ( ! empty( $param_tag['variable'] ) ) {
 				$param['name'] = $param_tag['variable'];
-			} elseif ( strpos( $arg, '$' ) === 0 ) {
+			} elseif ( 0 === strpos( $arg, '$' ) ) {
 				$param['name'] = $arg;
 			} else {
 				$param['name'] = '$(unnamed)';
@@ -273,7 +279,7 @@ function get_hook_prototype() {
 	$args          = get_hook_arguments();
 	foreach ( $args as $arg ) {
 		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
-		if ( ! empty( $arg['value'] ) && strpos( $arg['value'], '$' ) !== 0 ) {
+		if ( ! empty( $arg['value'] ) && 0 !== strpos( $arg['value'], '$' ) ) {
 			$friendly .= ' <span class="default"> = <span class="value">' . $arg['value'] . '</span></span>';
 		}
 
