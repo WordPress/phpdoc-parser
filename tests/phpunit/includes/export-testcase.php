@@ -256,9 +256,9 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	/**
 	 * Find the exported data for an entity.
 	 *
-	 * @param array  $data   The data to search in.
-	 * @param string $type   The type of entity.
-	 * @param string $entity The name of the function.
+	 * @param array  $data        The data to search in.
+	 * @param string $type        The type of entity.
+	 * @param string $entity_name The name of the function.
 	 *
 	 * @return array|false The data for the entity, or false if it couldn't be found.
 	 */
