@@ -537,8 +537,9 @@ class Importer {
 		 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
 		 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
 		 */
-		if ( ! apply_filters( 'wp_parser_pre_import_item', true, $data, $parent_post_id, $import_internal, $arg_overrides ) )
-			return;
+		if ( ! apply_filters( 'wp_parser_pre_import_item', true, $data, $parent_post_id, $import_internal, $arg_overrides ) ) {
+			return false;
+		}
 
 		// Look for an existing post for this item
 		$existing_post_id = $wpdb->get_var(
