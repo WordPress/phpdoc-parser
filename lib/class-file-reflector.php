@@ -16,8 +16,8 @@ class File_Reflector extends FileReflector {
 	 * List of elements used in global scope in this file, indexed by element type.
 	 *
 	 * @var array {
-	 *      @type \WP_Parser\Hook_Reflector[]          $hooks     The action and filters.
-	 *      @type \WP_Parser\Function_Call_Reflector[] $functions The functions called.
+	 *      @type Hook_Reflector[] $hooks     The action and filters.
+	 *      @type Function_Call_Reflector[] $functions The functions called.
 	 * }
 	 */
 	public $uses = array();
@@ -81,7 +81,7 @@ class File_Reflector extends FileReflector {
 
 			// Parse out hook definitions and function calls and add them to the queue.
 			case 'Expr_FuncCall':
-				$function = new \WP_Parser\Function_Call_Reflector( $node, $this->context );
+				$function = new Function_Call_Reflector( $node, $this->context );
 
 				/*
 				 * If the function call is in the global scope, add it to the
@@ -100,7 +100,7 @@ class File_Reflector extends FileReflector {
 						$this->last_doc = null;
 					}
 
-					$hook = new \WP_Parser\Hook_Reflector( $node, $this->context );
+					$hook = new Hook_Reflector( $node, $this->context );
 
 					/*
 					 * If the hook is in the global scope, add it to the file's
@@ -117,7 +117,7 @@ class File_Reflector extends FileReflector {
 
 			// Parse out method calls, so we can export where methods are used.
 			case 'Expr_MethodCall':
-				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
+				$method = new Method_Call_Reflector( $node, $this->context );
 
 				/*
 				 * If the method call is in the global scope, add it to the
@@ -133,7 +133,7 @@ class File_Reflector extends FileReflector {
 
 			// Parse out method calls, so we can export where methods are used.
 			case 'Expr_StaticCall':
-				$method = new \WP_Parser\Static_Method_Call_Reflector( $node, $this->context );
+				$method = new Static_Method_Call_Reflector( $node, $this->context );
 
 				/*
 				 * If the method call is in the global scope, add it to the

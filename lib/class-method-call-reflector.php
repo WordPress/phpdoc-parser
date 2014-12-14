@@ -1,12 +1,9 @@
 <?php
 
-/**
- * A reflection class for a method call.
- */
-
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
+use phpDocumentor\Reflection\ClassReflector;
 
 /**
  * A reflection of a method call expression.
@@ -16,7 +13,7 @@ class Method_Call_Reflector extends BaseReflector {
 	/**
 	 * The class that this method was called in, if it was called in a class.
 	 *
-	 * @var \phpDocumentor\Reflection\ClassReflector|false
+	 * @var ClassReflector|false
 	 */
 	protected $called_in_class = false;
 
@@ -54,9 +51,9 @@ class Method_Call_Reflector extends BaseReflector {
 	/**
 	 * Set the class that this method was called within.
 	 *
-	 * @param \phpDocumentor\Reflection\ClassReflector $class
+	 * @param ClassReflector $class
 	 */
-	public function set_class( \phpDocumentor\Reflection\ClassReflector $class ) {
+	public function set_class( ClassReflector $class ) {
 
 		$this->called_in_class = $class;
 	}
