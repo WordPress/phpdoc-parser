@@ -16,7 +16,7 @@ function get_wp_files( $directory ) {
 
 			$files[] = $file->getPathname();
 		}
-	} catch ( \UnexpectedValueException $e ) {
+	} catch ( \UnexpectedValueException $exc ) {
 		printf( 'Directory [%s] contained a directory we can not recurse into', $directory );
 	}
 
@@ -87,7 +87,7 @@ function parse_files( $files, $root ) {
 		}
 
 		foreach ( $file->getClasses() as $class ) {
-			$cl = array(
+			$class_data = array(
 				'name'       => $class->getShortName(),
 				'line'       => $class->getLineNumber(),
 				'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
@@ -100,7 +100,7 @@ function parse_files( $files, $root ) {
 				'doc'        => export_docblock( $class ),
 			);
 
-			$out['classes'][] = $cl;
+			$out['classes'][] = $class_data;
 		}
 
 		$output[] = $out;
@@ -126,34 +126,34 @@ function export_docblock( $element ) {
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
-		$t = array(
+		$tag_data = array(
 			'name'    => $tag->getName(),
 			'content' => preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
-			$t['types'] = $tag->getTypes();
+			$tag_data['types'] = $tag->getTypes();
 		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
-			$t['variable'] = $tag->getVariableName();
+			$tag_data['variable'] = $tag->getVariableName();
 		}
 		if ( method_exists( $tag, 'getReference' ) ) {
-			$t['refers'] = $tag->getReference();
+			$tag_data['refers'] = $tag->getReference();
 		}
 		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
 			$version = $tag->getVersion();
 			if ( ! empty( $version ) ) {
-				$t['content'] = $version;
+				$tag_data['content'] = $version;
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
 				$description = preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() );
 				if ( ! empty( $description ) ) {
-					$t['description'] = $description;
+					$tag_data['description'] = $description;
 				}
 			}
 		}
-		$output['tags'][] = $t;
+		$output['tags'][] = $tag_data;
 	}
 
 	return $output;

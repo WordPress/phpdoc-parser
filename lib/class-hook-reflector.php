@@ -13,11 +13,11 @@ class Hook_Reflector extends BaseReflector {
 	}
 
 	private function cleanupName( $name ) {
-		$m = array();
+		$matches = array();
 
 		// quotes on both ends of a string
-		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $m ) ) {
-			return $m[1];
+		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $matches ) ) {
+			return $matches[1];
 		}
 
 		// two concatenated things, last one of them a variable
@@ -25,12 +25,12 @@ class Hook_Reflector extends BaseReflector {
 			'/(?:[\'"]([^\'"]*)[\'"]\s*\.\s*)?' . // First filter name string (optional)
 			'(\$[^\s]*)' .                        // Dynamic variable
 			'(?:\s*\.\s*[\'"]([^\'"]*)[\'"])?/',  // Second filter name string (optional)
-			$name, $m ) ) {
+			$name, $matches ) ) {
 
-			if ( isset( $m[3] ) ) {
-				return $m[1] . '{' . $m[2] . '}' . $m[3];
+			if ( isset( $matches[3] ) ) {
+				return $matches[1] . '{' . $matches[2] . '}' . $matches[3];
 			} else {
-				return $m[1] . '{' . $m[2] . '}';
+				return $matches[1] . '{' . $matches[2] . '}';
 			}
 		}
 

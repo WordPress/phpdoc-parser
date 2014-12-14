@@ -80,7 +80,7 @@ class Importer {
 	 */
 	public function __construct( array $args = array() ) {
 
-		$r = wp_parse_args(
+		$properties = wp_parse_args(
 			$args,
 			array(
 				'post_type_class'        => 'wp-parser-class',
@@ -93,7 +93,7 @@ class Importer {
 			)
 		);
 
-		foreach ( $r as $property_name => $value ) {
+		foreach ( $properties as $property_name => $value ) {
 			$this->{$property_name} = $value;
 		}
 	}
@@ -276,14 +276,14 @@ class Importer {
 
 		// Functions
 		if ( ! empty( $file['functions'] ) ) {
-			$i = 0;
+			$count = 0;
 
 			foreach ( $file['functions'] as $function ) {
 				$this->import_function( $function, 0, $import_internal );
-				$i ++;
+				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 ) {
+				if ( ! $skip_sleep && $count % 10 == 0 ) { // TODO figure our why are we still doing this
 					sleep( 3 );
 				}
 			}
@@ -291,28 +291,28 @@ class Importer {
 
 		// Classes
 		if ( ! empty( $file['classes'] ) ) {
-			$i = 0;
+			$count = 0;
 
 			foreach ( $file['classes'] as $class ) {
 				$this->import_class( $class, $import_internal );
-				$i ++;
+				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 ) {
+				if ( ! $skip_sleep && $count % 10 == 0 ) {
 					sleep( 3 );
 				}
 			}
 		}
 
 		if ( ! empty( $file['hooks'] ) ) {
-			$i = 0;
+			$count = 0;
 
 			foreach ( $file['hooks'] as $hook ) {
 				$this->import_hook( $hook, 0, $import_internal );
-				$i ++;
+				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $i % 10 == 0 ) {
+				if ( ! $skip_sleep && $count % 10 == 0 ) {
 					sleep( 3 );
 				}
 			}
@@ -562,34 +562,34 @@ class Importer {
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
 			$is_new_post     = false;
-			$ID = $post_data['ID'] = (int) $existing_post_id;
+			$post_id = $post_data['ID'] = (int) $existing_post_id;
 			$post_needed_update = array_diff_assoc( sanitize_post( $post_data, 'db' ), get_post( $existing_post_id, ARRAY_A, 'db' ) );
 			if ( $post_needed_update ) {
-				$ID = wp_update_post( wp_slash( $post_data ), true );
+				$post_id = wp_update_post( wp_slash( $post_data ), true );
 			}
 		} else {
-			$ID = wp_insert_post( wp_slash( $post_data ), true );
+			$post_id = wp_insert_post( wp_slash( $post_data ), true );
 		}
 		$anything_updated = array();
 
-		if ( ! $ID || is_wp_error( $ID ) ) {
+		if ( ! $post_id || is_wp_error( $post_id ) ) {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for class "%1$s"', $data['name'], $ID->get_error_message() );
+					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for class "%1$s"', $data['name'], $post_id->get_error_message() );
 					break;
 
 				case $this->post_type_method:
-					$this->errors[] = "\t\t" . sprintf( 'Problem inserting/updating post for method "%1$s"', $data['name'], $ID->get_error_message() );
+					$this->errors[] = "\t\t" . sprintf( 'Problem inserting/updating post for method "%1$s"', $data['name'], $post_id->get_error_message() );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->errors[] = $indent . sprintf( 'Problem inserting/updating post for hook "%1$s"', $data['name'], $ID->get_error_message() );
+					$this->errors[] = $indent . sprintf( 'Problem inserting/updating post for hook "%1$s"', $data['name'], $post_id->get_error_message() );
 					break;
 
 				default:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for function "%1$s"', $data['name'], $ID->get_error_message() );
+					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for function "%1$s"', $data['name'], $post_id->get_error_message() );
 			}
 
 			return false;
@@ -608,7 +608,7 @@ class Importer {
 					// Assign the tax item to the post
 					if ( ! is_wp_error( $since_term ) ) {
 						$added_term_relationship = did_action( 'added_term_relationship' );
-						wp_set_object_terms( $ID, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
+						wp_set_object_terms( $post_id, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
 						if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
 							$anything_updated[] = true;
 						}
@@ -670,14 +670,14 @@ class Importer {
 			}
 		}
 		$added_term_relationship = did_action( 'added_term_relationship' );
-		wp_set_object_terms( $ID, $package_term_ids, $this->taxonomy_package );
+		wp_set_object_terms( $post_id, $package_term_ids, $this->taxonomy_package );
 		if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
 			$anything_updated[] = true;
 		}
 
 		// Set other taxonomy and post meta to use in the theme templates
 		$added_item = did_action( 'added_term_relationship' );
-		wp_set_object_terms( $ID, $this->file_meta['term_id'], $this->taxonomy_file );
+		wp_set_object_terms( $post_id, $this->file_meta['term_id'], $this->taxonomy_file );
 		if ( did_action( 'added_term_relationship' ) > $added_item ) {
 			$anything_updated[] = true;
 		}
@@ -688,11 +688,11 @@ class Importer {
 		}
 
 		if ( $post_data['post_type'] !== $this->post_type_class ) {
-			$anything_updated[] = update_post_meta( $ID, '_wp-parser_args', $data['arguments'] );
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', $data['arguments'] );
 		}
-		$anything_updated[] = update_post_meta( $ID, '_wp-parser_line_num', (string) $data['line'] );
-		$anything_updated[] = update_post_meta( $ID, '_wp-parser_end_line_num', (string) $data['end_line'] );
-		$anything_updated[] = update_post_meta( $ID, '_wp-parser_tags', $data['doc']['tags'] );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
 
 		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
 		if ( ! $is_new_post && ! $post_needed_update && array_filter( $anything_updated ) ) {
@@ -741,13 +741,13 @@ class Importer {
 		/**
 		 * Action at the end of importing an item.
 		 *
-		 * @param int   $ID   Optional; post ID of the inserted or updated item.
+		 * @param int   $post_id   Optional; post ID of the inserted or updated item.
 		 * @param array $data PHPDoc data for the item we just imported
 		 * @param array $post_data WordPress data of the post we just inserted or updated
 		 */
-		do_action( 'wp_parser_import_item', $ID, $data, $post_data );
+		do_action( 'wp_parser_import_item', $post_id, $data, $post_data );
 
-		return $ID;
+		return $post_id;
 	}
 
 	/**

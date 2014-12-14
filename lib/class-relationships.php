@@ -134,16 +134,16 @@ class Relationships {
 	 * These will be used to associate post IDs to each other without doing an additional
 	 * database query to map each post's slug to its ID.
 	 *
-	 * @param int   $ID              Post ID of item just imported.
-	 * @param array $data            Parser data
-	 * @param array $post_data       Post data
+	 * @param int   $post_id   Post ID of item just imported.
+	 * @param array $data      Parser data
+	 * @param array $post_data Post data
 	 */
-	public function import_item( $ID, $data, $post_data ) {
+	public function import_item( $post_id, $data, $post_data ) {
 
 		$from_type = $post_data['post_type'];
 		$slug = $post_data['post_name'];
 
-		$this->slugs_to_ids[ $from_type ][ $slug ] = $ID;
+		$this->slugs_to_ids[ $from_type ][ $slug ] = $post_id;
 
 		// Build Relationships: Functions
 		if ( $this->post_types['function'] == $from_type ) {
@@ -153,7 +153,7 @@ class Relationships {
 			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
 				$to_function_slug = $this->name_to_slug( $to_function['name'] );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_function_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_function_slug;
 			}
 
 			// Functions to Methods
@@ -167,7 +167,7 @@ class Relationships {
 				}
 				$to_method_slug = $this->name_to_slug( $to_method_slug );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_method_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_method_slug;
 			}
 
 			// Functions to Hooks
@@ -175,7 +175,7 @@ class Relationships {
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
 				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_hook_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
 		}
 
@@ -186,7 +186,7 @@ class Relationships {
 			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
 				$to_function_slug = $this->name_to_slug( $to_function['name'] );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_function_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_function_slug;
 			}
 
 			// Methods to Methods
@@ -204,7 +204,7 @@ class Relationships {
 				}
 				$to_method_slug = $this->name_to_slug( $to_method_slug );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_method_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_method_slug;
 			}
 
 			// Methods to Hooks
@@ -212,7 +212,7 @@ class Relationships {
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
 				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
 
-				$this->relationships[ $from_type ][ $ID ][ $to_type ][] = $to_hook_slug;
+				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
 		}
 
