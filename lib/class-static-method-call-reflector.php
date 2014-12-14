@@ -6,8 +6,6 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\BaseReflector;
-
 /**
  * A reflection of a method call expression.
  */
