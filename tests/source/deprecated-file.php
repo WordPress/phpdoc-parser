@@ -26,5 +26,3 @@ $var = apply_filters( 'deprecated_filter', $var );
 * This action should be marked as deprecated since 1.0
 */
 do_action( 'deprecated_action' );
-
-?>
