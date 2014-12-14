@@ -67,6 +67,8 @@ class File_Reflector extends FileReflector {
 	 *
 	 * Finally, we pick up any docblocks for nodes that usually aren't documentable,
 	 * so they can be assigned to the hooks to which they may belong.
+	 *
+	 * @param \PHPParser_Node $node
 	 */
 	public function enterNode( \PHPParser_Node $node ) {
 		parent::enterNode( $node );
@@ -165,6 +167,8 @@ class File_Reflector extends FileReflector {
 	 *
 	 * We can now access the function/method reflectors, so we can assign any queued
 	 * hooks to them. The reflector for a node isn't created until the node is left.
+	 *
+	 * @param \PHPParser_Node $node
 	 */
 	public function leaveNode( \PHPParser_Node $node ) {
 
