@@ -4,7 +4,7 @@ namespace WP_Parser;
 class Plugin {
 
 	/**
-	 * @var WP_Parser\Relationships
+	 * @var \WP_Parser\Relationships
 	 */
 	var $relationships;
 
