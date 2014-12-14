@@ -8,12 +8,22 @@
 	"authors"    : [
 		{
 			"name"    : "Ryan McCue",
-			"homepage": "http://ryanmccue.info"
+			"homepage": "http://ryanmccue.info",
+			"role"    : "Developer"
+		},
+		{
+			"name"    : "Andrey Savchenko",
+			"email"   : "contact@rarst.net",
+			"homepage": "http://www.Rarst.net/",
+			"role"    : "Maintainer"
+		},
+		{
+			"name"    : "Contributors",
+			"homepage": "https://github.com/rmccue/WP-Parser/graphs/contributors"
 		}
 	],
 	"support"    : {
-		"issues": "https://github.com/rmccue/WP-Parser/issues",
-		"source": "https://github.com/rmccue/WP-Parser"
+		"issues": "https://github.com/rmccue/WP-Parser/issues"
 	},
 	"require"    : {
 		"php"                      : ">=5.3.6",
