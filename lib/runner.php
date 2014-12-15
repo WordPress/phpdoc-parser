@@ -2,8 +2,10 @@
 
 namespace WP_Parser;
 
+use phpDocumentor\Reflection\BaseReflector;
 use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
+use phpDocumentor\Reflection\FunctionReflector;
 use phpDocumentor\Reflection\FunctionReflector\ArgumentReflector;
 
 /**
@@ -125,7 +127,7 @@ function parse_files( $files, $root ) {
 }
 
 /**
- * @param $element
+ * @param BaseReflector $element
  *
  * @return array
  */
@@ -295,6 +297,8 @@ function export_uses( array $uses ) {
 	unset( $uses['hooks'] );
 
 	foreach ( $uses as $type => $used_elements ) {
+
+		/** @var MethodReflector|FunctionReflector $element */
 		foreach ( $used_elements as $element ) {
 
 			$name = $element->getName();

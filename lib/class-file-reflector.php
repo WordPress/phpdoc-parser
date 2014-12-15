@@ -178,6 +178,7 @@ class File_Reflector extends FileReflector {
 			case 'Stmt_Class':
 				$class = end( $this->classes );
 				if ( ! empty( $this->method_uses_queue ) ) {
+					/** @var Reflection\ClassReflector\MethodReflector $method */
 					foreach ( $class->getMethods() as $method ) {
 						if ( isset( $this->method_uses_queue[ $method->getName() ] ) ) {
 							if ( isset( $this->method_uses_queue[ $method->getName() ]['methods'] ) ) {
@@ -186,6 +187,7 @@ class File_Reflector extends FileReflector {
 								 * That allows us to later get the correct class name for $this, self, parent.
 								 */
 								foreach ( $this->method_uses_queue[ $method->getName() ]['methods'] as $method_call ) {
+									/** @var Method_Call_Reflector $method_call */
 									$method_call->set_class( $class );
 								}
 							}
