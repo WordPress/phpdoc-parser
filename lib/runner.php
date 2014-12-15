@@ -236,7 +236,7 @@ function export_properties( array $properties ) {
 			'default'     => $property->getDefault(),
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
-			'visibililty' => $property->getVisibility(),
+			'visibility'  => $property->getVisibility(),
 			'doc'         => export_docblock( $property ),
 		);
 	}
