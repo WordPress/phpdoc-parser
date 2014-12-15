@@ -2,6 +2,8 @@
 
 namespace WP_Parser;
 
+use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
+
 function get_wp_files( $directory ) {
 	$iterableFiles = new \RecursiveIteratorIterator(
 		new \RecursiveDirectoryIterator( $directory )
@@ -109,6 +111,11 @@ function parse_files( $files, $root ) {
 	return $output;
 }
 
+/**
+ * @param $element
+ *
+ * @return array
+ */
 function export_docblock( $element ) {
 	$docblock = $element->getDocBlock();
 	if ( ! $docblock ) {
@@ -190,11 +197,16 @@ function export_arguments( array $arguments ) {
 	return $output;
 }
 
+/**
+ * @param PropertyReflector[] $properties
+ *
+ * @return array
+ */
 function export_properties( array $properties ) {
 	$out = array();
 
 	foreach ( $properties as $property ) {
-		$prop = array(
+		$out[] = array(
 			'name'        => $property->getName(),
 			'line'        => $property->getLineNumber(),
 			'end_line'    => $property->getNode()->getAttribute( 'endLine' ),
@@ -202,15 +214,8 @@ function export_properties( array $properties ) {
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
 			'visibililty' => $property->getVisibility(),
+			'doc'         => export_docblock( $property ),
 		);
-
-		$docblock = export_docblock( $property );
-		if ( $docblock ) {
-			$prop['doc'] = $docblock;
-		}
-
-		$out[] = $prop;
-
 	}
 
 	return $out;

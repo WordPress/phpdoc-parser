@@ -20,31 +20,19 @@ function the_content() {
 		return $content;
 	}
 
-	if ( 'wp-parser-hook' === $post->post_type ) {
-		$before_content = get_hook_prototype();
-	} else {
-		$before_content = get_prototype();
-	}
-
+	$before_content = ( 'wp-parser-hook' === $post->post_type ) ? get_hook_prototype() : get_prototype();
 	$before_content .= '<p class="wp-parser-description">' . get_the_excerpt() . '</p>';
 	$before_content .= '<div class="wp-parser-longdesc">';
 
 	$after_content = '</div>';
-
 	$after_content .= '<div class="wp-parser-arguments"><h3>Arguments</h3>';
 
-	if ( 'wp-parser-hook' === $post->post_type ) {
-		$args = get_hook_arguments();
-	} else {
-		$args = get_arguments();
-	}
+	$args = ( 'wp-parser-hook' === $post->post_type ) ? get_hook_arguments() : get_arguments();
 
 	foreach ( $args as $arg ) {
 		$after_content .= '<div class="wp-parser-arg">';
 		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
-		if ( ! empty( $arg['desc'] ) ) {
-			$after_content .= wpautop( $arg['desc'], false );
-		}
+		$after_content .= empty( $arg['desc'] ) ? '' : wpautop( $arg['desc'], false );
 		$after_content .= '</div>';
 	}
 
@@ -243,9 +231,7 @@ function get_prototype() {
 	$args          = get_arguments();
 	foreach ( $args as $arg ) {
 		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
-		if ( ! empty( $arg['default_value'] ) ) {
-			$friendly .= ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
-		}
+		$friendly .= empty( $arg['default_value'] ) ? '' : ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
 
 		$friendly_args[] = $friendly;
 	}
@@ -279,9 +265,8 @@ function get_hook_prototype() {
 	$args          = get_hook_arguments();
 	foreach ( $args as $arg ) {
 		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
-		if ( ! empty( $arg['value'] ) && 0 !== strpos( $arg['value'], '$' ) ) {
-			$friendly .= ' <span class="default"> = <span class="value">' . $arg['value'] . '</span></span>';
-		}
+		$has_value = ! empty( $arg['value'] ) && 0 !== strpos( $arg['value'], '$' );
+		$friendly .= $has_value ? ' <span class="default"> = <span class="value">' . $arg['value'] . '</span></span>' : '';
 
 		$friendly_args[] = $friendly;
 	}
