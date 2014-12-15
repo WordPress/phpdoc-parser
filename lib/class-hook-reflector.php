@@ -5,13 +5,24 @@ namespace WP_Parser;
 use phpDocumentor\Reflection\BaseReflector;
 use PHPParser_PrettyPrinter_Default;
 
+/**
+ * Custom reflector for WordPress hooks.
+ */
 class Hook_Reflector extends BaseReflector {
 
+	/**
+	 * @return string
+	 */
 	public function getName() {
 		$printer = new PHPParser_PrettyPrinter_Default;
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 
+	/**
+	 * @param string $name
+	 *
+	 * @return string
+	 */
 	private function cleanupName( $name ) {
 		$matches = array();
 
@@ -37,10 +48,16 @@ class Hook_Reflector extends BaseReflector {
 		return $name;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getShortName() {
 		return $this->getName();
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getType() {
 		$type = 'filter';
 		switch ( (string) $this->node->name ) {
@@ -58,6 +75,9 @@ class Hook_Reflector extends BaseReflector {
 		return $type;
 	}
 
+	/**
+	 * @return array
+	 */
 	public function getArgs() {
 		$printer = new Pretty_Printer;
 		$args    = array();

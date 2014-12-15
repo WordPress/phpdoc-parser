@@ -1,9 +1,5 @@
 <?php
 
-/**
- * A reflection class for a method call.
- */
-
 namespace WP_Parser;
 
 /**
@@ -30,7 +26,9 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 		return array( $class, $this->getShortName() );
 	}
 
-
+	/**
+	 * @return bool
+	 */
 	public function isStatic() {
 		return true;
 	}

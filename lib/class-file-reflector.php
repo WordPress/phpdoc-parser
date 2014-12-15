@@ -220,6 +220,11 @@ class File_Reflector extends FileReflector {
 		}
 	}
 
+	/**
+	 * @param \PHPParser_Node $node
+	 *
+	 * @return bool
+	 */
 	protected function isFilter( \PHPParser_Node $node ) {
 		// Ignore variable functions
 		if ( $node->name->getType() !== 'Name' ) {
@@ -238,10 +243,18 @@ class File_Reflector extends FileReflector {
 		return in_array( $calling, $functions );
 	}
 
+	/**
+	 * @return File_Reflector
+	 */
 	protected function getLocation() {
 		return empty( $this->location ) ? $this : end( $this->location );
 	}
 
+	/**
+	 * @param \PHPParser_Node $node
+	 *
+	 * @return bool
+	 */
 	protected function isNodeDocumentable( \PHPParser_Node $node ) {
 		return parent::isNodeDocumentable( $node )
 		|| ( $node instanceof \PHPParser_Node_Expr_FuncCall

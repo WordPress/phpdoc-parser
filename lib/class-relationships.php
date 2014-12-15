@@ -4,6 +4,9 @@ namespace WP_Parser;
 
 use WP_CLI;
 
+/**
+ * Registers and implements relationships with Posts 2 Posts.
+ */
 class Relationships {
 
 	/**
@@ -33,6 +36,9 @@ class Relationships {
 	 */
 	var $relationships = array();
 
+	/**
+	 * Adds the actions.
+	 */
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'require_posts_to_posts' ) );
 		add_action( 'wp_loaded', array( $this, 'register_post_relationships' ) );

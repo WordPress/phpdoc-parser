@@ -5,6 +5,9 @@ namespace WP_Parser;
 use PHPParser_Node_Arg;
 use PHPParser_PrettyPrinter_Default;
 
+/**
+ * Extends default printer for arguments.
+ */
 class Pretty_Printer extends PHPParser_PrettyPrinter_Default {
 	/**
 	 * Pretty prints an argument.

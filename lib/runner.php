@@ -2,8 +2,15 @@
 
 namespace WP_Parser;
 
+use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
+use phpDocumentor\Reflection\FunctionReflector\ArgumentReflector;
 
+/**
+ * @param string $directory
+ *
+ * @return array
+ */
 function get_wp_files( $directory ) {
 	$iterableFiles = new \RecursiveIteratorIterator(
 		new \RecursiveDirectoryIterator( $directory )
@@ -25,6 +32,12 @@ function get_wp_files( $directory ) {
 	return $files;
 }
 
+/**
+ * @param array  $files
+ * @param string $root
+ *
+ * @return array
+ */
 function parse_files( $files, $root ) {
 	$output = array();
 
@@ -166,6 +179,11 @@ function export_docblock( $element ) {
 	return $output;
 }
 
+/**
+ * @param Hook_Reflector[] $hooks
+ *
+ * @return array
+ */
 function export_hooks( array $hooks ) {
 	$out = array();
 
@@ -183,6 +201,11 @@ function export_hooks( array $hooks ) {
 	return $out;
 }
 
+/**
+ * @param ArgumentReflector[] $arguments
+ *
+ * @return array
+ */
 function export_arguments( array $arguments ) {
 	$output = array();
 
@@ -221,6 +244,11 @@ function export_properties( array $properties ) {
 	return $out;
 }
 
+/**
+ * @param MethodReflector[] $methods
+ *
+ * @return array
+ */
 function export_methods( array $methods ) {
 	$out = array();
 

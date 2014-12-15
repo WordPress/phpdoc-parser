@@ -1,6 +1,9 @@
 <?php
 namespace WP_Parser;
 
+/**
+ * Main plugin's class. Registers things and adds WP CLI command.
+ */
 class Plugin {
 
 	/**
@@ -170,6 +173,12 @@ class Plugin {
 		}
 	}
 
+	/**
+	 * @param string   $link
+	 * @param \WP_Post $post
+	 *
+	 * @return string|void
+	 */
 	public function method_permalink( $link, $post ) {
 
 		if ( $post->post_type !== 'wp-parser-method' || $post->post_parent == 0 ) {

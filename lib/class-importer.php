@@ -207,12 +207,21 @@ class Importer {
 		}
 	}
 
+	/**
+	 * @param int|string $term
+	 * @param string     $taxonomy
+	 * @param array      $args
+	 *
+	 * @return array|mixed|\WP_Error
+	 */
 	protected function insert_term( $term, $taxonomy, $args = array() ) {
+
 		if ( isset( $this->inserted_terms[ $taxonomy ][ $term ] ) ) {
 			return $this->inserted_terms[ $taxonomy ][ $term ];
 		}
 
 		$parent = isset( $args['parent'] ) ? $args['parent'] : 0;
+
 		if ( ! $inserted_term = term_exists( $term, $taxonomy, $parent ) ) {
 			$inserted_term = wp_insert_term( $term, $taxonomy, $args );
 		}
