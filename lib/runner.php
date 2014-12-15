@@ -250,10 +250,10 @@ function export_properties( array $properties ) {
  * @return array
  */
 function export_methods( array $methods ) {
-	$out = array();
+	$output = array();
 
 	foreach ( $methods as $method ) {
-		$meth = array(
+		$method_data = array(
 			'name'       => $method->getShortName(),
 			'line'       => $method->getLineNumber(),
 			'end_line'   => $method->getNode()->getAttribute( 'endLine' ),
@@ -266,17 +266,17 @@ function export_methods( array $methods ) {
 		);
 
 		if ( ! empty( $method->uses ) ) {
-			$meth['uses'] = export_uses( $method->uses );
+			$method_data['uses'] = export_uses( $method->uses );
 
 			if ( ! empty( $method->uses['hooks'] ) ) {
-				$meth['hooks'] = export_hooks( $method->uses['hooks'] );
+				$method_data['hooks'] = export_hooks( $method->uses['hooks'] );
 			}
 		}
 
-		$out[] = $meth;
+		$output[] = $method_data;
 	}
 
-	return $out;
+	return $output;
 }
 
 /**

@@ -8,7 +8,7 @@ namespace WP_Parser;
 class Importer {
 
 	/**
-	 * Taxonony name for files
+	 * Taxonomy name for files
 	 *
 	 * @var string
 	 */
@@ -171,7 +171,7 @@ class Importer {
 		}
 
 		/**
-		 * Workaround for a WP core bug where hierarchial taxonomy caches are not being cleared
+		 * Workaround for a WP core bug where hierarchical taxonomy caches are not being cleared
 		 *
 		 * https://core.trac.wordpress.org/ticket/14485
 		 * http://wordpress.stackexchange.com/questions/8357/inserting-terms-in-an-hierarchical-taxonomy
@@ -760,7 +760,7 @@ class Importer {
 	}
 
 	/**
-	 * Log a messsage.
+	 * Log a message.
 	 *
 	 * @param string $message The message to log.
 	 */

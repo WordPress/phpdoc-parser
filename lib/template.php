@@ -112,9 +112,9 @@ function the_return_desc() {
  * @return bool
  */
 function arguments_have_default_values() {
-	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_args', true ), array( 'name' => 'default' ) );
+	$return = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_args', true ), array( 'name' => 'default' ) );
 
-	return apply_filters( 'wp_parser_arguments_have_default_values', ! empty( $retval ) );
+	return apply_filters( 'wp_parser_arguments_have_default_values', ! empty( $return ) );
 }
 
 /**
@@ -123,9 +123,9 @@ function arguments_have_default_values() {
  * @return bool
  */
 function is_function_deprecated() {
-	$retval = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_tags', true ), array( 'name' => 'deprecated' ) );
+	$return = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_tags', true ), array( 'name' => 'deprecated' ) );
 
-	return apply_filters( 'wp_parser_is_function_deprecated', ! empty( $retval ) );
+	return apply_filters( 'wp_parser_is_function_deprecated', ! empty( $return ) );
 }
 
 /**
