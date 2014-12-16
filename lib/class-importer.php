@@ -154,7 +154,7 @@ class Importer {
 			}
 		}
 
-		if( ! empty( $root ) ) {
+		if ( ! empty( $root ) ) {
 			update_option( 'wp_parser_root_import_dir', $root );
 			$this->log( 'Updated option wp_parser_root_import_dir: ' . $root );
 		}
@@ -166,7 +166,7 @@ class Importer {
 		$this->log( sprintf( 'Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time ) );
 
 		$wp_version = get_option( 'wp_parser_imported_wp_version' );
-		if( $wp_version ) {
+		if ( $wp_version ) {
 			$this->log( 'Updated option wp_parser_imported_wp_version: ' . $wp_version );
 		}
 
@@ -454,9 +454,9 @@ class Importer {
 	 */
 	protected function import_version( $data ) {
 
-		$version_path =  $data['root'] . '/' . $data['path'];
+		$version_path = $data['root'] . '/' . $data['path'];
 
-		if( !is_readable( $version_path ) ) {
+		if ( ! is_readable( $version_path ) ) {
 			return;
 		}
 
