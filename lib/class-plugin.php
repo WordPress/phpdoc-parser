@@ -181,7 +181,7 @@ class Plugin {
 	 */
 	public function method_permalink( $link, $post ) {
 
-		if ( $post->post_type !== 'wp-parser-method' || $post->post_parent == 0 ) {
+		if ( 'wp-parser-method' !== $post->post_type || 0 == $post->post_parent ) {
 			return $link;
 		}
 

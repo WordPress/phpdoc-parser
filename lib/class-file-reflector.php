@@ -229,7 +229,7 @@ class File_Reflector extends FileReflector {
 	 */
 	protected function isFilter( \PHPParser_Node $node ) {
 		// Ignore variable functions
-		if ( $node->name->getType() !== 'Name' ) {
+		if ( 'Name' !== $node->name->getType() ) {
 			return false;
 		}
 

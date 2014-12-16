@@ -132,7 +132,7 @@ class Command extends WP_CLI_Command {
 		// Extract PHPDoc
 		$output = parse_files( $files, $path );
 
-		if ( $format == 'json' ) {
+		if ( 'json' == $format ) {
 			$output = json_encode( $output );
 		}
 

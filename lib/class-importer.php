@@ -292,7 +292,7 @@ class Importer {
 				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $count % 10 == 0 ) { // TODO figure our why are we still doing this
+				if ( ! $skip_sleep && 0 == $count % 10 ) { // TODO figure our why are we still doing this
 					sleep( 3 );
 				}
 			}
@@ -307,7 +307,7 @@ class Importer {
 				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $count % 10 == 0 ) {
+				if ( ! $skip_sleep && 0 == $count % 10 ) {
 					sleep( 3 );
 				}
 			}
@@ -321,7 +321,7 @@ class Importer {
 				$count ++;
 
 				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && $count % 10 == 0 ) {
+				if ( ! $skip_sleep && 0 == $count % 10 ) {
 					sleep( 3 );
 				}
 			}
@@ -655,18 +655,17 @@ class Importer {
 			$pack_value = array_shift( $pack_value );
 			$pack_value = $pack_value['content'];
 
+			$package_term_args = array( 'parent' => 0 );
 			// Set the parent term_id to look for, as the package taxonomy is hierarchical.
-			if ( $pack_name === 'sub' && is_int( $main_package_id ) ) {
+			if ( 'sub' === $pack_name && is_int( $main_package_id ) ) {
 				$package_term_args = array( 'parent' => $main_package_id );
-			} else {
-				$package_term_args = array( 'parent' => 0 );
 			}
 
 			// If the package doesn't already exist in the taxonomy, add it
 			$package_term = $this->insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
 			$package_term_ids[] = (int) $package_term['term_id'];
 
-			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) ) {
+			if ( 'main' === $pack_name && false === $main_package_id && ! is_wp_error( $package_term ) ) {
 				$main_package_id = (int) $package_term['term_id'];
 			}
 
