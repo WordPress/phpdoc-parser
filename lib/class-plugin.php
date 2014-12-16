@@ -9,7 +9,7 @@ class Plugin {
 	/**
 	 * @var \WP_Parser\Relationships
 	 */
-	var $relationships;
+	public $relationships;
 
 	public function on_load() {
 

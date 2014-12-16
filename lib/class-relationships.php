@@ -12,12 +12,12 @@ class Relationships {
 	/**
 	 * @var array Post types we're setting relationships between
 	 */
-	var $post_types;
+	public $post_types;
 
 	/**
 	 * @var array Map of post slugs to post ids.
 	 */
-	var $slugs_to_ids = array();
+	public $slugs_to_ids = array();
 
 	/**
 	 * Map of how post IDs relate to one another.
@@ -34,7 +34,7 @@ class Relationships {
 	 *
 	 * @var array
 	 */
-	var $relationships = array();
+	public $relationships = array();
 
 	/**
 	 * Adds the actions.
