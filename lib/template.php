@@ -140,33 +140,33 @@ function get_arguments() {
 
 	$return_args = array();
 
-	if ( ! empty( $args_data ) ) {
-		foreach ( $args_data as $arg ) {
-			$param_tag = wp_list_filter( $params, array( 'variable' => $arg['name'] ) );
-			$param_tag = array_shift( $param_tag );
+	if ( empty( $args_data ) ) {
+		$args_data = array();
+	}
 
-			$param = array(
-				'name' => $arg['name'],
-			);
+	foreach ( $args_data as $arg ) {
+		$param_tag = wp_list_filter( $params, array( 'variable' => $arg['name'] ) );
+		$param_tag = array_shift( $param_tag );
+		$param     = array(
+			'name'  => $arg['name'],
+			'types' => array(),
+		);
 
-			if ( ! empty( $arg['default'] ) ) {
-				$param['default_value'] = $arg['default'];
-			}
-
-			if ( ! empty( $arg['type'] ) ) {
-				$param['types'] = array( $arg['type'] );
-			} else if ( ! empty( $param_tag['types'] ) ) {
-				$param['types'] = $param_tag['types'];
-			} else {
-				$param['types'] = array();
-			}
-
-			if ( ! empty( $param_tag['content'] ) ) {
-				$param['desc'] = $param_tag['content'];
-			}
-
-			$return_args[] = $param;
+		if ( ! empty( $arg['default'] ) ) {
+			$param['default_value'] = $arg['default'];
 		}
+
+		if ( ! empty( $arg['type'] ) ) {
+			$param['types'] = array( $arg['type'] );
+		} else if ( ! empty( $param_tag['types'] ) ) {
+			$param['types'] = $param_tag['types'];
+		}
+
+		if ( ! empty( $param_tag['content'] ) ) {
+			$param['desc'] = $param_tag['content'];
+		}
+
+		$return_args[] = $param;
 	}
 
 	return apply_filters( 'wp_parser_get_arguments', $return_args );
@@ -184,34 +184,33 @@ function get_hook_arguments() {
 
 	$return_args = array();
 
-	if ( ! empty( $args_data ) ) {
-		foreach ( $args_data as $arg ) {
-			$param_tag = array_shift( $params );
+	if ( empty( $args_data ) ) {
+		$args_data = array();
+	}
 
-			$param = array();
+	foreach ( $args_data as $arg ) {
+		$param_tag = array_shift( $params );
+		$param     = array(
+			'name'  => '$(unnamed)',
+			'types' => array(),
+			'value' => $arg,
+		);
 
-			if ( ! empty( $param_tag['variable'] ) ) {
-				$param['name'] = $param_tag['variable'];
-			} elseif ( 0 === strpos( $arg, '$' ) ) {
-				$param['name'] = $arg;
-			} else {
-				$param['name'] = '$(unnamed)';
-			}
-
-			if ( ! empty( $param_tag['types'] ) ) {
-				$param['types'] = $param_tag['types'];
-			} else {
-				$param['types'] = array();
-			}
-
-			if ( ! empty( $param_tag['content'] ) ) {
-				$param['desc'] = $param_tag['content'];
-			}
-
-			$param['value'] = $arg;
-
-			$return_args[] = $param;
+		if ( ! empty( $param_tag['variable'] ) ) {
+			$param['name'] = $param_tag['variable'];
+		} elseif ( 0 === strpos( $arg, '$' ) ) {
+			$param['name'] = $arg;
 		}
+
+		if ( ! empty( $param_tag['types'] ) ) {
+			$param['types'] = $param_tag['types'];
+		}
+
+		if ( ! empty( $param_tag['content'] ) ) {
+			$param['desc'] = $param_tag['content'];
+		}
+
+		$return_args[] = $param;
 	}
 
 	return apply_filters( 'wp_parser_get_hook_arguments', $return_args );
