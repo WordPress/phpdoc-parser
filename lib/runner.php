@@ -7,6 +7,7 @@ use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
 use phpDocumentor\Reflection\FunctionReflector;
 use phpDocumentor\Reflection\FunctionReflector\ArgumentReflector;
+use phpDocumentor\Reflection\ReflectionAbstract;
 
 /**
  * @param string $directory
@@ -127,7 +128,7 @@ function parse_files( $files, $root ) {
 }
 
 /**
- * @param BaseReflector $element
+ * @param BaseReflector|ReflectionAbstract $element
  *
  * @return array
  */

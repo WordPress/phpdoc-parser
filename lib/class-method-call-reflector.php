@@ -36,6 +36,7 @@ class Method_Call_Reflector extends BaseReflector {
 			if ( is_a( $caller, 'PHPParser_Node_Expr_FuncCall' ) ) {
 
 				// Add parentheses to signify this is a function call
+				/** @var \PHPParser_Node_Expr_FuncCall $caller */
 				$caller = $caller->name->parts[0] . '()';
 			}
 
