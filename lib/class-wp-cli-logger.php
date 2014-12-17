@@ -5,7 +5,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
 
 /**
- *
+ * PSR-3 logger for WP CLI.
  */
 class WP_CLI_Logger extends AbstractLogger {
 
