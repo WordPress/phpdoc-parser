@@ -723,43 +723,24 @@ class Importer implements LoggerAwareInterface {
 			wp_update_post( wp_slash( $post_data ), true );
 		}
 
-		// Everything worked! Woo hoo!
-		if ( $is_new_post ) {
-			switch ( $post_data['post_type'] ) {
-				case $this->post_type_class:
-					$this->logger->info( "\t" . sprintf( 'Imported class "%1$s"', $data['name'] ) );
-					break;
+		$action = $is_new_post ? 'Imported' : 'Updated';
 
-				case $this->post_type_hook:
-					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->logger->info( $indent . sprintf( 'Imported hook "%1$s"', $data['name'] ) );
-					break;
+		switch ( $post_data['post_type'] ) {
+			case $this->post_type_class:
+				$this->logger->info( "\t" . sprintf( '%1$s class "%2$s"', $action, $data['name'] ) );
+				break;
 
-				case $this->post_type_method:
-					$this->logger->info( "\t\t" . sprintf( 'Imported method "%1$s"', $data['name'] ) );
-					break;
+			case $this->post_type_hook:
+				$indent = ( $parent_post_id ) ? "\t\t" : "\t";
+				$this->logger->info( $indent . sprintf( '%1$s hook "%2$s"', $action, $data['name'] ) );
+				break;
 
-				default:
-					$this->logger->info( "\t" . sprintf( 'Imported function "%1$s"', $data['name'] ) );
-			}
-		} else {
-			switch ( $post_data['post_type'] ) {
-				case $this->post_type_class:
-					$this->logger->info( "\t" . sprintf( 'Updated class "%1$s"', $data['name'] ) );
-					break;
+			case $this->post_type_method:
+				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $data['name'] ) );
+				break;
 
-				case $this->post_type_hook:
-					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->logger->info( $indent . sprintf( 'Updated hook "%1$s"', $data['name'] ) );
-					break;
-
-				case $this->post_type_method:
-					$this->logger->info( "\t\t" . sprintf( 'Updated method "%1$s"', $data['name'] ) );
-					break;
-
-				default:
-					$this->logger->info( "\t" . sprintf( 'Updated function "%1$s"', $data['name'] ) );
-			}
+			default:
+				$this->logger->info( "\t" . sprintf( '%1$s function "%2$s"', $action, $data['name'] ) );
 		}
 
 		/**
