@@ -200,7 +200,19 @@ class Plugin {
 	 */
 	public function make_args_safe( $args ) {
 
-		$filters = array(
+		array_walk_recursive( $args, array( $this, 'sanitize_argument' ) );
+
+		return apply_filters( 'wp_parser_make_args_safe', $args );
+	}
+
+	/**
+	 * @param mixed $value
+	 *
+	 * @return mixed
+	 */
+	public function sanitize_argument( &$value ) {
+
+		static $filters = array(
 			'wp_filter_kses',
 			'make_clickable',
 			'force_balance_tags',
@@ -210,21 +222,11 @@ class Plugin {
 			'stripslashes_deep',
 		);
 
-		foreach ( $args as &$arg ) {
-			foreach ( $arg as &$value ) {
-				foreach ( $filters as $filter_function ) {
-					if ( is_array( $value ) ) {
-						foreach ( $value as &$v ) {
-							$v = call_user_func( $filter_function, $v );
-						}
-					} else {
-						$value = call_user_func( $filter_function, $value );
-					}
-				}
-			}
+		foreach ( $filters as $filter ) {
+			$value = call_user_func( $filter, $value );
 		}
 
-		return apply_filters( 'wp_parser_make_args_safe', $args );
+		return $value;
 	}
 
 	/**
