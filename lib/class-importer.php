@@ -368,13 +368,20 @@ class Importer implements LoggerAwareInterface {
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
 	public function import_hook( array $data, $parent_post_id = 0, $import_internal = false ) {
+
+		/* TODO core-centric assumption, shouldn't be handled on import step
 		if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
 			return false;
-		} elseif ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
-			return false;
-		} elseif ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+		}
+
+		if ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
 			return false;
 		}
+
+		if ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+			return false;
+		}
+		*/
 
 		$hook_id = $this->import_item( $data, $parent_post_id, $import_internal, array( 'post_type' => $this->post_type_hook ) );
 
