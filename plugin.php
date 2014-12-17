@@ -19,4 +19,6 @@ $wp_parser->on_load();
 
 register_activation_hook( __FILE__, array( 'P2P_Storage', 'init' ) );
 register_activation_hook( __FILE__, array( 'P2P_Storage', 'install' ) );
-register_uninstall_hook( __FILE__, array( 'P2P_Storage', 'uninstall' ) );
+
+// TODO safer handling for uninstall
+//register_uninstall_hook( __FILE__, array( 'P2P_Storage', 'uninstall' ) );
