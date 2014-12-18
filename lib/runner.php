@@ -151,7 +151,7 @@ function export_docblock( $element ) {
 	foreach ( $docblock->getTags() as $tag ) {
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() ),
+			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = $tag->getTypes();
@@ -170,7 +170,7 @@ function export_docblock( $element ) {
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', $tag->getDescription() );
+				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}
@@ -335,4 +335,20 @@ function export_uses( array $uses ) {
 	}
 
 	return $out;
+}
+
+/**
+ * Format the given description with Markdown.
+ *
+ * @param string $description Description.
+ *
+ * @return string Description as Markdown if the Parsedown class exists, otherwise return
+ *                the given description text.
+ */
+function format_description( $description ) {
+	if ( class_exists( 'Parsedown' ) ) {
+		$parsedown   = \Parsedown::instance();
+		$description = $parsedown->line( $description );
+	}
+	return $description;
 }

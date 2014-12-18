@@ -29,7 +29,7 @@
 		"php"                      : ">=5.3.6",
 		"composer/installers"      : "~1.0",
 		"phpdocumentor/reflection" : "~1.0",
-		"erusev/parsedown"         : "~0.9",
+		"erusev/parsedown"         : "~1.1.4",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
 		"psr/log"                  : "~1.0"
