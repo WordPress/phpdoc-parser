@@ -341,7 +341,6 @@ function export_uses( array $uses ) {
  * Format the given description with Markdown.
  *
  * @param string $description Description.
- *
  * @return string Description as Markdown if the Parsedown class exists, otherwise return
  *                the given description text.
  */
