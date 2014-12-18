@@ -292,47 +292,39 @@ class Importer implements LoggerAwareInterface {
 			'deprecated' => $deprecated_file, // Deprecation status
 		);
 
-		// Functions
-		if ( ! empty( $file['functions'] ) ) {
-			$count = 0;
+		// TODO ensures values are set, but better handled upstream later
+		$file = array_merge( array(
+			'functions' => array(),
+			'classes'   => array(),
+			'hooks'     => array(),
+		), $file );
 
-			foreach ( $file['functions'] as $function ) {
-				$this->import_function( $function, 0, $import_internal );
-				$count ++;
+		$count = 0;
 
-				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && 0 == $count % 10 ) { // TODO figure our why are we still doing this
-					sleep( 3 );
-				}
+		foreach ( $file['functions'] as $function ) {
+			$this->import_function( $function, 0, $import_internal );
+			$count ++;
+
+			if ( ! $skip_sleep && 0 == $count % 10 ) { // TODO figure our why are we still doing this
+				sleep( 3 );
 			}
 		}
 
-		// Classes
-		if ( ! empty( $file['classes'] ) ) {
-			$count = 0;
+		foreach ( $file['classes'] as $class ) {
+			$this->import_class( $class, $import_internal );
+			$count ++;
 
-			foreach ( $file['classes'] as $class ) {
-				$this->import_class( $class, $import_internal );
-				$count ++;
-
-				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && 0 == $count % 10 ) {
-					sleep( 3 );
-				}
+			if ( ! $skip_sleep && 0 == $count % 10 ) {
+				sleep( 3 );
 			}
 		}
 
-		if ( ! empty( $file['hooks'] ) ) {
-			$count = 0;
+		foreach ( $file['hooks'] as $hook ) {
+			$this->import_hook( $hook, 0, $import_internal );
+			$count ++;
 
-			foreach ( $file['hooks'] as $hook ) {
-				$this->import_hook( $hook, 0, $import_internal );
-				$count ++;
-
-				// Wait 3 seconds after every 10 items
-				if ( ! $skip_sleep && 0 == $count % 10 ) {
-					sleep( 3 );
-				}
+			if ( ! $skip_sleep && 0 == $count % 10 ) {
+				sleep( 3 );
 			}
 		}
 
