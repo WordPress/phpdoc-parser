@@ -108,7 +108,7 @@ class Command extends WP_CLI_Command {
 	 * @param string $path   Directory to scan for PHPDoc
 	 * @param string $format Optional. What format the data is returned in: [json*|array].
 	 *
-	 * @return string
+	 * @return string|array
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json' ) {
 		$is_file = is_file( $path );
