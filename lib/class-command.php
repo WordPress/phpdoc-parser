@@ -143,10 +143,10 @@ class Command extends WP_CLI_Command {
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
 	 * @param array $data
-	 * @param bool  $skip_sleep                Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool  $skip_sleep      If true, the sleep() calls are skipped.
+	 * @param bool  $import_internal If true, functions marked @internal will be imported.
 	 */
-	protected function _do_import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
+	protected function _do_import( array $data, $skip_sleep = false, $import_internal = false ) {
 
 		if ( ! wp_get_current_user()->exists() ) {
 			WP_CLI::error( 'Please specify a valid user: --user=<id|login>' );
@@ -156,7 +156,7 @@ class Command extends WP_CLI_Command {
 		// Run the importer
 		$importer = new Importer;
 		$importer->setLogger( new WP_CLI_Logger() );
-		$importer->import( $data, $skip_sleep, $import_internal_functions );
+		$importer->import( $data, $skip_sleep, $import_internal );
 
 		WP_CLI::line();
 	}
