@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3afcce64c58240f7ee787a666df91db0",
+    "hash": "c3dfe31bb0f250fd8025b4d3c08c8ff8",
     "packages": [
         {
             "name": "composer/installers",
@@ -347,12 +347,14 @@
                     "autoload.php"
                 ]
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0+"
             ],
             "description": "A library for many-to-many relationships in WordPress",
             "homepage": "https://github.com/scribu/wp-lib-posts-to-posts",
+            "support": {
+                "source": "https://github.com/scribu/wp-lib-posts-to-posts/tree/master"
+            },
             "time": "2014-09-09 05:34:49"
         },
         {
@@ -406,7 +408,7 @@
     },
     "prefer-stable": false,
     "platform": {
-        "php": ">=5.3.6"
+        "php": ">=5.4"
     },
     "platform-dev": []
 }
