@@ -18,24 +18,13 @@ class Command extends WP_CLI_Command {
 	 * @param array $args
 	 */
 	public function export( $args ) {
-		$directory = $args[0];
-
-		$output_file = 'phpdoc.json';
-
-		if ( ! empty( $args[1] ) ) {
-			$output_file = $args[1];
-		}
-
-		$directory = realpath( $directory );
+		$directory   = realpath( $args[0] );
+		$output_file = empty( $args[1] ) ? 'phpdoc.json' : $args[1];
+		$json        = $this->_get_phpdoc_data( $directory );
+		$result      = file_put_contents( $output_file, $json );
 		WP_CLI::line();
 
-		// Get data from the PHPDoc
-		$json = $this->_get_phpdoc_data( $directory );
-
-		// Write to $output_file
-		$error = ! file_put_contents( $output_file, $json );
-
-		if ( $error ) {
+		if ( false === $result ) {
 			WP_CLI::error( sprintf( 'Problem writing %1$s bytes of data to %2$s', strlen( $json ), $output_file ) );
 			exit;
 		}
