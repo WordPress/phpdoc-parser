@@ -105,35 +105,26 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate the data from the PHPDoc markup.
 	 *
-	 * @param string $path   Directory to scan for PHPDoc
-	 * @param string $format Optional. What format the data is returned in: [json*|array].
+	 * @param string $path   Directory or file to scan for PHPDoc
+	 * @param string $format What format the data is returned in: [json|array].
 	 *
 	 * @return string|array
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json' ) {
+		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $path ) );
 		$is_file = is_file( $path );
-		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $is_file ? $path : "$path/" ) );
+		$files   = $is_file ? array( $path ) : get_wp_files( $path );
+		$path    = $is_file ? dirname( $path ) : $path;
 
-		// Find the files to get the PHPDoc data from. $path can either be a folder or an absolute ref to a file.
-		if ( $is_file ) {
-			$files = array( $path );
-			$path  = dirname( $path );
-		} else {
-			ob_start();
-			$files = get_wp_files( $path );
-			$error = ob_get_clean();
-
-			if ( $error ) {
-				WP_CLI::error( sprintf( 'Problem with %1$s: %2$s', $path, $error ) );
-				exit;
-			}
+		if ( $files instanceof \WP_Error ) {
+			WP_CLI::error( sprintf( 'Problem with %1$s: %2$s', $path, $files->get_error_message() ) );
+			exit;
 		}
 
-		// Extract PHPDoc
 		$output = parse_files( $files, $path );
 
 		if ( 'json' == $format ) {
-			$output = json_encode( $output );
+			return json_encode( $output, JSON_PRETTY_PRINT );
 		}
 
 		return $output;

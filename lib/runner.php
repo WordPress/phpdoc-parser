@@ -12,7 +12,7 @@ use phpDocumentor\Reflection\ReflectionAbstract;
 /**
  * @param string $directory
  *
- * @return array
+ * @return array|\WP_Error
  */
 function get_wp_files( $directory ) {
 	$iterableFiles = new \RecursiveIteratorIterator(
@@ -29,7 +29,10 @@ function get_wp_files( $directory ) {
 			$files[] = $file->getPathname();
 		}
 	} catch ( \UnexpectedValueException $exc ) {
-		printf( 'Directory [%s] contained a directory we can not recurse into', $directory );
+		return new \WP_Error(
+			'unexpected_value_exception',
+			sprintf( 'Directory [%s] contained a directory we can not recurse into', $directory )
+		);
 	}
 
 	return $files;
