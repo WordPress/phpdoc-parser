@@ -467,11 +467,6 @@ class Importer implements LoggerAwareInterface {
 			return;
 		}
 
-		// version.php should not contain functions, classes or hooks.
-		if ( isset( $data['functions'] ) || isset ( $data['classes'] ) ||  isset( $data['hooks'] ) ) {
-			return;
-		}
-
 		include $version_path;
 
 		if ( isset( $wp_version ) && $wp_version ) {
