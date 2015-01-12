@@ -110,10 +110,10 @@ class Importer implements LoggerAwareInterface {
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
 	 * @param array $data
-	 * @param bool  $skip_sleep                Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool  $import_internal_functions Optional; defaults to false. If true, functions marked @internal will be imported.
+	 * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 */
-	public function import( array $data, $skip_sleep = false, $import_internal_functions = false ) {
+	public function import( array $data, $skip_sleep = false, $import_ignored_functions = false ) {
 		global $wpdb;
 
 		$time_start = microtime(true);
@@ -155,7 +155,7 @@ class Importer implements LoggerAwareInterface {
 			$this->logger->info( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
 			$file_number ++;
 
-			$this->import_file( $file, $skip_sleep, $import_internal_functions );
+			$this->import_file( $file, $skip_sleep, $import_ignored_functions );
 
 			if ( empty( $root ) && ( isset( $file['root'] ) && $file['root'] ) ) {
 				$root = $file['root'];
@@ -245,10 +245,10 @@ class Importer implements LoggerAwareInterface {
 	 * For a specific file, go through and import the file, functions, and classes.
 	 *
 	 * @param array $file
-	 * @param bool  $skip_sleep      Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions and classes marked `@internal` will be imported.
+	 * @param bool  $skip_sleep     Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $import_ignored Optional; defaults to false. If true, functions and classes marked `@ignore` will be imported.
 	 */
-	public function import_file( array $file, $skip_sleep = false, $import_internal = false ) {
+	public function import_file( array $file, $skip_sleep = false, $import_ignored = false ) {
 
 		/**
 		 * Filter whether to proceed with importing a prospective file.
@@ -301,7 +301,7 @@ class Importer implements LoggerAwareInterface {
 		$count = 0;
 
 		foreach ( $file['functions'] as $function ) {
-			$this->import_function( $function, 0, $import_internal );
+			$this->import_function( $function, 0, $import_ignored );
 			$count ++;
 
 			if ( ! $skip_sleep && 0 == $count % 10 ) { // TODO figure our why are we still doing this
@@ -310,7 +310,7 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		foreach ( $file['classes'] as $class ) {
-			$this->import_class( $class, $import_internal );
+			$this->import_class( $class, $import_ignored );
 			$count ++;
 
 			if ( ! $skip_sleep && 0 == $count % 10 ) {
@@ -319,7 +319,7 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		foreach ( $file['hooks'] as $hook ) {
-			$this->import_hook( $hook, 0, $import_internal );
+			$this->import_hook( $hook, 0, $import_ignored );
 			$count ++;
 
 			if ( ! $skip_sleep && 0 == $count % 10 ) {
@@ -335,30 +335,29 @@ class Importer implements LoggerAwareInterface {
 	/**
 	 * Create a post for a function
 	 *
-	 * @param array $data            Function
-	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked `@internal` will be imported.
+	 * @param array $data           Function.
+	 * @param int   $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 *
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
-	public function import_function( array $data, $parent_post_id = 0, $import_internal = false ) {
-		$function_id = $this->import_item( $data, $parent_post_id, $import_internal );
+	public function import_function( array $data, $parent_post_id = 0, $import_ignored = false ) {
+		$function_id = $this->import_item( $data, $parent_post_id, $import_ignored );
 
 		foreach ( $data['hooks'] as $hook ) {
-			$this->import_hook( $hook, $function_id, $import_internal );
+			$this->import_hook( $hook, $function_id, $import_ignored );
 		}
 	}
 
 	/**
 	 * Create a post for a hook
 	 *
-	 * @param array $data            Hook
-	 * @param int   $parent_post_id  Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, hooks marked `@internal` will be imported.
-	 *
+	 * @param array $data           Hook.
+	 * @param int   $parent_post_id Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, hooks marked `@ignore` will be imported.
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
-	public function import_hook( array $data, $parent_post_id = 0, $import_internal = false ) {
+	public function import_hook( array $data, $parent_post_id = 0, $import_ignored = false ) {
 
 		/* TODO core-centric assumption, shouldn't be handled on import step
 		if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
@@ -374,7 +373,7 @@ class Importer implements LoggerAwareInterface {
 		}
 		*/
 
-		$hook_id = $this->import_item( $data, $parent_post_id, $import_internal, array( 'post_type' => $this->post_type_hook ) );
+		$hook_id = $this->import_item( $data, $parent_post_id, $import_ignored, array( 'post_type' => $this->post_type_hook ) );
 
 		if ( ! $hook_id ) {
 			return false;
@@ -388,15 +387,14 @@ class Importer implements LoggerAwareInterface {
 	/**
 	 * Create a post for a class
 	 *
-	 * @param array $data            Class
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions marked `@internal` will be imported.
-	 *
+	 * @param array $data           Class.
+	 * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
-	protected function import_class( array $data, $import_internal = false ) {
+	protected function import_class( array $data, $import_ignored = false ) {
 
 		// Insert this class
-		$class_id = $this->import_item( $data, 0, $import_internal, array( 'post_type' => $this->post_type_class ) );
+		$class_id = $this->import_item( $data, 0, $import_ignored, array( 'post_type' => $this->post_type_class ) );
 
 		if ( ! $class_id ) {
 			return false;
@@ -413,7 +411,7 @@ class Importer implements LoggerAwareInterface {
 		foreach ( $data['methods'] as $method ) {
 			// Namespace method names with the class name
 			$method['name'] = $data['name'] . '::' . $method['name'];
-			$this->import_method( $method, $class_id, $import_internal );
+			$this->import_method( $method, $class_id, $import_ignored );
 		}
 
 		return $class_id;
@@ -422,17 +420,17 @@ class Importer implements LoggerAwareInterface {
 	/**
 	 * Create a post for a class method.
 	 *
-	 * @param array $data            Method.
-	 * @param int   $parent_post_id  Optional; post ID of the parent (class) this
-	 *                               method belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions
-	 *                               marked `@internal` will be imported.
+	 * @param array $data           Method.
+	 * @param int   $parent_post_id Optional; post ID of the parent (class) this
+	 *                              method belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, functions
+	 *                              marked `@ignore` will be imported.
 	 * @return bool|int Post ID of this function, false if any failure.
 	 */
-	protected function import_method( array $data, $parent_post_id = 0, $import_internal = false ) {
+	protected function import_method( array $data, $parent_post_id = 0, $import_ignored = false ) {
 
 		// Insert this method.
-		$method_id = $this->import_item( $data, $parent_post_id, $import_internal, array( 'post_type' => $this->post_type_method ) );
+		$method_id = $this->import_item( $data, $parent_post_id, $import_ignored, array( 'post_type' => $this->post_type_method ) );
 
 		if ( ! $method_id ) {
 			return false;
@@ -447,7 +445,7 @@ class Importer implements LoggerAwareInterface {
 		// Now add the hooks.
 		if ( ! empty( $data['hooks'] ) ) {
 			foreach ( $data['hooks'] as $hook ) {
-				$this->import_hook( $hook, $method_id, $import_internal );
+				$this->import_hook( $hook, $method_id, $import_ignored );
 			}
 		}
 
@@ -481,14 +479,14 @@ class Importer implements LoggerAwareInterface {
 	 * Anything that needs to be dealt identically for functions or methods should go in this function.
 	 * Anything more specific should go in either import_function() or import_class() as appropriate.
 	 *
-	 * @param array $data            Data
-	 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-	 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
-	 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
+	 * @param array $data           Data.
+	 * @param int   $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, functions or classes marked `@ignore` will be imported.
+	 * @param array $arg_overrides  Optional; array of parameters that override the defaults passed to wp_update_post().
 	 *
 	 * @return bool|int Post ID of this item, false if any failure.
 	 */
-	public function import_item( array $data, $parent_post_id = 0, $import_internal = false, array $arg_overrides = array() ) {
+	public function import_item( array $data, $parent_post_id = 0, $import_ignored = false, array $arg_overrides = array() ) {
 
 		/** @var \wpdb $wpdb */
 		global $wpdb;
@@ -509,25 +507,25 @@ class Importer implements LoggerAwareInterface {
 			)
 		);
 
-		// Don't import items marked `@internal` unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
-		if ( ! $import_internal && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+		// Don't import items marked `@ignore` unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
+		if ( ! $import_ignored && wp_list_filter( $data['doc']['tags'], array( 'name' => 'ignore' ) ) ) {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @internal class "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d class "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_method:
-					$this->logger->info( "\t\t" . sprintf( 'Skipped importing @internal method "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t\t" . sprintf( 'Skipped importing @ignore-d method "%1$s"', $data['name'] ) );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->logger->info( $indent . sprintf( 'Skipped importing @internal hook "%1$s"', $data['name'] ) );
+					$this->logger->info( $indent . sprintf( 'Skipped importing @ignore-d hook "%1$s"', $data['name'] ) );
 					break;
 
 				default:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @internal function "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d function "%1$s"', $data['name'] ) );
 			}
 
 			return false;
@@ -545,10 +543,10 @@ class Importer implements LoggerAwareInterface {
 		 * @param bool  $display         Whether to proceed with adding/updating the import item. Default true.
 		 * @param array $data            Data
 		 * @param int   $parent_post_id  Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
-		 * @param bool  $import_internal Optional; defaults to false. If true, functions or classes marked `@internal` will be imported.
+		 * @param bool  $import_ignored Optional; defaults to false. If true, functions or classes marked `@ignore` will be imported.
 		 * @param array $arg_overrides   Optional; array of parameters that override the defaults passed to wp_update_post().
 		 */
-		if ( ! apply_filters( 'wp_parser_pre_import_item', true, $data, $parent_post_id, $import_internal, $arg_overrides ) ) {
+		if ( ! apply_filters( 'wp_parser_pre_import_item', true, $data, $parent_post_id, $import_ignored, $arg_overrides ) ) {
 			return false;
 		}
 
