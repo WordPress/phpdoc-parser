@@ -508,7 +508,7 @@ class Importer implements LoggerAwareInterface {
 		);
 
 		// Don't import items marked `@ignore` unless explicitly requested. See https://github.com/rmccue/WP-Parser/issues/16
-		if ( ! $import_ignored && wp_list_filter( $data['doc']['tags'], array( 'name' => 'internal' ) ) ) {
+		if ( ! $import_ignored && wp_list_filter( $data['doc']['tags'], array( 'name' => 'ignore' ) ) ) {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
