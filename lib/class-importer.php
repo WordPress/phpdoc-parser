@@ -358,20 +358,31 @@ class Importer implements LoggerAwareInterface {
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
 	public function import_hook( array $data, $parent_post_id = 0, $import_ignored = false ) {
+		/**
+		 * Filter whether to skip parsing duplicate hooks.
+		 *
+		 * "Duplicate hooks" are characterized in WordPress core by a preceding DocBlock comment
+		 * including the phrases "This action is documented in" or "This filter is documented in".
+		 *
+		 * Passing a truthy value will skip the parsing of duplicate hooks.
+		 *
+		 * @param bool $skip Whether to skip parsing duplicate hooks. Default false.
+		 */
+		$skip_duplicates = apply_filters( 'wp_parser_skip_duplicate_hooks', false );
 
-		/* TODO core-centric assumption, shouldn't be handled on import step
-		if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
-			return false;
-		}
+		if ( false !== $skip_duplicates ) {
+			if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
+				return false;
+			}
 
-		if ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
-			return false;
-		}
+			if ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
+				return false;
+			}
 
-		if ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
-			return false;
+			if ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+				return false;
+			}
 		}
-		*/
 
 		$hook_id = $this->import_item( $data, $parent_post_id, $import_ignored, array( 'post_type' => $this->post_type_hook ) );
 
