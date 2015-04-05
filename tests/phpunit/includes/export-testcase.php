@@ -104,6 +104,86 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Assert that a function uses another entity.
+	 *
+	 * @param string $type          The type of entity. E.g. 'functions', 'methods'.
+	 * @param string $function_name The name of the function that uses this function.
+	 * @param array  $entity        The expected exported data for the used entity.
+	 */
+	protected function assertFunctionUses( $type, $function_name, $entity ) {
+
+		$function_data = $this->find_entity_data_in(
+			$this->export_data
+			, 'functions'
+			, $function_name
+		);
+
+		$this->assertInternalType( 'array', $function_data );
+		$this->assertEntityUses( $function_data, $type, $entity );
+	}
+
+	/**
+	 * Assert that a method uses another entity.
+	 *
+	 * @param string $type        The type of entity. E.g. 'functions', 'methods'.
+	 * @param string $class_name  The name of the class that the method is used in.
+	 * @param string $method_name The name of the method that uses this method.
+	 * @param array  $entity      The expected exported data for this function.
+	 */
+	protected function assertMethodUses( $type, $class_name, $method_name, $entity ) {
+
+		$class_data = $this->find_entity_data_in(
+			$this->export_data
+			, 'classes'
+			, $class_name
+		);
+
+		$this->assertInternalType( 'array', $class_data );
+
+		$method_data = $this->find_entity_data_in(
+			$class_data
+			, 'methods'
+			, $method_name
+		);
+
+		$this->assertInternalType( 'array', $method_data );
+		$this->assertEntityUses( $method_data, $type, $entity );
+	}
+
+	/**
+	 * Assert that a file uses a function.
+	 *
+	 * @param array $function The expected export data for the function.
+	 */
+	protected function assertFileUsesFunction( $function ) {
+
+		$this->assertEntityUses( $this->export_data, 'functions', $function );
+	}
+
+	/**
+	 * Assert that a function uses another function.
+	 *
+	 * @param string $function_name The name of the function that uses this function.
+	 * @param array  $function      The expected exported data for the used function.
+	 */
+	protected function assertFunctionUsesFunction( $function_name, $function ) {
+
+		$this->assertFunctionUses( 'functions', $function_name, $function );
+	}
+
+	/**
+	 * Assert that a method uses a function.
+	 *
+	 * @param string $class_name  The name of the class that the method is used in.
+	 * @param string $method_name The name of the method that uses this method.
+	 * @param array  $function      The expected exported data for this function.
+	 */
+	protected function assertMethodUsesFunction( $class_name, $method_name, $function ) {
+
+		$this->assertMethodUses( 'functions', $class_name, $method_name, $function );
+	}
+
+	/**
 	 * Assert that a file uses an method.
 	 *
 	 * @param array $method The expected export data for the method.
@@ -121,14 +201,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function assertFunctionUsesMethod( $function_name, $method ) {
 
-		$function_data = $this->find_entity_data_in(
-			$this->export_data
-			, 'functions'
-			, $function_name
-		);
-
-		$this->assertInternalType( 'array', $function_data );
-		$this->assertEntityUses( $function_data, 'methods', $method );
+		$this->assertFunctionUses( 'methods', $function_name, $method );
 	}
 
 	/**
@@ -140,22 +213,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function assertMethodUsesMethod( $class_name, $method_name, $method ) {
 
-		$class_data = $this->find_entity_data_in(
-			$this->export_data
-			, 'classes'
-			, $class_name
-		);
-
-		$this->assertInternalType( 'array', $class_data );
-
-		$method_data = $this->find_entity_data_in(
-			$class_data
-			, 'methods'
-			, $method_name
-		);
-
-		$this->assertInternalType( 'array', $method_data );
-		$this->assertEntityUses( $method_data, 'methods', $method );
+		$this->assertMethodUses( 'methods', $class_name, $method_name, $method );
 	}
 
 	/**
