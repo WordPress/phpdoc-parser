@@ -67,7 +67,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 			}
 		}
 
-		$this->markTestFailed( "No matching {$type} contained by {$entity['name']}." );
+		$this->fail( "No matching {$type} contained by {$entity['name']}." );
 	}
 
 	/**
@@ -100,7 +100,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 			}
 		}
 
-		$this->markTestFailed( "No matching {$type} used by {$entity['name']}." );
+		$this->fail( "No matching {$type} used by {$entity['name']}." );
 	}
 
 	/**
