@@ -7,7 +7,7 @@
 namespace WP_Parser\Tests;
 
 /**
- * Test that module use is exported correctly.
+ * Test that method use is exported correctly.
  */
 class Export_Method_Use extends Export_UnitTestCase {
 

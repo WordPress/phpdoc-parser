@@ -85,7 +85,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @param array  $entity The exported entity data.
 	 * @param string $type   The type of thing that this entity should use.
-	 * @param array  $used   The expcted data for the thing the entity should use.
+	 * @param array  $used   The expected data for the thing the entity should use.
 	 */
 	protected function assertEntityUses( $entity, $type, $used ) {
 
