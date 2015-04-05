@@ -262,15 +262,15 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @return array|false The data for the entity, or false if it couldn't be found.
 	 */
-	protected function find_entity_data_in( $data, $type, $entity_name ) {
+	protected function find_entity_data_in( $data, $type, $entity ) {
 
 		if ( empty( $data[ $type ] ) ) {
 			return false;
 		}
 
-		foreach ( $data[ $type ] as $entity ) {
-			if ( $entity['name'] === $entity_name ) {
-				return $entity;
+		foreach ( $data[ $type ] as $entity_data ) {
+			if ( $entity_data['name'] === $entity ) {
+				return $entity_data;
 			}
 		}
 
