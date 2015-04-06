@@ -23,13 +23,6 @@ class File_Reflector extends FileReflector {
 	public $uses = array();
 
 	/**
-	 * List of elements used in the current node scope, indexed by element type.
-	 *
-	 * @var array {@see \WP_Parser\File_Reflector::$uses}
-	 */
-	protected $uses_queue = array();
-
-	/**
 	 * List of elements used in the current class scope, indexed by method.
 	 *
 	 * @var array[][] {@see \WP_Parser\File_Reflector::$uses}
@@ -83,16 +76,8 @@ class File_Reflector extends FileReflector {
 			case 'Expr_FuncCall':
 				$function = new \WP_Parser\Function_Call_Reflector( $node, $this->context );
 
-				/*
-				 * If the function call is in the global scope, add it to the
-				 * file's function calls. Otherwise, add it to the queue so it
-				 * can be added to the correct node when we leave it.
-				 */
-				if ( $this === $this->getLocation() ) {
-					$this->uses['functions'][] = $function;
-				} else {
-					$this->uses_queue['functions'][] = $function;
-				}
+				// Add the call to the list of functions used in this scope.
+				$this->getLocation()->uses['functions'][] = $function;
 
 				if ( $this->isFilter( $node ) ) {
 					if ( $this->last_doc && ! $node->getDocComment() ) {
@@ -102,16 +87,8 @@ class File_Reflector extends FileReflector {
 
 					$hook = new \WP_Parser\Hook_Reflector( $node, $this->context );
 
-					/*
-					 * If the hook is in the global scope, add it to the file's
-					 * hooks. Otherwise, add it to the queue so it can be added to
-					 * the correct node when we leave it.
-					 */
-					if ( $this === $this->getLocation() ) {
-						$this->uses['hooks'][] = $hook;
-					} else {
-						$this->uses_queue['hooks'][] = $hook;
-					}
+					// Add it to the list of hooks used in this scope.
+					$this->getLocation()->uses['hooks'][] = $hook;
 				}
 				break;
 
@@ -119,32 +96,16 @@ class File_Reflector extends FileReflector {
 			case 'Expr_MethodCall':
 				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
 
-				/*
-				 * If the method call is in the global scope, add it to the
-				 * file's method calls. Otherwise, add it to the queue so it
-				 * can be added to the correct node when we leave it.
-				 */
-				if ( $this === $this->getLocation() ) {
-					$this->uses['methods'][] = $method;
-				} else {
-					$this->uses_queue['methods'][] = $method;
-				}
+				// Add it to the list of methods used in this scope.
+				$this->getLocation()->uses['methods'][] = $method;
 				break;
 
 			// Parse out method calls, so we can export where methods are used.
 			case 'Expr_StaticCall':
 				$method = new \WP_Parser\Static_Method_Call_Reflector( $node, $this->context );
 
-				/*
-				 * If the method call is in the global scope, add it to the
-				 * file's method calls. Otherwise, add it to the queue so it
-				 * can be added to the correct node when we leave it.
-				 */
-				if ( $this === $this->getLocation() ) {
-					$this->uses['methods'][] = $method;
-				} else {
-					$this->uses_queue['methods'][] = $method;
-				}
+				// Add it to the list of methods used in this scope.
+				$this->getLocation()->uses['methods'][] = $method;
 				break;
 		}
 
@@ -196,22 +157,19 @@ class File_Reflector extends FileReflector {
 				break;
 
 			case 'Stmt_Function':
-				end( $this->functions )->uses = $this->uses_queue;
-				$this->uses_queue = array();
-				array_pop( $this->location );
+				end( $this->functions )->uses = array_pop( $this->location )->uses;
 				break;
 
 			case 'Stmt_ClassMethod':
+				$method = array_pop( $this->location );
+
 				/*
 				 * Store the list of elements used by this method in the queue. We'll
 				 * assign them to the method upon leaving the class (see above).
 				 */
-				if ( ! empty( $this->uses_queue ) ) {
-					$this->method_uses_queue[ $node->name ] = $this->uses_queue;
-					$this->uses_queue = array();
+				if ( ! empty( $method->uses ) ) {
+					$this->method_uses_queue[ $method->name ] = $method->uses;
 				}
-
-				array_pop( $this->location );
 				break;
 		}
 	}
