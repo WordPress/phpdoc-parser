@@ -56,7 +56,6 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 
 		$this->assertArrayHasKey( $type, $entity );
 
-		$found = false;
 		foreach ( $entity[ $type ] as $exported ) {
 			if ( $exported['line'] == $expected['line'] ) {
 				foreach ( $expected as $key => $expected_value ) {
@@ -351,7 +350,6 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 
 		$this->assertArrayHasKey( $doc_key, $entity );
 
-		$found = false;
 		foreach ( $docs as $key => $expected_value ) {
 			$this->assertEquals( $expected_value, $entity[ $doc_key ][ $key ] );
 		}
