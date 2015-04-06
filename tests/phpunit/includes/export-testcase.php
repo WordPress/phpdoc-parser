@@ -89,18 +89,29 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function assertEntityUses( $entity, $type, $used ) {
 
-		$this->assertArrayHasKey( 'uses', $entity );
-		$this->assertArrayHasKey( $type, $entity['uses'] );
+		if ( ! $this->entity_uses( $entity, $type, $used ) ) {
 
-		$found = false;
-		foreach ( $entity['uses'][ $type ] as $exported_used ) {
-			if ( $exported_used['line'] == $used['line'] ) {
-				$this->assertEquals( $used, $exported_used );
-				return;
-			}
+			$name = isset( $entity['path'] ) ? $entity['path'] : $entity['name'];
+
+			$this->fail( "No matching {$type} used by {$name}." );
 		}
+	}
 
-		$this->fail( "No matching {$type} used by {$entity['name']}." );
+	/**
+	 * Assert that an entity doesn't use another entity.
+	 *
+	 * @param array  $entity The exported entity data.
+	 * @param string $type   The type of thing that this entity shouldn't use.
+	 * @param array  $used   The expected data for the thing the entity shouldn't use.
+	 */
+	protected function assertEntityNotUses( $entity, $type, $used ) {
+
+		if ( $this->entity_uses( $entity, $type, $used ) ) {
+
+			$name = isset( $entity['path'] ) ? $entity['path'] : $entity['name'];
+
+			$this->fail( "Matching {$type} used by {$name}." );
+		}
 	}
 
 	/**
@@ -120,6 +131,25 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInternalType( 'array', $function_data );
 		$this->assertEntityUses( $function_data, $type, $entity );
+	}
+
+	/**
+	 * Assert that a function doesn't use another entity.
+	 *
+	 * @param string $type          The type of entity. E.g. 'functions', 'methods'.
+	 * @param string $function_name The name of the function that uses this function.
+	 * @param array  $entity        The expected exported data for the used entity.
+	 */
+	protected function assertFunctionNotUses( $type, $function_name, $entity ) {
+
+		$function_data = $this->find_entity_data_in(
+			$this->export_data
+			, 'functions'
+			, $function_name
+		);
+
+		$this->assertInternalType( 'array', $function_data );
+		$this->assertEntityNotUses( $function_data, $type, $entity );
 	}
 
 	/**
@@ -148,6 +178,34 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInternalType( 'array', $method_data );
 		$this->assertEntityUses( $method_data, $type, $entity );
+	}
+
+	/**
+	 * Assert that a method doesn't use another entity.
+	 *
+	 * @param string $type        The type of entity. E.g. 'functions', 'methods'.
+	 * @param string $class_name  The name of the class that the method is used in.
+	 * @param string $method_name The name of the method that uses this method.
+	 * @param array  $entity      The expected exported data for this entity.
+	 */
+	protected function assertMethodNotUses( $type, $class_name, $method_name, $entity ) {
+
+		$class_data = $this->find_entity_data_in(
+			$this->export_data
+			, 'classes'
+			, $class_name
+		);
+
+		$this->assertInternalType( 'array', $class_data );
+
+		$method_data = $this->find_entity_data_in(
+			$class_data
+			, 'methods'
+			, $method_name
+		);
+
+		$this->assertInternalType( 'array', $method_data );
+		$this->assertEntityNotUses( $method_data, $type, $entity );
 	}
 
 	/**
@@ -184,6 +242,39 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Assert that a file uses a function.
+	 *
+	 * @param array $function The expected export data for the function.
+	 */
+	protected function assertFileNotUsesFunction( $function ) {
+
+		$this->assertEntityNotUses( $this->export_data, 'functions', $function );
+	}
+
+	/**
+	 * Assert that a function uses another function.
+	 *
+	 * @param string $function_name The name of the function that uses this function.
+	 * @param array  $function      The expected exported data for the used function.
+	 */
+	protected function assertFunctionNotUsesFunction( $function_name, $function ) {
+
+		$this->assertFunctionNotUses( 'functions', $function_name, $function );
+	}
+
+	/**
+	 * Assert that a method uses a function.
+	 *
+	 * @param string $class_name  The name of the class that the method is used in.
+	 * @param string $method_name The name of the method that uses this method.
+	 * @param array  $function    The expected exported data for this function.
+	 */
+	protected function assertMethodNotUsesFunction( $class_name, $method_name, $function ) {
+
+		$this->assertMethodNotUses( 'functions', $class_name, $method_name, $function );
+	}
+
+	/**
 	 * Assert that a file uses an method.
 	 *
 	 * @param array $method The expected export data for the method.
@@ -214,6 +305,39 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	protected function assertMethodUsesMethod( $class_name, $method_name, $method ) {
 
 		$this->assertMethodUses( 'methods', $class_name, $method_name, $method );
+	}
+
+	/**
+	 * Assert that a file uses an method.
+	 *
+	 * @param array $method The expected export data for the method.
+	 */
+	protected function assertFileNotUsesMethod( $method ) {
+
+		$this->assertEntityNotUses( $this->export_data, 'methods', $method );
+	}
+
+	/**
+	 * Assert that a function uses a method.
+	 *
+	 * @param string $function_name The name of the function that uses this method.
+	 * @param array  $method        The expected exported data for this method.
+	 */
+	protected function assertFunctionNotUsesMethod( $function_name, $method ) {
+
+		$this->assertFunctionNotUses( 'methods', $function_name, $method );
+	}
+
+	/**
+	 * Assert that a method uses a method.
+	 *
+	 * @param string $class_name  The name of the class that the method is used in.
+	 * @param string $method_name The name of the method that uses this method.
+	 * @param array  $method      The expected exported data for this method.
+	 */
+	protected function assertMethodNotUsesMethod( $class_name, $method_name, $method ) {
+
+		$this->assertMethodNotUses( 'methods', $class_name, $method_name, $method );
 	}
 
 	/**
@@ -329,6 +453,31 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 		foreach ( $data[ $type ] as $entity_data ) {
 			if ( $entity_data['name'] === $entity ) {
 				return $entity_data;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if one entity uses another entity.
+	 *
+	 * @param array  $entity The exported entity data.
+	 * @param string $type   The type of thing that this entity should use.
+	 * @param array  $used   The expected data for the thing the entity should use.
+	 *
+	 * @return bool Whether the entity uses the other.
+	 */
+	function entity_uses( $entity, $type, $used ) {
+
+		if ( ! isset( $entity['uses'][ $type ] ) ) {
+			return false;
+		}
+
+		foreach ( $entity['uses'][ $type ] as $exported_used ) {
+			if ( $exported_used['line'] == $used['line'] ) {
+				$this->assertEquals( $used, $exported_used );
+				return true;
 			}
 		}
 
