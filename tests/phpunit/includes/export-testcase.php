@@ -50,7 +50,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @param array  $entity   The exported entity data.
 	 * @param string $type     The type of thing that this entity should contain.
-	 * @param array  $expected The expcted data for the thing the entity should contain.
+	 * @param array  $expected The expected data for the thing the entity should contain.
 	 */
 	protected function assertEntityContains( $entity, $type, $expected ) {
 
@@ -158,7 +158,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 * @param string $type        The type of entity. E.g. 'functions', 'methods'.
 	 * @param string $class_name  The name of the class that the method is used in.
 	 * @param string $method_name The name of the method that uses this method.
-	 * @param array  $entity      The expected exported data for this function.
+	 * @param array  $entity      The expected exported data for this entity.
 	 */
 	protected function assertMethodUses( $type, $class_name, $method_name, $entity ) {
 
@@ -234,7 +234,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @param string $class_name  The name of the class that the method is used in.
 	 * @param string $method_name The name of the method that uses this method.
-	 * @param array  $function      The expected exported data for this function.
+	 * @param array  $function    The expected exported data for this function.
 	 */
 	protected function assertMethodUsesFunction( $class_name, $method_name, $function ) {
 
@@ -344,7 +344,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 * Assert that an entity has a docblock.
 	 *
 	 * @param array  $entity  The exported entity data.
-	 * @param array  $docs    The expcted data for the entity's docblock.
+	 * @param array  $docs    The expected data for the entity's docblock.
 	 * @param string $doc_key The key in the entity array that should hold the docs.
 	 */
 	protected function assertEntityHasDocs( $entity, $docs, $doc_key = 'doc' ) {
@@ -396,7 +396,7 @@ class Export_UnitTestCase extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @param string $class  The name of the class that the method is used in.
 	 * @param string $method The method name.
-	 * @param array  $docs   The expected data for the methods's docblock.
+	 * @param array  $docs   The expected data for the method's docblock.
 	 */
 	protected function assertMethodHasDocs( $class, $method, $docs ) {
 
