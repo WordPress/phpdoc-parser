@@ -37,9 +37,11 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesMethod(
 			'test'
 			, array(
-				'name'     => array( 'My_Class', 'do_things' ),
+				'name'     => 'do_things',
 				'line'     => 16,
 				'end_line' => 16,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 
@@ -55,9 +57,11 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionNotUsesMethod(
 			'test'
 			, array(
-				'name'     => array( 'My_Class', 'static_method' ),
+				'name'     => 'static_method',
 				'line'     => 11,
 				'end_line' => 11,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 	}
@@ -79,9 +83,11 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesMethod(
 			'sub_test'
 			, array(
-				'name'     => array( 'My_Class', 'static_method' ),
+				'name'     => 'static_method',
 				'line'     => 11,
 				'end_line' => 11,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 
@@ -106,7 +112,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionNotUsesMethod(
 			'sub_test'
 			, array(
-				'name'     => array( 'My_Class', 'do_things' ),
+				'name'     => 'do_things',
 				'line'     => 16,
 				'end_line' => 16,
 			)
@@ -123,9 +129,11 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'a_method'
 			, array(
-				'name'     => array( 'My_Class', 'do_it', ),
+				'name'     => 'do_it',
 				'line'     => 23,
 				'end_line' => 23,
+				'class'    => 'My_Class',
+				'static'   => false,
 			)
 		);
 
@@ -153,9 +161,11 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'a_method'
 			, array(
-				'name'     => array( 'My_Class', 'a_method' ),
+				'name'     => 'a_method',
 				'line'     => 29,
 				'end_line' => 29,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 	}
@@ -177,18 +187,22 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesMethod(
 			'sub_method_test'
 			, array(
-				'name'     => array( 'My_Class', 'a_method' ),
+				'name'     => 'a_method',
 				'line'     => 29,
 				'end_line' => 29,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 
 		$this->assertFunctionNotUsesMethod(
 			'sub_method_test'
 			, array(
-				'name'     => array( 'My_Class', 'do_it', ),
+				'name'     => 'do_it',
 				'line'     => 23,
 				'end_line' => 23,
+				'class'    => 'My_Class',
+				'static'   => false,
 			)
 		);
 
