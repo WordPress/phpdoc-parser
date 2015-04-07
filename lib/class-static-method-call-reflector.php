@@ -14,14 +14,7 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 	 */
 	public function getName() {
 		$class = $this->node->class->parts[0];
-
-		if ( $this->called_in_class && 'self' === $class ) {
-			$class = $this->called_in_class->getShortName();
-		}
-
-		if ( $this->called_in_class && 'parent' === $class ) {
-			$class = $this->called_in_class->getNode()->extends;
-		}
+		$class = $this->_resolveName( $class );
 
 		return array( $class, $this->getShortName() );
 	}

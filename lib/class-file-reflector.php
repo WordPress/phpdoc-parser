@@ -109,6 +109,14 @@ class File_Reflector extends FileReflector {
 				// Add it to the list of methods used in this scope.
 				$this->getLocation()->uses['methods'][] = $method;
 				break;
+
+			// Parse out `new Class()` calls as uses of Class::__construct().
+			case 'Expr_New':
+				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
+
+				// Add it to the list of methods used in this scope.
+				$this->getLocation()->uses['methods'][] = $method;
+				break;
 		}
 
 		// Pick up DocBlock from non-documentable elements so that it can be assigned
