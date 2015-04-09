@@ -23,27 +23,35 @@ class Method_Call_Reflector extends BaseReflector {
 	 * @return string[] Index 0 is the calling instance, 1 is the method name.
 	 */
 	public function getName() {
-		$name = $this->getShortName();
 
-		$printer = new Pretty_Printer;
-		$caller = $printer->prettyPrintExpr( $this->node->var );
-
-		if ( $this->called_in_class && '$this' === $caller ) {
-			$caller = $this->called_in_class->getShortName();
+		if ( 'Expr_New' === $this->node->getType() ) {
+			$name = '__construct';
+			$caller = $this->node->class;
 		} else {
+			$name = $this->getShortName();
+			$caller = $this->node->var;
+		}
 
-			// If the caller is a function, convert it to the function name
-			if ( is_a( $caller, 'PHPParser_Node_Expr_FuncCall' ) ) {
+		if ( $caller instanceof \PHPParser_Node_Expr ) {
+			$printer = new Pretty_Printer;
+			$caller = $printer->prettyPrintExpr( $caller );
+		} elseif ( $caller instanceof \PHPParser_Node_Name ) {
+			$caller = $caller->toString();
+		}
 
-				// Add parentheses to signify this is a function call
-				/** @var \PHPParser_Node_Expr_FuncCall $caller */
-				$caller = $caller->name->parts[0] . '()';
-			}
+		$caller = $this->_resolveName( $caller );
 
-			$class_mapping = $this->_getClassMapping();
-			if ( array_key_exists( $caller, $class_mapping ) ) {
-				$caller = $class_mapping[ $caller ];
-			}
+		// If the caller is a function, convert it to the function name
+		if ( is_a( $caller, 'PHPParser_Node_Expr_FuncCall' ) ) {
+
+			// Add parentheses to signify this is a function call
+			/** @var \PHPParser_Node_Expr_FuncCall $caller */
+			$caller = $caller->name->parts[0] . '()';
+		}
+
+		$class_mapping = $this->_getClassMapping();
+		if ( array_key_exists( $caller, $class_mapping ) ) {
+			$caller = $class_mapping[ $caller ];
 		}
 
 		return array( $caller, $name );
@@ -117,4 +125,30 @@ class Method_Call_Reflector extends BaseReflector {
 		return $class_mapping;
 	}
 
+	/**
+	 * Resolve a class name from self/parent.
+	 *
+	 * @param string $class The class name.
+	 *
+	 * @return string The resolved class name.
+	 */
+	protected function _resolveName( $class ) {
+
+		if ( ! $this->called_in_class ) {
+			return $class;
+		}
+
+		switch ( $class ) {
+			case '$this':
+			case 'self':
+				$class = $this->called_in_class->getShortName();
+				break;
+
+			case 'parent':
+				$class = $this->called_in_class->getNode()->extends->toString();
+				break;
+		}
+
+		return $class;
+	}
 }

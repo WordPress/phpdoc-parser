@@ -18,18 +18,22 @@ class Export_Method_Use extends Export_UnitTestCase {
 
 		$this->assertFileUsesMethod(
 			array(
-				'name'     => array( 'My_Class', 'static_method' ),
+				'name'     => 'static_method',
 				'line'     => 3,
 				'end_line' => 3,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 
 		$this->assertFunctionUsesMethod(
 			'test'
 			, array(
-				'name'     => array( 'Another_Class', 'another_method' ),
+				'name'     => 'another_method',
 				'line'     => 8,
 				'end_line' => 8,
+				'class'    => 'Another_Class',
+				'static'   => true,
 			)
 		);
 
@@ -37,9 +41,11 @@ class Export_Method_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'static_method'
 			, array(
-				'name'     => array( 'Another_Class', 'do_static_stuff' ),
+				'name'     => 'do_static_stuff',
 				'line'     => 16,
 				'end_line' => 16,
+				'class'    => 'Another_Class',
+				'static'   => true,
 			)
 		);
 
@@ -47,9 +53,11 @@ class Export_Method_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'static_method'
 			, array(
-				'name'     => array( 'My_Class', 'do_stuff' ),
+				'name'     => 'do_stuff',
 				'line'     => 17,
 				'end_line' => 17,
+				'class'    => 'My_Class',
+				'static'   => true,
 			)
 		);
 
@@ -57,9 +65,11 @@ class Export_Method_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'static_method'
 			, array(
-				'name'     => array( 'Parent_Class', 'do_parental_stuff' ),
+				'name'     => 'do_parental_stuff',
 				'line'     => 19,
 				'end_line' => 19,
+				'class'    => 'Parent_Class',
+				'static'   => true,
 			)
 		);
 	}
@@ -71,18 +81,22 @@ class Export_Method_Use extends Export_UnitTestCase {
 
 		$this->assertFileUsesMethod(
 			array(
-				'name'     => array( '$wpdb', 'update' ),
+				'name'     => 'update',
 				'line'     => 5,
 				'end_line' => 5,
+				'class'    => '$wpdb',
+				'static'   => false,
 			)
 		);
 
 		$this->assertFunctionUsesMethod(
 			'test'
 			, array(
-				'name'     => array( 'get_class()', 'call_method' ),
+				'name'     => 'call_method',
 				'line'     => 10,
 				'end_line' => 10,
+				'class'    => 'get_class()',
+				'static'   => false,
 			)
 		);
 
@@ -90,9 +104,11 @@ class Export_Method_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'static_method'
 			, array(
-				'name'     => array( 'My_Class', 'go' ),
+				'name'     => 'go',
 				'line'     => 18,
 				'end_line' => 18,
+				'class'    => 'My_Class',
+				'static'   => false,
 			)
 		);
 	}
