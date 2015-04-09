@@ -9,7 +9,7 @@ before_install:
     # Setup WP_TESTS_DIR (needed to bootstrap WP PHPUnit tests).
     - WP_TESTS_DIR=/tmp/wordpress/tests/phpunit/
     # Clone the WordPress develop repo.
-    - git clone --depth=1 --branch="branch-4.1" git://develop.git.wordpress.org/ /tmp/wordpress/
+    - git clone --depth=1 --branch="4.1" git://develop.git.wordpress.org/ /tmp/wordpress/
     # Setup DB.
     - mysql -e "CREATE DATABASE wordpress_test;" -uroot
     # Setup wp-config.
