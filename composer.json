@@ -12,12 +12,6 @@
 			"role"    : "Developer"
 		},
 		{
-			"name"    : "Andrey Savchenko",
-			"email"   : "contact@rarst.net",
-			"homepage": "http://www.Rarst.net/",
-			"role"    : "Maintainer"
-		},
-		{
 			"name"    : "Contributors",
 			"homepage": "https://github.com/rmccue/WP-Parser/graphs/contributors"
 		}
