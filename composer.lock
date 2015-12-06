@@ -1,24 +1,28 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "c3dfe31bb0f250fd8025b4d3c08c8ff8",
+    "hash": "a6b6b77caa783549c8eda9ef2cc489fb",
+    "content-hash": "81428b7705fd3ea26dd058625d6527c9",
     "packages": [
         {
             "name": "composer/installers",
-            "version": "v1.0.19",
+            "version": "v1.0.22",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/installers.git",
-                "reference": "89d77bfbee79e16653f7162c86e602cc188471db"
+                "reference": "bd9b14f094c89c8b5804a4e41edeb7853bb85046"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/installers/zipball/89d77bfbee79e16653f7162c86e602cc188471db",
-                "reference": "89d77bfbee79e16653f7162c86e602cc188471db",
+                "url": "https://api.github.com/repos/composer/installers/zipball/bd9b14f094c89c8b5804a4e41edeb7853bb85046",
+                "reference": "bd9b14f094c89c8b5804a4e41edeb7853bb85046",
                 "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "1.0.0"
             },
             "replace": {
                 "roundcube/plugin-installer": "*",
@@ -28,9 +32,9 @@
                 "composer/composer": "1.0.*@dev",
                 "phpunit/phpunit": "4.1.*"
             },
-            "type": "composer-installer",
+            "type": "composer-plugin",
             "extra": {
-                "class": "Composer\\Installers\\Installer",
+                "class": "Composer\\Installers\\Plugin",
                 "branch-alias": {
                     "dev-master": "1.0-dev"
                 }
@@ -59,9 +63,11 @@
                 "Hurad",
                 "MODX Evo",
                 "OXID",
+                "SMF",
                 "Thelia",
                 "WolfCMS",
                 "agl",
+                "aimeos",
                 "annotatecms",
                 "bitrix",
                 "cakephp",
@@ -97,20 +103,20 @@
                 "zend",
                 "zikula"
             ],
-            "time": "2014-11-29 01:29:17"
+            "time": "2015-10-29 23:28:48"
         },
         {
             "name": "erusev/parsedown",
-            "version": "1.1.4",
+            "version": "1.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/erusev/parsedown.git",
-                "reference": "495e7ac73bb5fde6b857b88ff2bb1b5e79a4263a"
+                "reference": "3ebbd730b5c2cf5ce78bc1bf64071407fc6674b7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/erusev/parsedown/zipball/495e7ac73bb5fde6b857b88ff2bb1b5e79a4263a",
-                "reference": "495e7ac73bb5fde6b857b88ff2bb1b5e79a4263a",
+                "url": "https://api.github.com/repos/erusev/parsedown/zipball/3ebbd730b5c2cf5ce78bc1bf64071407fc6674b7",
+                "reference": "3ebbd730b5c2cf5ce78bc1bf64071407fc6674b7",
                 "shasum": ""
             },
             "type": "library",
@@ -136,7 +142,7 @@
                 "markdown",
                 "parser"
             ],
-            "time": "2014-11-29 02:29:14"
+            "time": "2015-10-04 16:44:32"
         },
         {
             "name": "nikic/php-parser",
@@ -239,27 +245,27 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "2.0.3",
+            "version": "2.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "38743b677965c48a637097b2746a281264ae2347"
+                "reference": "d68dbdc53dc358a816f00b300704702b2eaff7b8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/38743b677965c48a637097b2746a281264ae2347",
-                "reference": "38743b677965c48a637097b2746a281264ae2347",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/d68dbdc53dc358a816f00b300704702b2eaff7b8",
+                "reference": "d68dbdc53dc358a816f00b300704702b2eaff7b8",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3"
             },
             "require-dev": {
-                "phpunit/phpunit": "3.7.*@stable"
+                "phpunit/phpunit": "~4.0"
             },
             "suggest": {
-                "dflydev/markdown": "1.0.*",
-                "erusev/parsedown": "~0.7"
+                "dflydev/markdown": "~1.0",
+                "erusev/parsedown": "~1.0"
             },
             "type": "library",
             "extra": {
@@ -284,7 +290,7 @@
                     "email": "mike.vanriel@naenius.com"
                 }
             ],
-            "time": "2014-08-09 10:27:07"
+            "time": "2015-02-03 12:10:50"
         },
         {
             "name": "psr/log",
@@ -330,12 +336,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/scribu/wp-lib-posts-to-posts.git",
-                "reference": "0f04cd2e35a802bfd6799fc502cd960c75ca46e3"
+                "reference": "baefe121458b5d4d333b29e0c0b8cb8fad0fa4a2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scribu/wp-lib-posts-to-posts/zipball/0f04cd2e35a802bfd6799fc502cd960c75ca46e3",
-                "reference": "0f04cd2e35a802bfd6799fc502cd960c75ca46e3",
+                "url": "https://api.github.com/repos/scribu/wp-lib-posts-to-posts/zipball/baefe121458b5d4d333b29e0c0b8cb8fad0fa4a2",
+                "reference": "baefe121458b5d4d333b29e0c0b8cb8fad0fa4a2",
                 "shasum": ""
             },
             "require": {
@@ -347,15 +353,13 @@
                     "autoload.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0+"
             ],
             "description": "A library for many-to-many relationships in WordPress",
             "homepage": "https://github.com/scribu/wp-lib-posts-to-posts",
-            "support": {
-                "source": "https://github.com/scribu/wp-lib-posts-to-posts/tree/master"
-            },
-            "time": "2014-09-09 05:34:49"
+            "time": "2015-08-19 09:04:19"
         },
         {
             "name": "scribu/scb-framework",
@@ -363,12 +367,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/scribu/wp-scb-framework.git",
-                "reference": "6ea9861db28fcd3722c1a726446ecf60f048409c"
+                "reference": "95b23ac342fce16bf5eb8d939ac5a361b94b104b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scribu/wp-scb-framework/zipball/6ea9861db28fcd3722c1a726446ecf60f048409c",
-                "reference": "6ea9861db28fcd3722c1a726446ecf60f048409c",
+                "url": "https://api.github.com/repos/scribu/wp-scb-framework/zipball/95b23ac342fce16bf5eb8d939ac5a361b94b104b",
+                "reference": "95b23ac342fce16bf5eb8d939ac5a361b94b104b",
                 "shasum": ""
             },
             "type": "library",
@@ -396,7 +400,7 @@
             "keywords": [
                 "wordpress"
             ],
-            "time": "2014-01-23 13:57:58"
+            "time": "2015-10-25 20:19:41"
         }
     ],
     "packages-dev": [],
@@ -407,6 +411,7 @@
         "scribu/scb-framework": 20
     },
     "prefer-stable": false,
+    "prefer-lowest": false,
     "platform": {
         "php": ">=5.4"
     },
