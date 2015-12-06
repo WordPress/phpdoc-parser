@@ -21,6 +21,13 @@ class Importer implements LoggerAwareInterface {
 	public $taxonomy_file;
 
 	/**
+	 * Taxonomy name for an item's namespace tags
+	 *
+	 * @var string
+	 */
+	public $taxonomy_namespace;
+
+	/**
 	 * Taxonomy name for an item's @since tag
 	 *
 	 * @var string
@@ -94,6 +101,7 @@ class Importer implements LoggerAwareInterface {
 				'post_type_function'     => 'wp-parser-function',
 				'post_type_hook'         => 'wp-parser-hook',
 				'taxonomy_file'          => 'wp-parser-source-file',
+				'taxonomy_namespace'     => 'wp-parser-namespace',
 				'taxonomy_package'       => 'wp-parser-package',
 				'taxonomy_since_version' => 'wp-parser-since',
 			)
@@ -223,12 +231,12 @@ class Importer implements LoggerAwareInterface {
 	 * @return array|mixed|\WP_Error
 	 */
 	protected function insert_term( $term, $taxonomy, $args = array() ) {
+		$parent = isset( $args['parent'] ) ? $args['parent'] : 0;
 
-		if ( isset( $this->inserted_terms[ $taxonomy ][ $term ] ) ) {
-			return $this->inserted_terms[ $taxonomy ][ $term ];
+		if ( isset( $this->inserted_terms[ $taxonomy ][ $term . $parent ] ) ) {
+			return $this->inserted_terms[ $taxonomy ][ $term . $parent ];
 		}
 
-		$parent = isset( $args['parent'] ) ? $args['parent'] : 0;
 
 		if ( ! $inserted_term = term_exists( $term, $taxonomy, $parent ) ) {
 			$inserted_term = wp_insert_term( $term, $taxonomy, $args );
@@ -503,7 +511,8 @@ class Importer implements LoggerAwareInterface {
 		global $wpdb;
 
 		$is_new_post = true;
-		$slug        = sanitize_title( str_replace( '::', '-', $data['name'] ) );
+		$ns_name     = ( empty( $data['namespace'] ) || 'global' === $data['namespace'] ) ? $data['name'] :  $data['namespace'] . '\\' . $data['name'];
+		$slug        = sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $ns_name ) ) );
 
 		$post_data   = wp_parse_args(
 			$arg_overrides,
@@ -523,20 +532,20 @@ class Importer implements LoggerAwareInterface {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d class "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d class "%1$s"', $ns_name ) );
 					break;
 
 				case $this->post_type_method:
-					$this->logger->info( "\t\t" . sprintf( 'Skipped importing @ignore-d method "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t\t" . sprintf( 'Skipped importing @ignore-d method "%1$s"', $ns_name ) );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->logger->info( $indent . sprintf( 'Skipped importing @ignore-d hook "%1$s"', $data['name'] ) );
+					$this->logger->info( $indent . sprintf( 'Skipped importing @ignore-d hook "%1$s"', $ns_name ) );
 					break;
 
 				default:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d function "%1$s"', $data['name'] ) );
+					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d function "%1$s"', $ns_name ) );
 			}
 
 			return false;
@@ -596,23 +605,53 @@ class Importer implements LoggerAwareInterface {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for class "%1$s"', $data['name'], $post_id->get_error_message() );
+					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for class "%1$s"', $ns_name, $post_id->get_error_message() );
 					break;
 
 				case $this->post_type_method:
-					$this->errors[] = "\t\t" . sprintf( 'Problem inserting/updating post for method "%1$s"', $data['name'], $post_id->get_error_message() );
+					$this->errors[] = "\t\t" . sprintf( 'Problem inserting/updating post for method "%1$s"', $ns_name, $post_id->get_error_message() );
 					break;
 
 				case $this->post_type_hook:
 					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->errors[] = $indent . sprintf( 'Problem inserting/updating post for hook "%1$s"', $data['name'], $post_id->get_error_message() );
+					$this->errors[] = $indent . sprintf( 'Problem inserting/updating post for hook "%1$s"', $ns_name, $post_id->get_error_message() );
 					break;
 
 				default:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for function "%1$s"', $data['name'], $post_id->get_error_message() );
+					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for function "%1$s"', $ns_name, $post_id->get_error_message() );
 			}
 
 			return false;
+		}
+
+		$namespaces = ( ! empty( $data['namespace'] ) ) ? explode( '\\', $data['namespace'] ) : false;
+		if ( $namespaces ) {
+			$ns_term = false;
+			$ns_terms = array();
+			foreach ( $namespaces as $namespace ) {
+				$ns_term = $this->insert_term(
+					$namespace,
+					$this->taxonomy_namespace,
+					array(
+						'slug'   => strtolower( str_replace( '_', '-', $namespace ) ),
+						'parent' => ( $ns_term ) ? $ns_term['term_id'] : 0,
+					)
+				);
+				if ( ! is_wp_error( $ns_term ) ) {
+					$ns_terms[] = (int) $ns_term['term_id'];
+				} else {
+					$this->logger->warning( "\tCannot set namespace term: " . $ns_term->get_error_message() );
+					$ns_term = false;
+				}
+			}
+
+			if ( ! empty( $ns_terms ) ) {
+				$added_term_relationship = did_action( 'added_term_relationship' );
+				wp_set_object_terms( $post_id, $ns_terms, $this->taxonomy_namespace );
+				if( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+					$this->anything_updated[] = true;
+				}
+			}
 		}
 
 		// If the item has @since markup, assign the taxonomy
@@ -709,6 +748,17 @@ class Importer implements LoggerAwareInterface {
 		if ( $post_data['post_type'] !== $this->post_type_class ) {
 			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', $data['arguments'] );
 		}
+
+		// If the post type is using namespace aliases, record them.
+		if ( ! empty( $data['aliases'] ) ) {
+			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_aliases', (array) $data['aliases'] );
+		}
+
+		// Recored the namespace if there is one.
+		if ( ! empty( $data['namespace'] ) ) {
+			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_namespace', (string) addslashes( $data['namespace'] ) );
+		}
+
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
@@ -722,20 +772,20 @@ class Importer implements LoggerAwareInterface {
 
 		switch ( $post_data['post_type'] ) {
 			case $this->post_type_class:
-				$this->logger->info( "\t" . sprintf( '%1$s class "%2$s"', $action, $data['name'] ) );
+				$this->logger->info( "\t" . sprintf( '%1$s class "%2$s"', $action, $ns_name ) );
 				break;
 
 			case $this->post_type_hook:
 				$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-				$this->logger->info( $indent . sprintf( '%1$s hook "%2$s"', $action, $data['name'] ) );
+				$this->logger->info( $indent . sprintf( '%1$s hook "%2$s"', $action, $ns_name ) );
 				break;
 
 			case $this->post_type_method:
-				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $data['name'] ) );
+				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $ns_name ) );
 				break;
 
 			default:
-				$this->logger->info( "\t" . sprintf( '%1$s function "%2$s"', $action, $data['name'] ) );
+				$this->logger->info( "\t" . sprintf( '%1$s function "%2$s"', $action, $ns_name ) );
 		}
 
 		/**

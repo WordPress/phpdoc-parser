@@ -13,8 +13,9 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 	 * @return string[] Index 0 is the class name, 1 is the method name.
 	 */
 	public function getName() {
-		$class = $this->node->class->parts[0];
-		$class = $this->_resolveName( $class );
+		$class = $this->node->class;
+		$prefix = ( is_a( $class, 'PHPParser_Node_Name_FullyQualified' ) ) ? '\\' : '';
+		$class = $prefix . $this->_resolveName( implode( '\\', $class->parts ) );
 
 		return array( $class, $this->getShortName() );
 	}

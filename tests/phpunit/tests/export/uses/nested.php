@@ -40,7 +40,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'do_things',
 				'line'     => 16,
 				'end_line' => 16,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -60,7 +60,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'static_method',
 				'line'     => 11,
 				'end_line' => 11,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -86,7 +86,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'static_method',
 				'line'     => 11,
 				'end_line' => 11,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -132,7 +132,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'do_it',
 				'line'     => 23,
 				'end_line' => 23,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => false,
 			)
 		);
@@ -164,7 +164,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'a_method',
 				'line'     => 29,
 				'end_line' => 29,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -190,7 +190,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'a_method',
 				'line'     => 29,
 				'end_line' => 29,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -201,7 +201,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 				'name'     => 'do_it',
 				'line'     => 23,
 				'end_line' => 23,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => false,
 			)
 		);

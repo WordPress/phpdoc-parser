@@ -25,6 +25,10 @@ class Function_Call_Reflector extends BaseReflector {
 
 		$shortName = $this->getShortName();
 
+		if ( is_a( $shortName, 'PHPParser_Node_Name_FullyQualified' ) ) {
+			return '\\' . (string) $shortName;
+		}
+
 		if ( is_a( $shortName, 'PHPParser_Node_Name' ) ) {
 			return (string) $shortName;
 		}
