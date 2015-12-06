@@ -624,35 +624,8 @@ class Importer implements LoggerAwareInterface {
 			return false;
 		}
 
-		$namespaces = ( ! empty( $data['namespace'] ) ) ? explode( '\\', $data['namespace'] ) : false;
-		if ( $namespaces ) {
-			$ns_term = false;
-			$ns_terms = array();
-			foreach ( $namespaces as $namespace ) {
-				$ns_term = $this->insert_term(
-					$namespace,
-					$this->taxonomy_namespace,
-					array(
-						'slug'   => strtolower( str_replace( '_', '-', $namespace ) ),
-						'parent' => ( $ns_term ) ? $ns_term['term_id'] : 0,
-					)
-				);
-				if ( ! is_wp_error( $ns_term ) ) {
-					$ns_terms[] = (int) $ns_term['term_id'];
-				} else {
-					$this->logger->warning( "\tCannot set namespace term: " . $ns_term->get_error_message() );
-					$ns_term = false;
-				}
-			}
-
-			if ( ! empty( $ns_terms ) ) {
-				$added_term_relationship = did_action( 'added_term_relationship' );
-				wp_set_object_terms( $post_id, $ns_terms, $this->taxonomy_namespace );
-				if( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
-					$this->anything_updated[] = true;
-				}
-			}
-		}
+		$namespaces = ( ! empty( $data['namespace'] ) ) ? explode( '\\', $data['namespace'] ) : array();
+		$this->_set_namespaces( $post_id, $namespaces );
 
 		// If the item has @since markup, assign the taxonomy
 		$since_versions = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
@@ -798,5 +771,42 @@ class Importer implements LoggerAwareInterface {
 		do_action( 'wp_parser_import_item', $post_id, $data, $post_data );
 
 		return $post_id;
+	}
+
+	/**
+	 * Process the Namespace of items and add them to the correct taxonomy terms.
+	 *
+	 * This creates terms for each of the namespace terms in a hierachical tree
+	 * and then adds the item being processed to each of the terms in that tree.
+	 *
+	 * @param int $post_id The ID of the post item being processed.
+	 */
+	protected function _set_namespaces( $post_id, $namespaces ) {
+		$ns_term = false;
+		$ns_terms = array();
+		foreach ( $namespaces as $namespace ) {
+			$ns_term = $this->insert_term(
+				$namespace,
+				$this->taxonomy_namespace,
+				array(
+					'slug'   => strtolower( str_replace( '_', '-', $namespace ) ),
+					'parent' => ( $ns_term ) ? $ns_term['term_id'] : 0,
+				)
+			);
+			if ( ! is_wp_error( $ns_term ) ) {
+				$ns_terms[] = (int) $ns_term['term_id'];
+			} else {
+				$this->logger->warning( "\tCannot set namespace term: " . $ns_term->get_error_message() );
+				$ns_term = false;
+			}
+		}
+
+		if ( ! empty( $ns_terms ) ) {
+			$added_term_relationship = did_action( 'added_term_relationship' );
+			wp_set_object_terms( $post_id, $ns_terms, $this->taxonomy_namespace );
+			if( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+				$this->anything_updated[] = true;
+			}
+		}
 	}
 }
