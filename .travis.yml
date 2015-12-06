@@ -30,7 +30,7 @@ script:
   - phpunit
 
   # Parse WordPress core as a sanity check
-  - if [[ "$PARSE_CORE" == "1" ]]; wget https://wordpress.org/latest.zip; fi
-  - if [[ "$PARSE_CORE" == "1" ]]; unzip latest.zip; fi
-  - if [[ "$PARSE_CORE" == "1" ]]; wp parser create wordpress --user=admin; fi
+  - if [[ "$PARSE_CORE" == "1" ]]; then wget https://wordpress.org/latest.zip; fi
+  - if [[ "$PARSE_CORE" == "1" ]]; then unzip latest.zip; fi
+  - if [[ "$PARSE_CORE" == "1" ]]; then wp parser create wordpress --user=admin; fi
 
