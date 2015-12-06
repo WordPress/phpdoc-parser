@@ -28,9 +28,6 @@ install: composer install --no-dev
 script:
   - phpunit
 
-
-language: php
-
 cache:
   directories:
     - vendor
