@@ -779,7 +779,8 @@ class Importer implements LoggerAwareInterface {
 	 * This creates terms for each of the namespace terms in a hierachical tree
 	 * and then adds the item being processed to each of the terms in that tree.
 	 *
-	 * @param int $post_id The ID of the post item being processed.
+	 * @param int   $post_id    The ID of the post item being processed.
+	 * @param array $namespaces An array of namespaces strings
 	 */
 	protected function _set_namespaces( $post_id, $namespaces ) {
 		$ns_term = false;
