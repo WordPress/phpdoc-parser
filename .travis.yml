@@ -22,3 +22,6 @@ before_install:
     - sed -i "s/yourpasswordhere//" /tmp/wordpress/wp-tests-config.php
 
 install: composer install --no-dev
+
+script:
+  - phpunit
