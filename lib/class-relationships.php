@@ -342,6 +342,29 @@ class Relationships {
 
 	}
 
+	/**
+	 * Map a name to slug, taking into account namespace context.
+	 *
+	 * When a function is called within a namespace, the function is first looked
+	 * for in the current namespace. If it exists, the namespaced version is used.
+	 * If the function does not exist in the current namespace, PHP tries to find
+	 * the function in the global scope.
+	 *
+	 * Unless the call has been prefixed with '\' indicating it is fully qualified
+	 * we need to check first in the current namespace and then in the global
+	 * scope.
+	 *
+	 * This also catches the case where relative namespaces are used. You can
+	 * create a file in namespace `\Foo` and then call a funtion called `baz` in
+	 * namespace `\Foo\Bar\` by just calling `Bar\baz()`. PHP will first look
+	 * for `\Foo\Bar\baz()` and if it can't find it fall back to `\Bar\baz()`.
+	 *
+	 * @see    WP_Parser\Importer::import_item()
+	 * @param  string $name      The name of the item a slug is needed for.
+	 * @param  string $namespace The namespace the item is in when for context.
+	 * @return array             An array of slugs, starting with the context of the
+	 *                           namespace, and falling back to the global namespace.
+	 */
 	public function names_to_slugs( $name, $namespace = null ) {
 		$fully_qualified = ( 0 === strpos( '\\', $name ) );
 		$name = ltrim( $name, '\\' );
@@ -356,17 +379,12 @@ class Relationships {
 	}
 
 	/**
-	 * Convert a method, function, or hook name to a post slug.
+	 * Simple conversion of a method, function, or hook name to a post slug.
 	 *
-	 * Based on context, we may need to check on two names for a fuction because
-	 * if the function call looks to be to global scope, but is from a namespace
-	 * then the call may actually be to a function in that namespace. Similarly,
-	 * PHP will traverse up namespace trees from the current namespace, so we'll
-	 * try to catch that use case as well.
+	 * Replaces '::' and '\' to dashes and then runs the name through `sanitize_title()`.
 	 *
-	 * @see    WP_Parser\Importer::import_item()
 	 * @param  string $name Method, function, or hook name
-	 * @return string       Post slug
+	 * @return string       The post slug for the passed name.
 	 */
 	public function name_to_slug( $name ) {
 		return sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $name ) ) );
