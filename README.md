@@ -11,9 +11,17 @@ There is a guide to developing for developer.wordpress.org in the [WordPress doc
 * [Composer](https://getcomposer.org/)
 * [WP CLI](http://wp-cli.org/)
 
-Install via Composer into your WordPress plugins directory:
+Clone the repository into your WordPress plugins directory:
 
-    composer create-project rmccue/wp-parser:dev-master --no-dev
+```bash
+git clone git@github.com:WordPress/phpdoc-parser.git 
+```
+
+After that install the dependencies using composer in the parser directory:
+
+```bash
+composer install
+```
 
 ## Running
 Note: ensure the plugin is enabled first.
