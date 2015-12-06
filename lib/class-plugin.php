@@ -171,6 +171,22 @@ class Plugin {
 				)
 			);
 		}
+
+		if ( ! taxonomy_exists( 'wp-parser-namespace' ) ) {
+
+			register_taxonomy(
+				'wp-parser-namespace',
+				$object_types,
+				array(
+					'hierarchical'          => true,
+					'label'                 => __( 'Namespaces', 'wp-parser' ),
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'namespace' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
 	}
 
 	/**

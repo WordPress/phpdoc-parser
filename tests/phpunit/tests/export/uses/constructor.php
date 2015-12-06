@@ -21,7 +21,7 @@ class Export_Constructor_Use extends Export_UnitTestCase {
 				'name'     => '__construct',
 				'line'     => 3,
 				'end_line' => 3,
-				'class'    => 'WP_Query',
+				'class'    => '\WP_Query',
 				'static'   => false,
 			)
 		);
@@ -32,7 +32,7 @@ class Export_Constructor_Use extends Export_UnitTestCase {
 				'name'     => '__construct',
 				'line'     => 6,
 				'end_line' => 6,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => false,
 			)
 		);
@@ -50,7 +50,7 @@ class Export_Constructor_Use extends Export_UnitTestCase {
 				'name'     => '__construct',
 				'line'     => 12,
 				'end_line' => 12,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => false,
 			)
 		);
@@ -68,7 +68,7 @@ class Export_Constructor_Use extends Export_UnitTestCase {
 				'name'     => '__construct',
 				'line'     => 16,
 				'end_line' => 16,
-				'class'    => 'Parent_Class',
+				'class'    => '\Parent_Class',
 				'static'   => false,
 			)
 		);

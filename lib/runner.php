@@ -89,6 +89,8 @@ function parse_files( $files, $root ) {
 		foreach ( $file->getFunctions() as $function ) {
 			$func = array(
 				'name'      => $function->getShortName(),
+				'namespace' => $function->getNamespace(),
+				'aliases'   => $function->getNamespaceAliases(),
 				'line'      => $function->getLineNumber(),
 				'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 				'arguments' => export_arguments( $function->getArguments() ),
@@ -110,6 +112,7 @@ function parse_files( $files, $root ) {
 		foreach ( $file->getClasses() as $class ) {
 			$class_data = array(
 				'name'       => $class->getShortName(),
+				'namespace' => $function->getNamespace(),
 				'line'       => $class->getLineNumber(),
 				'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
 				'final'      => $class->isFinal(),
@@ -259,8 +262,11 @@ function export_methods( array $methods ) {
 	$output = array();
 
 	foreach ( $methods as $method ) {
+
 		$method_data = array(
 			'name'       => $method->getShortName(),
+			'namespace'  => $method->getNamespace(),
+			'aliases'    => $method->getNamespaceAliases(),
 			'line'       => $method->getLineNumber(),
 			'end_line'   => $method->getNode()->getAttribute( 'endLine' ),
 			'final'      => $method->isFinal(),

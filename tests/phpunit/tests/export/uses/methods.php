@@ -21,7 +21,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'static_method',
 				'line'     => 3,
 				'end_line' => 3,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -32,7 +32,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'another_method',
 				'line'     => 8,
 				'end_line' => 8,
-				'class'    => 'Another_Class',
+				'class'    => '\Another_Class',
 				'static'   => true,
 			)
 		);
@@ -44,7 +44,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'do_static_stuff',
 				'line'     => 16,
 				'end_line' => 16,
-				'class'    => 'Another_Class',
+				'class'    => '\Another_Class',
 				'static'   => true,
 			)
 		);
@@ -56,7 +56,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'do_stuff',
 				'line'     => 17,
 				'end_line' => 17,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => true,
 			)
 		);
@@ -68,7 +68,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'do_parental_stuff',
 				'line'     => 19,
 				'end_line' => 19,
-				'class'    => 'Parent_Class',
+				'class'    => '\Parent_Class',
 				'static'   => true,
 			)
 		);
@@ -107,7 +107,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'go',
 				'line'     => 18,
 				'end_line' => 18,
-				'class'    => 'My_Class',
+				'class'    => '\My_Class',
 				'static'   => false,
 			)
 		);

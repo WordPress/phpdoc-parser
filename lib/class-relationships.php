@@ -157,7 +157,7 @@ class Relationships {
 			// Functions to Functions
 			$to_type = $this->post_types['function'];
 			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
-				$to_function_slug = $this->name_to_slug( $to_function['name'] );
+				$to_function_slug = $this->names_to_slugs( $to_function['name'], $data['namespace'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_function_slug;
 			}
@@ -171,7 +171,7 @@ class Relationships {
 				} else {
 					$to_method_slug = $to_method['name'];
 				}
-				$to_method_slug = $this->name_to_slug( $to_method_slug );
+				$to_method_slug = $this->names_to_slugs( $to_method_slug, $data['namespace'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_method_slug;
 			}
@@ -179,7 +179,8 @@ class Relationships {
 			// Functions to Hooks
 			$to_type = $this->post_types['hook'];
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
-				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
+				// Never a namespace on a hook so don't send one.
+				$to_hook_slug = $this->names_to_slugs( $to_hook['name'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
@@ -190,7 +191,7 @@ class Relationships {
 			// Methods to Functions
 			$to_type = $this->post_types['function'];
 			foreach ( (array) @$data['uses']['functions'] as $to_function ) {
-				$to_function_slug = $this->name_to_slug( $to_function['name'] );
+				$to_function_slug = $this->names_to_slugs( $to_function['name'], $data['namespace'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_function_slug;
 			}
@@ -208,7 +209,7 @@ class Relationships {
 				} else {
 					$to_method_slug = $to_method['name'];
 				}
-				$to_method_slug = $this->name_to_slug( $to_method_slug );
+				$to_method_slug = $this->names_to_slugs( $to_method_slug, $data['namespace'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_method_slug;
 			}
@@ -216,7 +217,7 @@ class Relationships {
 			// Methods to Hooks
 			$to_type = $this->post_types['hook'];
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
-				$to_hook_slug = $this->name_to_slug( $to_hook['name'] );
+				$to_hook_slug = $this->names_to_slugs( $to_hook['name'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
@@ -251,8 +252,8 @@ class Relationships {
 
 				// Iterate over slugs for each post type being related TO
 				foreach ( $to_types as $to_type => $to_slugs ) {
-					// Convert slugs to IDs.
 
+					// Convert slugs to IDs.
 					if ( empty( $this->slugs_to_ids[ $to_type ] ) ) { // TODO why might this be empty? test class-IXR.php
 						continue;
 					}
@@ -342,14 +343,51 @@ class Relationships {
 	}
 
 	/**
-	 * Convert a method, function, or hook name to a post slug.
+	 * Map a name to slug, taking into account namespace context.
+	 *
+	 * When a function is called within a namespace, the function is first looked
+	 * for in the current namespace. If it exists, the namespaced version is used.
+	 * If the function does not exist in the current namespace, PHP tries to find
+	 * the function in the global scope.
+	 *
+	 * Unless the call has been prefixed with '\' indicating it is fully qualified
+	 * we need to check first in the current namespace and then in the global
+	 * scope.
+	 *
+	 * This also catches the case where relative namespaces are used. You can
+	 * create a file in namespace `\Foo` and then call a funtion called `baz` in
+	 * namespace `\Foo\Bar\` by just calling `Bar\baz()`. PHP will first look
+	 * for `\Foo\Bar\baz()` and if it can't find it fall back to `\Bar\baz()`.
 	 *
 	 * @see    WP_Parser\Importer::import_item()
+	 * @param  string $name      The name of the item a slug is needed for.
+	 * @param  string $namespace The namespace the item is in when for context.
+	 * @return array             An array of slugs, starting with the context of the
+	 *                           namespace, and falling back to the global namespace.
+	 */
+	public function names_to_slugs( $name, $namespace = null ) {
+		$fully_qualified = ( 0 === strpos( '\\', $name ) );
+		$name = ltrim( $name, '\\' );
+		$names = array();
+
+		if ( $namespace && ! $fully_qualified  ) {
+			$names[] = $this->name_to_slug( $namespace . '\\' . $name );
+		}
+		$names[] = $this->name_to_slug( $name );
+
+		return $names;
+	}
+
+	/**
+	 * Simple conversion of a method, function, or hook name to a post slug.
+	 *
+	 * Replaces '::' and '\' to dashes and then runs the name through `sanitize_title()`.
+	 *
 	 * @param  string $name Method, function, or hook name
-	 * @return string       Post slug
+	 * @return string       The post slug for the passed name.
 	 */
 	public function name_to_slug( $name ) {
-		return sanitize_title( str_replace( '::', '-', $name ) );
+		return sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $name ) ) );
 	}
 
 	/**
@@ -363,9 +401,14 @@ class Relationships {
 	public function get_ids_for_slugs( array $slugs, array $slugs_to_ids ) {
 		$slugs_with_ids = array();
 
-		foreach ( $slugs as $index => $slug ) {
-			if ( array_key_exists( $slug, $slugs_to_ids ) ) {
-				$slugs_with_ids[ $slug ] = $slugs_to_ids[ $slug ];
+		foreach ( $slugs as $index => $scoped_slugs ) {
+			// Find the first matching scope the ID exists for.
+			foreach ( $scoped_slugs as $slug ) {
+				if ( array_key_exists( $slug, $slugs_to_ids ) ) {
+					$slugs_with_ids[ $slug ] = $slugs_to_ids[ $slug ];
+					// if we found it in this scope, stop searching the chain.
+					continue;
+				}
 			}
 		}
 

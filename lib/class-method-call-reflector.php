@@ -35,6 +35,8 @@ class Method_Call_Reflector extends BaseReflector {
 		if ( $caller instanceof \PHPParser_Node_Expr ) {
 			$printer = new Pretty_Printer;
 			$caller = $printer->prettyPrintExpr( $caller );
+		} elseif ( $caller instanceof \PHPParser_Node_Name_FullyQualified ) {
+			$caller = '\\' . $caller->toString();
 		} elseif ( $caller instanceof \PHPParser_Node_Name ) {
 			$caller = $caller->toString();
 		}
@@ -46,7 +48,7 @@ class Method_Call_Reflector extends BaseReflector {
 
 			// Add parentheses to signify this is a function call
 			/** @var \PHPParser_Node_Expr_FuncCall $caller */
-			$caller = $caller->name->parts[0] . '()';
+			$caller = implode( '\\', $caller->name->parts ) . '()';
 		}
 
 		$class_mapping = $this->_getClassMapping();
@@ -138,14 +140,16 @@ class Method_Call_Reflector extends BaseReflector {
 			return $class;
 		}
 
+
 		switch ( $class ) {
 			case '$this':
 			case 'self':
-				$class = $this->called_in_class->getShortName();
+				$namespace = (string) $this->called_in_class->getNamespace();
+				$namespace = ( 'global' !== $namespace ) ? $namespace . '\\' : '';
+				$class = '\\' . $namespace . $this->called_in_class->getShortName();
 				break;
-
 			case 'parent':
-				$class = $this->called_in_class->getNode()->extends->toString();
+				$class = '\\' . $this->called_in_class->getNode()->extends->toString();
 				break;
 		}
 
