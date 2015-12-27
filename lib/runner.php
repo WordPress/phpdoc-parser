@@ -140,15 +140,29 @@ function parse_files( $files, $root ) {
  */
 function export_docblock( $element ) {
 	$docblock = $element->getDocBlock();
+	$raw = '';
+
 	if ( ! $docblock ) {
 		return array(
+			'raw'              => '',
 			'description'      => '',
 			'long_description' => '',
 			'tags'             => array(),
 		);
 	}
 
+	// Pull out the raw docblock if we have it.
+	if ( isset( $element->raw_docblock ) ) {
+		$raw = $element->raw_docblock->getText();
+	} elseif ( $element instanceof BaseReflector ) {
+		$comments = $element->getNode()->getAttribute( 'comments' );
+		if ( $comments && $comments[0] instanceof \PHPParser_Comment_Doc ) {
+			$raw = $comments[0]->getText();
+		}
+	}
+
 	$output = array(
+		'raw'              => $raw,
 		'description'      => $docblock->getShortDescription(),
 		'long_description' => $docblock->getLongDescription()->getFormattedContents(),
 		'tags'             => array(),
