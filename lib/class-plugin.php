@@ -35,7 +35,6 @@ class Plugin {
 		$supports = array(
 			'comments',
 			'custom-fields',
-			'editor',
 			'excerpt',
 			'revisions',
 			'title',
