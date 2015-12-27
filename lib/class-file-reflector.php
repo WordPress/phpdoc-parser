@@ -46,7 +46,13 @@ class File_Reflector extends FileReflector {
 	protected $last_doc = null;
 
 	/**
-	 * Grab and store the raw doc comment for the file.
+	 * Grab and store the raw doc comment for the file if present.
+	 *
+	 * Note much of this logic mirrors what is in the parent class for storing
+	 * the file's doc_block key, but it doesn't provide any access to the raw
+	 * text of the comment. Since we are interested in having the raw text
+	 * available, we run the same logic here and store the text  instead of a
+	 * docblock reflection objet.
 	 *
 	 * @param  array  $nodes The nodes that will be traversed in this file.
 	 * @return array         The nodes to traverse for this file.
@@ -89,7 +95,7 @@ class File_Reflector extends FileReflector {
 					&& -1 !== strpos( $comments[0], '@package' ) )
 					|| ! $this->isNodeDocumentable( $node )
 				) {
-					$this->raw_docblock = $comments[0];
+					$this->doc_comment = $comments[0];
 				}
 			}
 		}
