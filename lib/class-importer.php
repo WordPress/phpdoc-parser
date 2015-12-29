@@ -243,7 +243,7 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		if ( ! is_wp_error( $inserted_term ) ) {
-			$this->inserted_terms[ $taxonomy ][ $term ] = $inserted_term;
+			$this->inserted_terms[ $taxonomy ][ $term . $parent ] = $inserted_term;
 		}
 
 		return $inserted_term;
