@@ -128,11 +128,30 @@ class Relationships {
 	public function wp_parser_starting_import() {
 		$importer = new Importer;
 
+		if ( ! $this->p2p_tables_exist() ) {
+			\P2P_Storage::init();
+			\P2P_Storage::install();
+		}
+
 		$this->post_types = array(
 			'hook' => $importer->post_type_hook,
 			'method' => $importer->post_type_method,
 			'function' => $importer->post_type_function,
 		);
+	}
+
+	/**
+	 * Checks to see if the posts to posts tables exist and returns if they do
+	 *
+	 * @return bool Whether or not the posts 2 posts tables exist.
+	 */
+	public function p2p_tables_exist() {
+		global $wpdb;
+
+		$tables = $wpdb->get_col( 'SHOW TABLES' );
+
+		// There is no way to get the name out of P2P so we hard code it here.
+		return in_array( $wpdb->prefix . 'p2p', $tables );
 	}
 
 	/**
