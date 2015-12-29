@@ -112,7 +112,7 @@ function parse_files( $files, $root ) {
 		foreach ( $file->getClasses() as $class ) {
 			$class_data = array(
 				'name'       => $class->getShortName(),
-				'namespace' => $function->getNamespace(),
+				'namespace'  => $class->getNamespace(),
 				'line'       => $class->getLineNumber(),
 				'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
 				'final'      => $class->isFinal(),
