@@ -379,15 +379,15 @@ class Importer implements LoggerAwareInterface {
 		$skip_duplicates = apply_filters( 'wp_parser_skip_duplicate_hooks', false );
 
 		if ( false !== $skip_duplicates ) {
-			if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
+			if ( 0 === strpos( $data['doc']['summary'], 'This action is documented in' ) ) {
 				return false;
 			}
 
-			if ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
+			if ( 0 === strpos( $data['doc']['summary'], 'This filter is documented in' ) ) {
 				return false;
 			}
 
-			if ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+			if ( '' === $data['doc']['summary'] && '' === $data['doc']['description'] ) {
 				return false;
 			}
 		}
@@ -517,9 +517,9 @@ class Importer implements LoggerAwareInterface {
 		$post_data   = wp_parse_args(
 			$arg_overrides,
 			array(
-				'post_content'          => $data['doc']['long_description'],
-				'post_content_filtered' => $data['doc']['raw'],
-				'post_excerpt'          => $data['doc']['description'],
+				'post_content'          => $data['doc']['description'],
+				'post_content_filtered' => $data['doc']['raw_description'],
+				'post_excerpt'          => $data['doc']['summary'],
 				'post_name'             => $slug,
 				'post_parent'           => (int) $parent_post_id,
 				'post_status'           => 'publish',
@@ -733,6 +733,7 @@ class Importer implements LoggerAwareInterface {
 			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_namespace', (string) addslashes( $data['namespace'] ) );
 		}
 
+		$anything_updated[] = update_post_meta( $post_id, '_wp_parser_raw_docblock', (string) $data['doc']['raw'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );

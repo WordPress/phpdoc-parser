@@ -142,11 +142,12 @@ function export_docblock( $element ) {
 	$docblock = $element->getDocBlock();
 
 	if ( ! $docblock ) {
-		return array(
-			'raw'              => '',
-			'description'      => '',
-			'long_description' => '',
-			'tags'             => array(),
+			return array(
+			'raw'             => '',
+			'summary'         => '',
+			'description'     => '',
+			'raw_description' => '',
+			'tags'            => array(),
 		);
 	}
 
@@ -160,10 +161,11 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'raw'              => $raw_doc,
-		'description'      => $docblock->getShortDescription(),
-		'long_description' => $docblock->getLongDescription()->getFormattedContents(),
-		'tags'             => array(),
+		'raw'             => $raw_doc,
+		'summary'         => $docblock->getShortDescription(),
+		'description'     => $docblock->getLongDescription()->getFormattedContents(),
+		'raw_description' => $docblock->getLongDescription()->getContents(),
+		'tags'            => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
