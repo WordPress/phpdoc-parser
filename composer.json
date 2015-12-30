@@ -1,9 +1,9 @@
 {
-	"name"       : "wordpress/phpdoc-parser",
+	"name"       : "rmccue/wp-parser",
 	"description": "Static code parser for WordPress source.",
 	"keywords"   : ["wordpress"],
 	"type"       : "wordpress-plugin",
-	"homepage"   : "https://github.com/WordPress/phpdoc-parser",
+	"homepage"   : "https://github.com/rmccue/WP-Parser",
 	"license"    : "GPL-2.0+",
 	"authors"    : [
 		{
@@ -13,11 +13,11 @@
 		},
 		{
 			"name"    : "Contributors",
-			"homepage": "https://github.com/WordPress/phpdoc-parser/graphs/contributors"
+			"homepage": "https://github.com/rmccue/WP-Parser/graphs/contributors"
 		}
 	],
 	"support"    : {
-		"issues": "https://github.com/WordPress/phpdoc-parser/issues"
+		"issues": "https://github.com/rmccue/WP-Parser/issues"
 	},
 	"require"    : {
 		"php"                      : ">=5.4",
