@@ -1,5 +1,5 @@
 {
-	"name"       : "WordPress/phpdoc-parser",
+	"name"       : "wordpress/phpdoc-parser",
 	"description": "Static code parser for WordPress source.",
 	"keywords"   : ["wordpress"],
 	"type"       : "wordpress-plugin",
