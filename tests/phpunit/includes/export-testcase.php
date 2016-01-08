@@ -458,6 +458,38 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Compact an array of strings to a multi-line string.
+	 *
+	 * @param  array  $lines The array of lines to turn into a multi-line string.
+	 * @return string        The processed multi-line string.
+	 */
+	protected function multiline_string( array $lines ) {
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Compact an array of strings into a docblock string.
+	 *
+	 * Takes an array of string, and creates a multi-line string starting with the
+	 * classic docblock /** and ending with the *+/ to close out the docblock. Each
+	 * line will have the whitespace param plus ' * ' added to it.
+	 *
+	 * @param  array  $lines      The array of lines to create a docblock string from.
+	 * @param  string $whitespace Optional. The whitespace to use in the docblocks.
+	 * @return string             The docblock string created from the array of lines.
+	 */
+	protected function make_docblock( array $lines, $whitespace = '' ) {
+		array_walk( $lines, function( &$line ) use ( $whitespace ) {
+			$line = ( empty( $line ) ) ? '' : ' ' . $line;
+			$line = $whitespace . ' *' . $line;
+		});
+		array_unshift( $lines, '/**' );
+		$lines[] = $whitespace . ' */';
+
+		return $this->multiline_string( $lines );
+	}
+
+	/**
 	 * Check if one entity uses another entity.
 	 *
 	 * @param array  $entity The exported entity data.
