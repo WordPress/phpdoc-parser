@@ -165,7 +165,7 @@ function export_docblock( $element ) {
 		if ( method_exists( $tag, 'getReference' ) ) {
 			$tag_data['refers'] = $tag->getReference();
 		}
-		if ( 'since' == $tag->getName() && method_exists( $tag, 'getVersion' ) ) {
+		if ( method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
 			$version = $tag->getVersion();
 			if ( ! empty( $version ) ) {
