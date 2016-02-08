@@ -162,6 +162,9 @@ function export_docblock( $element ) {
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = $tag->getTypes();
 		}
+		if ( method_exists( $tag, 'getLink' ) ) {
+			$tag_data['link'] = $tag->getLink();
+		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$tag_data['variable'] = $tag->getVariableName();
 		}
