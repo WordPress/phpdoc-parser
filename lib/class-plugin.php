@@ -21,6 +21,7 @@ class Plugin {
 
 		add_action( 'init', array( $this, 'register_post_types' ), 11 );
 		add_action( 'init', array( $this, 'register_taxonomies' ), 11 );
+		add_action( 'wp', array( $this, 'replace_autop' ), 11 );
 		add_filter( 'wp_parser_get_arguments', array( $this, 'make_args_safe' ) );
 		add_filter( 'wp_parser_return_type', array( $this, 'humanize_separator' ) );
 
@@ -35,7 +36,6 @@ class Plugin {
 		$supports = array(
 			'comments',
 			'custom-fields',
-			'editor',
 			'excerpt',
 			'revisions',
 			'title',
@@ -254,5 +254,44 @@ class Plugin {
 	 */
 	public function humanize_separator( $type ) {
 		return str_replace( '|', '<span class="wp-parser-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
+	}
+
+	/**
+	 * Replaces the normal content autop with a custom version to skip parser types.
+	 *
+	 * By running this filter replacement late on the wp hook, plugins are given ample
+	 * time to remove autop themselves. If they have removed autop, then the maybe_autop
+	 * filter is not added. There are potentially conflicting edge cases, but this
+	 * should catch at least some of them.
+	 *
+	 * Other plugins can also remove this functionality fairly easily by removing the wp
+	 * hook and stopping this process if needed.
+	 */
+	public function replace_autop() {
+		if ( has_filter( 'the_content', 'wpautop' ) ) {
+			remove_filter( 'the_content', 'wpautop' );
+			add_filter( 'the_content', array( $this, 'maybe_autop' ) );
+		}
+	}
+
+	/**
+	 * Autop's all post content except for wp-parser types.
+	 *
+	 * @param  string $content The content to filter.
+	 * @return string          The filtered content, conditionally with autop run.
+	 */
+	public function maybe_autop( $content ) {
+		// Get and cache the blacklist
+		static $blacklist;
+		if ( is_null( $blacklist ) ) {
+			$blacklist = apply_filters( 'wp_parser_autop_blacklist', array(
+				'wp-parser-function' => true,
+				'wp-parser-hook'     => true,
+				'wp-parser-class'    => true,
+				'wp-parser-method'   => true,
+			) );
+		}
+
+		return ( isset( $blacklist[ get_post_type() ] ) ) ? $content : wpautop( $content );
 	}
 }

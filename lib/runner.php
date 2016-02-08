@@ -140,24 +140,38 @@ function parse_files( $files, $root ) {
  */
 function export_docblock( $element ) {
 	$docblock = $element->getDocBlock();
+
 	if ( ! $docblock ) {
-		return array(
-			'description'      => '',
-			'long_description' => '',
-			'tags'             => array(),
+			return array(
+			'raw'             => '',
+			'summary'         => '',
+			'description'     => '',
+			'raw_description' => '',
+			'tags'            => array(),
 		);
 	}
 
+	// Extract the raw doc comment
+	if ( $element instanceof BaseReflector ) {
+		$raw_doc = (string) $element->getNode()->getDocComment();
+	} elseif ( $element instanceof File_Reflector && isset( $element->doc_comment ) ) {
+		$raw_doc = (string) $element->doc_comment->getText();
+	} else {
+		$raw_doc = '';
+	}
+
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => preg_replace( '/[\n\r]+/', ' ', $docblock->getLongDescription()->getFormattedContents() ),
-		'tags'             => array(),
+		'raw'             => $raw_doc,
+		'summary'         => $docblock->getShortDescription(),
+		'description'     => $docblock->getLongDescription()->getFormattedContents(),
+		'raw_description' => $docblock->getLongDescription()->getContents(),
+		'tags'            => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
+			'content' => format_description( $tag->getDescription() ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = $tag->getTypes();
@@ -179,7 +193,7 @@ function export_docblock( $element ) {
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
+				$description = format_description( $tag->getDescription() );
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}

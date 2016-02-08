@@ -4,6 +4,7 @@ namespace WP_Parser;
 
 use phpDocumentor\Reflection;
 use phpDocumentor\Reflection\FileReflector;
+use PHPParser_Comment_Doc;
 
 /**
  * Reflection class for a full file.
@@ -43,6 +44,66 @@ class File_Reflector extends FileReflector {
 	 * @var \PHPParser_Comment_Doc
 	 */
 	protected $last_doc = null;
+
+	/**
+	 * Grab and store the raw doc comment for the file if present.
+	 *
+	 * Note much of this logic mirrors what is in the parent class for storing
+	 * the file's doc_block key, but it doesn't provide any access to the raw
+	 * text of the comment. Since we are interested in having the raw text
+	 * available, we run the same logic here and store the text  instead of a
+	 * docblock reflection objet.
+	 *
+	 * @param  array  $nodes The nodes that will be traversed in this file.
+	 * @return array         The nodes to traverse for this file.
+	 */
+	public function beforeTraverse(array $nodes) {
+		$node = null;
+		$key = 0;
+		foreach ($nodes as $k => $n) {
+			if (!$n instanceof PHPParser_Node_Stmt_InlineHTML) {
+				$node = $n;
+				$key = $k;
+				break;
+			}
+		}
+
+		if ($node) {
+			$comments = (array) $node->getAttribute('comments');
+
+			// remove non-DocBlock comments
+			$comments = array_values(
+				array_filter(
+					$comments,
+					function ($comment) {
+						return $comment instanceof PHPParser_Comment_Doc;
+					}
+				)
+			);
+
+			if ( ! empty( $comments ) ) {
+				// the first DocBlock in a file documents the file if
+				// * it precedes another DocBlock or
+				// * it contains a @package tag and doesn't precede a class
+				//   declaration or
+				// * it precedes a non-documentable element (thus no include,
+				//   require, class, function, define, const)
+				if (
+					count( $comments ) > 1
+					|| ( ! $node instanceof PHPParser_Node_Stmt_Class
+					&& ! $node instanceof PHPParser_Node_Stmt_Interface
+					&& -1 !== strpos( $comments[0], '@package' ) )
+					|| ! $this->isNodeDocumentable( $node )
+				) {
+					$this->doc_comment = $comments[0];
+				}
+			}
+		}
+
+		$nodes = parent::beforeTraverse( $nodes );
+
+		return $nodes;
+	}
 
 	/**
 	 * Add hooks to the queue and update the node stack when we enter a node.
