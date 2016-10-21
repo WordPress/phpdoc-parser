@@ -24,8 +24,10 @@ composer install
 ```
 
 ## Running
-Note: ensure the plugin is enabled first.
+Activate the plugin first:
+
+    wp plugin activate phpdoc-parser
 
 In your site's directory:
 
-	$ wp parser create /path/to/source/code --user=<id|login>
+    wp parser create /path/to/source/code --user=<id|login>
