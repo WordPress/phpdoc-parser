@@ -14,7 +14,7 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	/**
 	 * The exported data.
 	 *
-	 * @var string
+	 * @var array
 	 */
 	protected $export_data;
 
@@ -424,8 +424,8 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	/**
 	 * Assert that a hook has a docblock.
 	 *
-	 * @param array $hook The hook name.
-	 * @param array $docs The expected data for the hook's docblock.
+	 * @param string $hook The hook name.
+	 * @param array  $docs The expected data for the hook's docblock.
 	 */
 	protected function assertHookHasDocs( $hook, $docs ) {
 
@@ -436,9 +436,9 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	/**
 	 * Find the exported data for an entity.
 	 *
-	 * @param array  $data        The data to search in.
-	 * @param string $type        The type of entity.
-	 * @param string $entity_name The name of the function.
+	 * @param array  $data   The data to search in.
+	 * @param string $type   The type of entity.
+	 * @param string $entity The name of the entity.
 	 *
 	 * @return array|false The data for the entity, or false if it couldn't be found.
 	 */
