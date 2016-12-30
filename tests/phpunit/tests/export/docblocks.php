@@ -59,6 +59,16 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'test_ref_array_filter'
 			, array( 'description' => 'A reference array filter.' )
 		);
+
+		$this->assertHookHasDocs(
+			'in_conditional_expression'
+			, array( 'description' => 'A filter in a conditional expression.' )
+		);
+
+		$this->assertHookHasDocs(
+			'in_conditional'
+			, array( 'description' => 'A filter in a conditional.' )
+		);
 	}
 
 	/**

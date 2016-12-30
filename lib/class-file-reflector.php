@@ -38,11 +38,11 @@ class File_Reflector extends FileReflector {
 	protected $location = array();
 
 	/**
-	 * Last DocBlock associated with a non-documentable element.
+	 * Last DocBlock(s) associated with a non-documentable element(s).
 	 *
-	 * @var \PHPParser_Comment_Doc
+	 * @var \PHPParser_Comment_Doc[]
 	 */
-	protected $last_doc = null;
+	protected $last_doc = array();
 
 	/**
 	 * Add hooks to the queue and update the node stack when we enter a node.
@@ -83,8 +83,8 @@ class File_Reflector extends FileReflector {
 
 				if ( $this->isFilter( $node ) ) {
 					if ( $this->last_doc && ! $node->getDocComment() ) {
-						$node->setAttribute( 'comments', array( $this->last_doc ) );
-						$this->last_doc = null;
+						$last_doc = array_pop( $this->last_doc );
+						$node->setAttribute( 'comments', array( $last_doc ) );
 					}
 
 					$hook = new Hook_Reflector( $node, $this->context );
@@ -127,7 +127,11 @@ class File_Reflector extends FileReflector {
 		// associated with a named element, and so aren't really from a non-
 		// documentable element after all.
 		if ( ! $this->isNodeDocumentable( $node ) && 'Name' !== $node->getType() && ( $docblock = $node->getDocComment() ) ) {
-			$this->last_doc = $docblock;
+			// The same docblock can be associated with multiple non-documentable
+			// elements, so we have to take care not to save the same docblock twice.
+			if ( ! $this->last_doc || $docblock->getText() !== end( $this->last_doc )->getText() ) {
+				$this->last_doc[] = $docblock;
+			}
 		}
 	}
 
