@@ -171,7 +171,10 @@ class File_Reflector extends FileReflector {
 				break;
 
 			case 'Stmt_Function':
-				end( $this->functions )->uses = array_pop( $this->location )->uses;
+				$location = array_pop( $this->location );
+				if ( isset( $location->uses ) ) {
+					end( $this->functions )->uses = $location->uses;
+				}
 				break;
 
 			case 'Stmt_ClassMethod':
