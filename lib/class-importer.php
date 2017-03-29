@@ -512,7 +512,7 @@ class Importer implements LoggerAwareInterface {
 
 		$is_new_post = true;
 		$ns_name     = ( empty( $data['namespace'] ) || 'global' === $data['namespace'] ) ? $data['name'] :  $data['namespace'] . '\\' . $data['name'];
-		$slug        = sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $ns_name ) ) );
+		$slug        = sanitize_title( str_replace( array( '\\', '::', '_' ), '-', $ns_name ) );
 
 		$post_data   = wp_parse_args(
 			$arg_overrides,
