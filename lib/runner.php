@@ -149,15 +149,15 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => preg_replace( '/[\n\r]+/', ' ', $docblock->getLongDescription()->getFormattedContents() ),
+		'description'      => strip_newlines( $docblock->getShortDescription() ),
+		'long_description' => strip_newlines( $docblock->getLongDescription()->getFormattedContents() ),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
+			'content' => strip_newlines( format_description( $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = $tag->getTypes();
@@ -179,7 +179,7 @@ function export_docblock( $element ) {
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
+				$description = strip_newlines( format_description( $tag->getDescription() ) );
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}
@@ -361,5 +361,36 @@ function format_description( $description ) {
 		$parsedown   = \Parsedown::instance();
 		$description = $parsedown->line( $description );
 	}
+	return $description;
+}
+
+/**
+ * Strips newline characters from descriptions, saving out pre-formatted blocks.
+ *
+ * @param string $description The descriptions to parse.
+ * @return string The string with newlines replaced by spaces, except in pre-formatted blocks.
+ */
+function strip_newlines( $description ) {
+	$pre_matcher = '/<pre.*<\/pre>/s';
+	$line_matcher = '/[\r\n]+/';
+
+	// See if any pre-formatted tags exist.
+	preg_match_all( $pre_matcher, $description, $matches );
+	$has_blocks = ( is_array( $matches ) && ! empty( $matches[0] ) );
+
+	// If we have pre-formatted blocks, strip them out and replace with a token.
+	if ( $has_blocks ) {
+		$token = '%%%' . md5( serialize( $matches ) ) . '%%%';
+		$description = preg_replace( $pre_matcher, $token, $description );
+	}
+
+	// Strip newlines, replacing them with spaces.
+	$description = preg_replace( $line_matcher, ' ', $description );
+
+	// Put back the protected pre-formatted blocks.
+	if ( $has_blocks ) {
+		$description = str_replace( array_fill( 0, count( $matches[0] ), $token ), $matches[0], $description );
+	}
+
 	return $description;
 }
