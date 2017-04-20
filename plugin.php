@@ -9,9 +9,13 @@
  * Text Domain: wp-parser
  */
 
-if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-	require __DIR__ . '/vendor/autoload.php';
+if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+	// They did not run `composer update` or did that with `--no-autoloader`.
+	// Continuing would case a fatal error.
+	// TODO: display an admin notice?
+	return;
 }
+require __DIR__ . '/vendor/autoload.php';
 
 global $wp_parser;
 $wp_parser = new WP_Parser\Plugin();
