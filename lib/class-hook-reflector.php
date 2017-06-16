@@ -67,8 +67,14 @@ class Hook_Reflector extends BaseReflector {
 			case 'do_action_ref_array':
 				$type = 'action_reference';
 				break;
+			case 'do_action_deprecated':
+				$type = 'action_deprecated';
+				break;
 			case 'apply_filters_ref_array':
 				$type = 'filter_reference';
+				break;
+			case 'apply_filters_deprecated';
+				$type = 'filter_deprecated';
 				break;
 		}
 

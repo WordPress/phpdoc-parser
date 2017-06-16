@@ -123,9 +123,34 @@ function arguments_have_default_values() {
  * @return bool
  */
 function is_function_deprecated() {
-	$return = wp_list_filter( get_post_meta( get_the_ID(), '_wp-parser_tags', true ), array( 'name' => 'deprecated' ) );
+	/**
+	 * Filters whether the current function is considered deprecated.
+	 *
+	 * @param bool Whether the current function should be considered deprecated.
+	 */
+	return apply_filters( 'wp_parser_is_function_deprecated', is_deprecated() );
+}
 
-	return apply_filters( 'wp_parser_is_function_deprecated', ! empty( $return ) );
+/**
+ * Determines if the current element is deprecated.
+ *
+ * Works for conceivably any parsed post type that stores DocBlock tag values in meta.
+ *
+ * @return bool Whether the current element is considered deprecated.
+ */
+function is_deprecated() {
+	$tags       = get_post_meta( get_the_ID(), '_wp-parser_tags', true );
+	$deprecated = wp_list_filter( $tags, array( 'name' => 'deprecated' ) );
+
+	$post_type = get_post_type( get_the_ID() );
+
+	/**
+	 * Filters whether the current element is deprecated.
+	 *
+	 * @param bool   $deprecated Whether the current element should be considered deprecated.
+	 * @param string $post_type  Post type for the current element.
+	 */
+	return apply_filters( 'wp_parser_is_deprecated', ! empty( $deprecated ), $post_type );
 }
 
 /**

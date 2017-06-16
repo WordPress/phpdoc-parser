@@ -204,8 +204,10 @@ class File_Reflector extends FileReflector {
 		$functions = array(
 			'apply_filters',
 			'apply_filters_ref_array',
+			'apply_filters_deprecated',
 			'do_action',
 			'do_action_ref_array',
+			'do_action_deprecated',
 		);
 
 		return in_array( $calling, $functions );

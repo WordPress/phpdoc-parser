@@ -335,7 +335,11 @@ function export_uses( array $uses ) {
 						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
 					);
 
-					if ( '_deprecated_file' === $name || '_deprecated_function' === $name || '_deprecated_argument' === $name ) {
+					if ( '_deprecated_file' === $name
+						|| '_deprecated_function' === $name
+						|| '_deprecated_argument' === $name
+						|| '_deprecated_hook' === $name
+					) {
 						$arguments = $element->getNode()->args;
 
 						$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
