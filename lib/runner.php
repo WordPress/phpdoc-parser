@@ -134,6 +134,47 @@ function parse_files( $files, $root ) {
 }
 
 /**
+ * Fixes newline handling in parsed text.
+ *
+ * DocBlock lines, particularly for descriptions, generally adhere to a given character width. For sentences and
+ * paragraphs that exceed that width, what is intended as a manual soft wrap (via line break) is used to ensure
+ * on-screen/in-file legibility of that text. These line breaks are retained by phpDocumentor. However, consumers
+ * of this parsed data may believe the line breaks to be intentional and may display the text as such.
+ *
+ * This function fixes text by merging consecutive lines of text into a single line. A special exception is made
+ * for text appearing in `<code>` and `<pre>` tags, as newlines appearing in those tags are always intentional.
+ *
+ * @param string $text
+ *
+ * @return string
+ */
+function fix_newlines( $text ) {
+	// Non-naturally occurring string to use as temporary replacement.
+	$replacement_string = '{{{{{}}}}}';
+
+	// Replace newline characters within 'code' and 'pre' tags with replacement string.
+	$text = preg_replace_callback(
+		"/(?<=<pre><code>)(.+)(?=<\/code><\/pre>)/s",
+		function ( $matches ) {
+			return preg_replace( '/[\n\r]/', $replacement_string, $matches[1] );
+		},
+		$text
+	);
+
+	// Merge consecutive non-blank lines together by replacing the newlines with a space.
+	$text = preg_replace(
+		"/[\n\r](?!\s*[\n\r])/m",
+		' ',
+		$text
+	);
+
+	// Restore newline characters into code blocks.
+	$text = str_replace( $replacement_string, "\n", $text );
+
+	return $text;
+}
+
+/**
  * @param BaseReflector|ReflectionAbstract $element
  *
  * @return array
@@ -150,7 +191,7 @@ function export_docblock( $element ) {
 
 	$output = array(
 		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => preg_replace( '/[\n\r]+/', ' ', $docblock->getLongDescription()->getFormattedContents() ),
+		'long_description' => fix_newlines( $docblock->getLongDescription()->getFormattedContents() ),
 		'tags'             => array(),
 	);
 
