@@ -4,7 +4,7 @@
 	"keywords"   : ["wordpress"],
 	"type"       : "wordpress-plugin",
 	"homepage"   : "https://github.com/WordPress/phpdoc-parser",
-	"license"    : "GPL-2.0+",
+	"license"    : "GPL-2.0-or-later",
 	"authors"    : [
 		{
 			"name"    : "Ryan McCue",
