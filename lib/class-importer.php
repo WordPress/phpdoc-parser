@@ -571,14 +571,24 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		// Look for an existing post for this item
-		$existing_post_id = $wpdb->get_var(
-			$q = $wpdb->prepare(
-				"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
-				$slug,
-				$post_data['post_type'],
-				(int) $parent_post_id
-			)
-		);
+		if ( 'wp-parser-hook' === $post_data['post_type'] ) {
+			$existing_post_id = $wpdb->get_var(
+				$q = $wpdb->prepare(
+					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s LIMIT 1",
+					$slug,
+					$post_data['post_type']
+				)
+			);
+		} else {
+			$existing_post_id = $wpdb->get_var(
+				$q = $wpdb->prepare(
+					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
+					$slug,
+					$post_data['post_type'],
+					(int) $parent_post_id
+				)
+			);
+		}
 
 		/**
 		 * Filter an import item's post data before it is updated or inserted.
