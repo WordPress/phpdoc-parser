@@ -118,10 +118,10 @@ class Importer implements LoggerAwareInterface {
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
 	 * @param array $data
-	 * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $skip_sleep               Optional. Whether to skip the sleep() calls. Default true.
 	 * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 */
-	public function import( array $data, $skip_sleep = false, $import_ignored_functions = false ) {
+	public function import( array $data, $skip_sleep = true, $import_ignored_functions = false ) {
 		global $wpdb;
 
 		$time_start = microtime(true);
@@ -253,10 +253,10 @@ class Importer implements LoggerAwareInterface {
 	 * For a specific file, go through and import the file, functions, and classes.
 	 *
 	 * @param array $file
-	 * @param bool  $skip_sleep     Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool  $skip_sleep     Optional. Whether to skip the sleep() calls. Default true.
 	 * @param bool  $import_ignored Optional; defaults to false. If true, functions and classes marked `@ignore` will be imported.
 	 */
-	public function import_file( array $file, $skip_sleep = false, $import_ignored = false ) {
+	public function import_file( array $file, $skip_sleep = true, $import_ignored = false ) {
 
 		/**
 		 * Filter whether to proceed with importing a prospective file.
@@ -266,8 +266,9 @@ class Importer implements LoggerAwareInterface {
 		 * @param bool  $display         Whether to proceed with importing the file. Default true.
 		 * @param array $file            File data
 		 */
-		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) )
+		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) ) {
 			return;
+		}
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
