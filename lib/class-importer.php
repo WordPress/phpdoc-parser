@@ -266,8 +266,10 @@ class Importer implements LoggerAwareInterface {
 		 * @param bool  $display         Whether to proceed with importing the file. Default true.
 		 * @param array $file            File data
 		 */
-		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) )
+		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) ) {
+			$this->logger->info( sprintf( "\t" . 'Skipping file "%s".', $file['path'] ) );
 			return;
+		}
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
