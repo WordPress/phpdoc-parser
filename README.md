@@ -14,7 +14,7 @@ There is a guide to developing for developer.wordpress.org in the [WordPress doc
 Clone the repository into your WordPress plugins directory:
 
 ```bash
-git clone git@github.com:WordPress/phpdoc-parser.git 
+git clone https://github.com/WordPress/phpdoc-parser.git
 ```
 
 After that install the dependencies using composer in the parser directory:
