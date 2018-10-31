@@ -155,7 +155,7 @@ class Importer implements LoggerAwareInterface {
 		delete_option( 'wp_parser_root_import_dir' );
 
 		// Sanity check -- do the required post types exist?
-		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) ) {
+		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) || ! post_type_exists( $this->post_type_constant ) ) {
 			$this->logger->error( sprintf( 'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook ) );
 			exit;
 		}
