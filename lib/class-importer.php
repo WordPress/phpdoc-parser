@@ -801,6 +801,10 @@ class Importer implements LoggerAwareInterface {
 				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $ns_name ) );
 				break;
 
+			case $this->post_type_constant:
+				$this->logger->info( "\t\t" . sprintf( '%1$s constant "%2$s"', $action, $ns_name ) );
+				break;
+
 			default:
 				$this->logger->info( "\t" . sprintf( '%1$s function "%2$s"', $action, $ns_name ) );
 		}
