@@ -70,6 +70,13 @@ class Importer implements LoggerAwareInterface {
 	public $post_type_hook;
 
 	/**
+	 * Post type name for constants
+	 *
+	 * @var string
+	 */
+	public $post_type_constant;
+
+	/**
 	 * Handy store for meta about the current item being imported
 	 *
 	 * @var array
@@ -100,6 +107,7 @@ class Importer implements LoggerAwareInterface {
 				'post_type_method'       => 'wp-parser-method',
 				'post_type_function'     => 'wp-parser-function',
 				'post_type_hook'         => 'wp-parser-hook',
+				'post_type_constant'     => 'wp-parser-constant',
 				'taxonomy_file'          => 'wp-parser-source-file',
 				'taxonomy_namespace'     => 'wp-parser-namespace',
 				'taxonomy_package'       => 'wp-parser-package',
