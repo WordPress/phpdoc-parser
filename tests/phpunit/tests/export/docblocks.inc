@@ -88,3 +88,12 @@ do_action( 'undocumented_hook' );
  * A reference array action.
  */
 do_action_ref_array( 'test_ref_array_action', array( &$var ) );
+
+define( 'TEST_UNDOCUMENTED_CONST', true );
+
+/**
+ * Documented constant.
+ *
+ * @since 5.0
+ */
+define ('TEST_CONST', true );
