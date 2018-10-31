@@ -314,6 +314,7 @@ class Importer implements LoggerAwareInterface {
 			'functions' => array(),
 			'classes'   => array(),
 			'hooks'     => array(),
+			'constants' => array(),
 		), $file );
 
 		$count = 0;
@@ -338,6 +339,15 @@ class Importer implements LoggerAwareInterface {
 
 		foreach ( $file['hooks'] as $hook ) {
 			$this->import_hook( $hook, 0, $import_ignored );
+			$count ++;
+
+			if ( ! $skip_sleep && 0 == $count % 10 ) {
+				sleep( 3 );
+			}
+		}
+
+		foreach ( $file['constants'] as $constant ) {
+			$this->import_constant( $constant, $import_ignored );
 			$count ++;
 
 			if ( ! $skip_sleep && 0 == $count % 10 ) {
@@ -411,6 +421,20 @@ class Importer implements LoggerAwareInterface {
 		update_post_meta( $hook_id, '_wp-parser_hook_type', $data['type'] );
 
 		return $hook_id;
+	}
+
+	/**
+	 * Create a post for a constant
+	 *
+	 * @param array $data           Constant.
+	 * @param int   $parent_post_id Optional; post ID of the parent (file, class, or function) this item belongs to.
+	 *                              Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, constants marked `@ignore` will be imported.
+	 *
+	 * @return bool|int Post ID of this constant, false if any failure.
+	 */
+	public function import_constant( array $data, $parent_post_id = 0, $import_ignored = false ) {
+		$constant_id = $this->import_item( $data, $parent_post_id, $import_ignored,  array( 'post_type' => $this->post_type_constant ) );
 	}
 
 	/**
