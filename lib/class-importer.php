@@ -762,7 +762,7 @@ class Importer implements LoggerAwareInterface {
 			$data['doc']['tags']['deprecated'] = $this->file_meta['deprecated'];
 		}
 
-		if ( $post_data['post_type'] !== $this->post_type_class ) {
+		if ( ! in_array( $post_data['post_type'], array( $this->post_type_class, $this->post_type_constant ) ) ) {
 			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', $data['arguments'] );
 		}
 
