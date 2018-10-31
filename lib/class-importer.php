@@ -266,8 +266,10 @@ class Importer implements LoggerAwareInterface {
 		 * @param bool  $display         Whether to proceed with importing the file. Default true.
 		 * @param array $file            File data
 		 */
-		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) )
+		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) ) {
+			$this->logger->info( sprintf( "\t" . 'Skipping file "%s".', $file['path'] ) );
 			return;
+		}
 
 		// Maybe add this file to the file taxonomy
 		$slug = sanitize_title( str_replace( '/', '_', $file['path'] ) );
@@ -571,14 +573,24 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		// Look for an existing post for this item
-		$existing_post_id = $wpdb->get_var(
-			$q = $wpdb->prepare(
-				"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
-				$slug,
-				$post_data['post_type'],
-				(int) $parent_post_id
-			)
-		);
+		if ( 'wp-parser-hook' === $post_data['post_type'] ) {
+			$existing_post_id = $wpdb->get_var(
+				$q = $wpdb->prepare(
+					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s LIMIT 1",
+					$slug,
+					$post_data['post_type']
+				)
+			);
+		} else {
+			$existing_post_id = $wpdb->get_var(
+				$q = $wpdb->prepare(
+					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND post_parent = %d LIMIT 1",
+					$slug,
+					$post_data['post_type'],
+					(int) $parent_post_id
+				)
+			);
+		}
 
 		/**
 		 * Filter an import item's post data before it is updated or inserted.
