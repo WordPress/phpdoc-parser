@@ -434,6 +434,18 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Asserts that a constant has a DocBlock.
+	 *
+	 * @param string $constant Constant name.
+	 * @param array  $docs     The expected data for the constant's DocBlock.
+	 */
+	protected function assertConstantHasDocs( $constant, $docs ) {
+
+		$constant = $this->find_entity_data_in( $this->export_data, 'constants', $constant );
+		$this->assertEntityHasDocs( $constant, $docs );
+	}
+
+	/**
 	 * Find the exported data for an entity.
 	 *
 	 * @param array  $data        The data to search in.
