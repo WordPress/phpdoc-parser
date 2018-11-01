@@ -348,12 +348,12 @@ function maybe_version( $version ) {
 	/**
 	 * Whether a version should be checked or not.
 	 *
-	 * This filter allows you to do your own version validation by returning a boolean.
+	 * Return boolean to validate the version yourself.
 	 *
 	 * @param mixed  $check_version. Whether to check the version or not. Default null.
 	 * @param string $version        Version string.
 	 */
-	$check_version = apply_filters( 'wp_parser_maybe_version', null, $version );
+	$check_version = apply_filters( 'wp_parser_check_version', null, $version );
 	if ( is_bool( $check_version ) ) {
 		return $check_version;
 	}

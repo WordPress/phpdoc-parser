@@ -858,26 +858,26 @@ class Importer implements LoggerAwareInterface {
 	protected function _set_since_meta( $post_id, $since_versions, $deprecated_version ) {
 		$anything_updated   = array();
 		$introduced_version = array_shift( $since_versions );
-		$introduced = isset( $introduced_version['content'] ) && $introduced_version['content'];
 
+		$introduced = isset( $introduced_version['content'] ) && $introduced_version['content'];
 		if ( $introduced && maybe_version( $introduced_version['content'] ) ) {
-			$anything_updated[] = update_post_meta( $post_id, 'wp_parser_introduced', $introduced_version['content'] );
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_introduced', $introduced_version['content'] );
 		} else {
-			delete_post_meta( $post_id, 'wp_parser_introduced' );
+			delete_post_meta( $post_id, '_wp-parser_introduced' );
 		}
 
 		$deprecated = isset( $deprecated_version['content'] ) && $deprecated_version['content'];
 		if ( $deprecated && maybe_version( $deprecated_version['content']  ) ) {
-			$anything_updated[] = update_post_meta( $post_id, 'wp_parser_deprecated', $deprecated_version['content'] );
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_deprecated', $deprecated_version['content'] );
 		} else {
-			delete_post_meta( $post_id, 'wp_parser_deprecated' );
+			delete_post_meta( $post_id, '_wp-parser_deprecated' );
 		}
 
-		$old_meta = get_post_meta( $post_id, 'wp_parser_modified' );
+		$old_meta = get_post_meta( $post_id, '_wp-parser_modified' );
 		$new_meta = array();
 
 		// Delete modified meta and check if anything was updated after adding new meta.
-		delete_post_meta( $post_id, 'wp_parser_modified' );
+		delete_post_meta( $post_id, '_wp-parser_modified' );
 
 		if ( ! empty( $since_versions ) ) {
 			foreach ( $since_versions as $since ) {
@@ -887,7 +887,7 @@ class Importer implements LoggerAwareInterface {
 				}
 
 				$new_meta[] = $since['content'];
-				add_post_meta( $post_id, 'wp_parser_modified', $since['content'] );
+				add_post_meta( $post_id, '_wp-parser_modified', $since['content'] );
 			}
 		}
 
