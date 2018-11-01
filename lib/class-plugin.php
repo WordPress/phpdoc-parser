@@ -28,7 +28,7 @@ class Plugin {
 	}
 
 	/**
-	 * Register the function and class post types
+	 * Register the post types.
 	 */
 	public function register_post_types() {
 
@@ -116,6 +116,24 @@ class Plugin {
 				)
 			);
 		}
+
+		if ( ! post_type_exists( 'wp-parser-constant' ) ) {
+
+			register_post_type(
+				'wp-parser-constant',
+				array(
+					'has_archive' => 'constants',
+					'label'       => __( 'Constants', 'wp-parser' ),
+					'public'      => true,
+					'rewrite'     => array(
+						'feeds'      => false,
+						'slug'       => 'constant',
+						'with_front' => false,
+					),
+					'supports'    => $supports,
+				)
+			);
+		}
 	}
 
 	/**
@@ -123,7 +141,7 @@ class Plugin {
 	 */
 	public function register_taxonomies() {
 
-		$object_types = array( 'wp-parser-class', 'wp-parser-method', 'wp-parser-function', 'wp-parser-hook' );
+		$object_types = array( 'wp-parser-class', 'wp-parser-method', 'wp-parser-function', 'wp-parser-hook', 'wp-parser-constant' );
 
 		if ( ! taxonomy_exists( 'wp-parser-source-file' ) ) {
 

@@ -76,9 +76,11 @@ function parse_files( $files, $root ) {
 
 		foreach ( $file->getConstants() as $constant ) {
 			$out['constants'][] = array(
-				'name'  => $constant->getShortName(),
-				'line'  => $constant->getLineNumber(),
-				'value' => $constant->getValue(),
+				'name'      => $constant->getShortName(),
+				'line'      => $constant->getLineNumber(),
+				'value'     => $constant->getValue(),
+				'end_line'  => $constant->getNode()->getAttribute( 'endLine' ),
+				'doc'       => export_docblock( $constant ),
 			);
 		}
 

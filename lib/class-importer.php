@@ -70,6 +70,13 @@ class Importer implements LoggerAwareInterface {
 	public $post_type_hook;
 
 	/**
+	 * Post type name for constants
+	 *
+	 * @var string
+	 */
+	public $post_type_constant;
+
+	/**
 	 * Handy store for meta about the current item being imported
 	 *
 	 * @var array
@@ -100,6 +107,7 @@ class Importer implements LoggerAwareInterface {
 				'post_type_method'       => 'wp-parser-method',
 				'post_type_function'     => 'wp-parser-function',
 				'post_type_hook'         => 'wp-parser-hook',
+				'post_type_constant'     => 'wp-parser-constant',
 				'taxonomy_file'          => 'wp-parser-source-file',
 				'taxonomy_namespace'     => 'wp-parser-namespace',
 				'taxonomy_package'       => 'wp-parser-package',
@@ -147,7 +155,7 @@ class Importer implements LoggerAwareInterface {
 		delete_option( 'wp_parser_root_import_dir' );
 
 		// Sanity check -- do the required post types exist?
-		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) ) {
+		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) || ! post_type_exists( $this->post_type_constant ) ) {
 			$this->logger->error( sprintf( 'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook ) );
 			exit;
 		}
@@ -306,6 +314,7 @@ class Importer implements LoggerAwareInterface {
 			'functions' => array(),
 			'classes'   => array(),
 			'hooks'     => array(),
+			'constants' => array(),
 		), $file );
 
 		$count = 0;
@@ -330,6 +339,15 @@ class Importer implements LoggerAwareInterface {
 
 		foreach ( $file['hooks'] as $hook ) {
 			$this->import_hook( $hook, 0, $import_ignored );
+			$count ++;
+
+			if ( ! $skip_sleep && 0 == $count % 10 ) {
+				sleep( 3 );
+			}
+		}
+
+		foreach ( $file['constants'] as $constant ) {
+			$this->import_constant( $constant, $import_ignored );
 			$count ++;
 
 			if ( ! $skip_sleep && 0 == $count % 10 ) {
@@ -403,6 +421,20 @@ class Importer implements LoggerAwareInterface {
 		update_post_meta( $hook_id, '_wp-parser_hook_type', $data['type'] );
 
 		return $hook_id;
+	}
+
+	/**
+	 * Create a post for a constant
+	 *
+	 * @param array $data           Constant.
+	 * @param int   $parent_post_id Optional; post ID of the parent (file, class, or function) this item belongs to.
+	 *                              Defaults to zero (no parent).
+	 * @param bool  $import_ignored Optional; defaults to false. If true, constants marked `@ignore` will be imported.
+	 *
+	 * @return bool|int Post ID of this constant, false if any failure.
+	 */
+	public function import_constant( array $data, $parent_post_id = 0, $import_ignored = false ) {
+		$constant_id = $this->import_item( $data, $parent_post_id, $import_ignored,  array( 'post_type' => $this->post_type_constant ) );
 	}
 
 	/**
@@ -730,7 +762,7 @@ class Importer implements LoggerAwareInterface {
 			$data['doc']['tags']['deprecated'] = $this->file_meta['deprecated'];
 		}
 
-		if ( $post_data['post_type'] !== $this->post_type_class ) {
+		if ( ! in_array( $post_data['post_type'], array( $this->post_type_class, $this->post_type_constant ) ) ) {
 			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', $data['arguments'] );
 		}
 
@@ -767,6 +799,10 @@ class Importer implements LoggerAwareInterface {
 
 			case $this->post_type_method:
 				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $ns_name ) );
+				break;
+
+			case $this->post_type_constant:
+				$this->logger->info( "\t\t" . sprintf( '%1$s constant "%2$s"', $action, $ns_name ) );
 				break;
 
 			default:

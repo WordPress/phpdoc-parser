@@ -142,4 +142,31 @@ class Export_Docblocks extends Export_UnitTestCase {
 			, array( 'description' => 'This is a docblock for a class property.' )
 		);
 	}
+
+	/**
+	 * Test the constant docs are exported.
+	 */
+	public function test_constant_docblocks() {
+
+		$this->assertConstantHasDocs(
+			'TEST_CONST'
+			, array(
+				'description' => 'Documented constant.',
+			)
+		);
+	}
+
+	/**
+	 * Test that constants that aren't documented don't receive docs from another node.
+	 */
+	public function test_undocumented_constant() {
+
+		$this->assertConstantHasDocs(
+			'TEST_UNDOCUMENTED_CONST'
+			, array(
+				'description' => '',
+			)
+		);
+	}
+
 }
