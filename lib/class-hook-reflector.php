@@ -3,7 +3,7 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
-use PHPParser_PrettyPrinter_Default;
+use \PhpParser\PrettyPrinter\Standard;
 
 /**
  * Custom reflector for WordPress hooks.
@@ -14,7 +14,7 @@ class Hook_Reflector extends BaseReflector {
 	 * @return string
 	 */
 	public function getName() {
-		$printer = new PHPParser_PrettyPrinter_Default;
+		$printer = new \PhpParser\PrettyPrinter\Standard;
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 

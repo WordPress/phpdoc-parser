@@ -61,9 +61,9 @@ class File_Reflector extends FileReflector {
 	 * Finally, we pick up any docblocks for nodes that usually aren't documentable,
 	 * so they can be assigned to the hooks to which they may belong.
 	 *
-	 * @param \PHPParser_Node $node
+	 * @param \PhpParser\Node $node
 	 */
-	public function enterNode( \PHPParser_Node $node ) {
+	public function enterNode( \PhpParser\Node $node ) {
 		parent::enterNode( $node );
 
 		switch ( $node->getType() ) {
@@ -137,9 +137,9 @@ class File_Reflector extends FileReflector {
 	 * We can now access the function/method reflectors, so we can assign any queued
 	 * hooks to them. The reflector for a node isn't created until the node is left.
 	 *
-	 * @param \PHPParser_Node $node
+	 * @param \PhpParser\Node $node
 	 */
-	public function leaveNode( \PHPParser_Node $node ) {
+	public function leaveNode( \PhpParser\Node $node ) {
 
 		parent::leaveNode( $node );
 
@@ -189,11 +189,11 @@ class File_Reflector extends FileReflector {
 	}
 
 	/**
-	 * @param \PHPParser_Node $node
+	 * @param \PhpParser\Node $node
 	 *
 	 * @return bool
 	 */
-	protected function isFilter( \PHPParser_Node $node ) {
+	protected function isFilter( \PhpParser\Node $node ) {
 		// Ignore variable functions
 		if ( 'Name' !== $node->name->getType() ) {
 			return false;
@@ -221,13 +221,13 @@ class File_Reflector extends FileReflector {
 	}
 
 	/**
-	 * @param \PHPParser_Node $node
+	 * @param \PhpParser\Node $node
 	 *
 	 * @return bool
 	 */
-	protected function isNodeDocumentable( \PHPParser_Node $node ) {
+	protected function isNodeDocumentable( \PhpParser\Node $node ) {
 		return parent::isNodeDocumentable( $node )
-		|| ( $node instanceof \PHPParser_Node_Expr_FuncCall
+		|| ( $node instanceof \PhpParser\Node\Expr\FuncCall
 			&& $this->isFilter( $node ) );
 	}
 }
