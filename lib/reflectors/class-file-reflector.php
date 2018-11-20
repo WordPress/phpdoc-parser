@@ -171,15 +171,23 @@ class File_Reflector extends FileReflector {
 				break;
 
 			case 'Stmt_Function':
-				end( $this->functions )->uses = array_pop( $this->location )->uses;
+				$item = array_pop( $this->location );
+
+				if ( ! property_exists( $item, 'uses' ) ) {
+					$uses = '';
+				} else {
+					$uses = $item->uses;
+				}
+
+				end( $this->functions )->uses = $uses;
 				break;
 
 			case 'Stmt_ClassMethod':
 				$method = array_pop( $this->location );
 
 				/*
-				 * Store the list of elements used by this method in the queue. We'll
-				 * assign them to the method upon leaving the class (see above).
+				 * Store the list of elements used by this method in the queue.
+				 * We'll assign them to the method upon leaving the class (see above).
 				 */
 				if ( ! empty( $method->uses ) ) {
 					$this->method_uses_queue[ $method->name ] = $method->uses;
@@ -195,7 +203,7 @@ class File_Reflector extends FileReflector {
 	 */
 	protected function isFilter( \PHPParser_Node $node ) {
 		// Ignore variable functions
-		if ( 'Name' !== $node->name->getType() ) {
+		if ( $node->name->getType() !== 'Name' ) {
 			return false;
 		}
 

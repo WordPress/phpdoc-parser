@@ -98,11 +98,15 @@ class Command extends WP_CLI_Command {
 	 * @param string $format What format the data is returned in: [json|array].
 	 *
 	 * @return string|array
+	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
+	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json' ) {
+		$runner = new Runner();
+
 		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $path ) );
 		$is_file = is_file( $path );
-		$files   = $is_file ? array( $path ) : get_wp_files( $path );
+		$files   = $is_file ? array( $path ) : $runner->get_wp_files( $path );
 		$path    = $is_file ? dirname( $path ) : $path;
 
 		if ( $files instanceof \WP_Error ) {
@@ -110,7 +114,7 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		$output = parse_files( $files, $path );
+		$output = $runner->parse_files( $files, $path );
 
 		if ( 'json' == $format ) {
 			return json_encode( $output, JSON_PRETTY_PRINT );
