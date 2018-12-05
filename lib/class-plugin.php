@@ -197,14 +197,13 @@ class Plugin {
 	 */
 	public function method_permalink( $link, $post ) {
 
-		if ( 'wp-parser-method' !== $post->post_type || 0 == $post->post_parent ) {
+		if ( $post->post_type !== 'wp-parser-method' || $post->post_parent === 0 ) {
 			return $link;
 		}
 
 		list( $class, $method ) = explode( '-', $post->post_name );
-		$link = home_url( user_trailingslashit( "method/$class/$method" ) );
 
-		return $link;
+		return home_url( user_trailingslashit( "method/$class/$method" ) );
 	}
 
 	/**

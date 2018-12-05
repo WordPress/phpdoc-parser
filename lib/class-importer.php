@@ -159,9 +159,18 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		$root = '';
+
 		foreach ( $data as $file ) {
-			$this->logger->info( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
-			$file_number ++;
+			$this->logger->info(
+				sprintf(
+					'Processing file %1$s of %2$s "%3$s".',
+					number_format_i18n( $file_number ),
+					number_format_i18n( $num_of_files ),
+					$file['path']
+				)
+			);
+
+			$file_number++;
 
 			$this->import_file( $file, $skip_sleep, $import_ignored_functions );
 
@@ -175,11 +184,7 @@ class Importer implements LoggerAwareInterface {
 			$this->logger->info( 'Updated option wp_parser_root_import_dir: ' . $root );
 		}
 
-		$last_import = time();
-		$import_date = date_i18n( get_option('date_format'), $last_import );
-		$import_time = date_i18n( get_option('time_format'), $last_import );
-		update_option( 'wp_parser_last_import', $last_import );
-		$this->logger->info( sprintf( 'Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time ) );
+		$this->log_last_import();
 
 		$wp_version = get_option( 'wp_parser_imported_wp_version' );
 		if ( $wp_version ) {
@@ -206,20 +211,36 @@ class Importer implements LoggerAwareInterface {
 		wp_cache_flush();
 		wp_defer_comment_counting( false );
 
-		$time_end = microtime(true);
+		$time_end = microtime( true );
 		$time = $time_end - $time_start;
 
-		$this->logger->info( 'Time: '.$time );
+		$this->logger->info( 'Time: ' . $time );
 		$this->logger->info( 'Queries: ' . ( $wpdb->num_queries - $num_queries ) );
+
 		if ( empty( $this->errors ) ) {
 			$this->logger->notice( 'Import complete!' );
-
 		} else {
 			$this->logger->info( 'Import complete, but some errors were found:' );
 
-			foreach ( $this->errors as $error ) {
-				$this->logger->error( $error );
-			}
+			$this->output_errors();
+		}
+	}
+
+	protected function log_last_import() {
+		$last_import = time();
+		$import_date = date_i18n( get_option('date_format'), $last_import );
+		$import_time = date_i18n( get_option('time_format'), $last_import );
+
+		update_option( 'wp_parser_last_import', $last_import );
+
+		$this->logger->info(
+			sprintf( 'Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time )
+		);
+	}
+
+	protected function output_errors() {
+		foreach ( $this->errors as $error ) {
+			$this->logger->error( $error );
 		}
 	}
 
@@ -236,7 +257,6 @@ class Importer implements LoggerAwareInterface {
 		if ( isset( $this->inserted_terms[ $taxonomy ][ $term . $parent ] ) ) {
 			return $this->inserted_terms[ $taxonomy ][ $term . $parent ];
 		}
-
 
 		if ( ! $inserted_term = term_exists( $term, $taxonomy, $parent ) ) {
 			$inserted_term = wp_insert_term( $term, $taxonomy, $args );
@@ -267,7 +287,7 @@ class Importer implements LoggerAwareInterface {
 		 * @param array $file            File data
 		 */
 		if ( ! apply_filters( 'wp_parser_pre_import_file', true, $file ) ) {
-			$this->logger->info( sprintf( "\t" . 'Skipping file "%s".', $file['path'] ) );
+			$this->output_message( sprintf( 'Skipping file "%s".', $file['path'] ), 1 );
 			return;
 		}
 
@@ -277,7 +297,14 @@ class Importer implements LoggerAwareInterface {
 		$term = $this->insert_term( $file['path'], $this->taxonomy_file, array( 'slug' => $slug ) );
 
 		if ( is_wp_error( $term ) ) {
-			$this->errors[] = sprintf( 'Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message() );
+			$this->log_error(
+				sprintf(
+					'Problem creating file tax item "%1$s" for %2$s: %3$s',
+					$slug,
+					$file['path'],
+					$term->get_error_message()
+				)
+			);
 			return;
 		}
 
@@ -287,7 +314,7 @@ class Importer implements LoggerAwareInterface {
 			$first_function = $file['uses']['functions'][0];
 
 			// If the first function in this file is _deprecated_function
-			if ( '_deprecated_file' === $first_function['name'] ) {
+			if ( $first_function['name'] === '_deprecated_file' ) {
 
 				// Set the deprecated flag to the version number
 				$deprecated_file = $first_function['deprecation_version'];
@@ -312,32 +339,33 @@ class Importer implements LoggerAwareInterface {
 
 		foreach ( $file['functions'] as $function ) {
 			$this->import_function( $function, 0, $import_ignored );
-			$count ++;
+			$count++;
 
-			if ( ! $skip_sleep && 0 == $count % 10 ) { // TODO figure our why are we still doing this
+			// TODO figure our why are we still doing this
+			if ( ! $skip_sleep && $count % 10 === 0 ) {
 				sleep( 3 );
 			}
 		}
 
 		foreach ( $file['classes'] as $class ) {
 			$this->import_class( $class, $import_ignored );
-			$count ++;
+			$count++;
 
-			if ( ! $skip_sleep && 0 == $count % 10 ) {
+			if ( ! $skip_sleep && $count % 10 === 0 ) {
 				sleep( 3 );
 			}
 		}
 
 		foreach ( $file['hooks'] as $hook ) {
 			$this->import_hook( $hook, 0, $import_ignored );
-			$count ++;
+			$count++;
 
-			if ( ! $skip_sleep && 0 == $count % 10 ) {
+			if ( ! $skip_sleep && $count % 10 === 0 ) {
 				sleep( 3 );
 			}
 		}
 
-		if ( 'wp-includes/version.php' === $file['path'] ) {
+		if ( $file['path'] === 'wp-includes/version.php' ) {
 			$this->import_version( $file );
 		}
 	}
@@ -494,6 +522,18 @@ class Importer implements LoggerAwareInterface {
 		}
 	}
 
+	private function get_namespace( $data ) {
+		if ( empty( $data['namespace'] ) || $data['namespace'] === 'global' ) {
+			return $data['name'];
+		}
+
+		return $data['namespace'] . '\\' . $data['name'];
+	}
+
+	private function get_slug_from_namespace( $namespace ) {
+		return sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $namespace ) ) );
+	}
+
 	/**
 	 * Create a post for an item (a class or a function).
 	 *
@@ -513,8 +553,9 @@ class Importer implements LoggerAwareInterface {
 		global $wpdb;
 
 		$is_new_post = true;
-		$ns_name     = ( empty( $data['namespace'] ) || 'global' === $data['namespace'] ) ? $data['name'] :  $data['namespace'] . '\\' . $data['name'];
-		$slug        = sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $ns_name ) ) );
+		$post_needed_update = false;
+		$namespace     = $this->get_namespace( $data );
+		$slug        = $this->get_slug_from_namespace( $namespace );
 
 		$post_data   = wp_parse_args(
 			$arg_overrides,
@@ -534,20 +575,31 @@ class Importer implements LoggerAwareInterface {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d class "%1$s"', $ns_name ) );
+					$this->output_message(
+						sprintf( 'Skipped importing @ignore-d class "%1$s"', $namespace ),
+						1
+					);
 					break;
 
 				case $this->post_type_method:
-					$this->logger->info( "\t\t" . sprintf( 'Skipped importing @ignore-d method "%1$s"', $ns_name ) );
+					$this->output_message(
+						sprintf( 'Skipped importing @ignore-d method "%1$s"', $namespace ),
+						2
+					);
 					break;
 
 				case $this->post_type_hook:
-					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->logger->info( $indent . sprintf( 'Skipped importing @ignore-d hook "%1$s"', $ns_name ) );
+					$this->output_message(
+						sprintf( 'Skipped importing @ignore-d hook "%1$s"', $namespace ),
+						( $parent_post_id ) ? 2 : 1
+					);
 					break;
 
 				default:
-					$this->logger->info( "\t" . sprintf( 'Skipped importing @ignore-d function "%1$s"', $ns_name ) );
+					$this->output_message(
+						sprintf( 'Skipped importing @ignore-d function "%1$s"', $namespace ),
+						1
+					);
 			}
 
 			return false;
@@ -573,7 +625,7 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		// Look for an existing post for this item
-		if ( 'wp-parser-hook' === $post_data['post_type'] ) {
+		if ( $post_data['post_type'] === 'wp-parser-hook' ) {
 			$existing_post_id = $wpdb->get_var(
 				$q = $wpdb->prepare(
 					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s LIMIT 1",
@@ -602,35 +654,37 @@ class Importer implements LoggerAwareInterface {
 
 		// Insert/update the item post
 		if ( ! empty( $existing_post_id ) ) {
-			$is_new_post     = false;
-			$post_id = $post_data['ID'] = (int) $existing_post_id;
+			$is_new_post = false;
+			$post_id 	 = $post_data['ID'] = (int) $existing_post_id;
+
 			$post_needed_update = array_diff_assoc( sanitize_post( $post_data, 'db' ), get_post( $existing_post_id, ARRAY_A, 'db' ) );
+
 			if ( $post_needed_update ) {
-				$post_id = wp_update_post( wp_slash( $post_data ), true );
+				$post_id = $this->update_post( $post_data );
 			}
 		} else {
-			$post_id = wp_insert_post( wp_slash( $post_data ), true );
+			$post_id = $this->insert_post( $post_data );
 		}
+
 		$anything_updated = array();
 
 		if ( ! $post_id || is_wp_error( $post_id ) ) {
 
 			switch ( $post_data['post_type'] ) {
 				case $this->post_type_class:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for class "%1$s"', $ns_name, $post_id->get_error_message() );
+					$this->log_error( sprintf( 'Problem inserting/updating post for class "%1$s"', $namespace, $post_id->get_error_message() ), 1 );
 					break;
 
 				case $this->post_type_method:
-					$this->errors[] = "\t\t" . sprintf( 'Problem inserting/updating post for method "%1$s"', $ns_name, $post_id->get_error_message() );
+					$this->log_error( sprintf( 'Problem inserting/updating post for method "%1$s"', $namespace, $post_id->get_error_message() ), 2 );
 					break;
 
 				case $this->post_type_hook:
-					$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-					$this->errors[] = $indent . sprintf( 'Problem inserting/updating post for hook "%1$s"', $ns_name, $post_id->get_error_message() );
+					$this->log_error( sprintf( 'Problem inserting/updating post for hook "%1$s"', $namespace, $post_id->get_error_message() ), ( $parent_post_id ) ? 2 : 1 );
 					break;
 
 				default:
-					$this->errors[] = "\t" . sprintf( 'Problem inserting/updating post for function "%1$s"', $ns_name, $post_id->get_error_message() );
+					$this->log_error( sprintf( 'Problem inserting/updating post for function "%1$s"', $namespace, $post_id->get_error_message() ), 1 );
 			}
 
 			return false;
@@ -641,25 +695,30 @@ class Importer implements LoggerAwareInterface {
 
 		// If the item has @since markup, assign the taxonomy
 		$since_versions = wp_list_filter( $data['doc']['tags'], array( 'name' => 'since' ) );
+
 		if ( ! empty( $since_versions ) ) {
 
 			// Loop through all @since versions.
 			foreach ( $since_versions as $since_version ) {
-
-				if ( ! empty( $since_version['content'] ) ) {
-					$since_term = $this->insert_term( $since_version['content'], $this->taxonomy_since_version );
-
-					// Assign the tax item to the post
-					if ( ! is_wp_error( $since_term ) ) {
-						$added_term_relationship = did_action( 'added_term_relationship' );
-						wp_set_object_terms( $post_id, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
-						if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
-							$anything_updated[] = true;
-						}
-					} else {
-						$this->logger->warning( "\tCannot set @since term: " . $since_term->get_error_message() );
-					}
+				if ( empty( $since_version['content'] ) ) {
+					continue;
 				}
+
+				$since_term = $this->insert_term( $since_version['content'], $this->taxonomy_since_version );
+
+				// Assign the tax item to the post
+				if ( ! is_wp_error( $since_term ) ) {
+					$added_term_relationship = did_action( 'added_term_relationship' );
+
+					wp_set_object_terms( $post_id, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
+
+					if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+						$anything_updated[] = true;
+					}
+				} else {
+					$this->output_warning( "Cannot set @since term: " . $since_term->get_error_message(), 1 );
+				}
+
 			}
 		}
 
@@ -677,12 +736,11 @@ class Importer implements LoggerAwareInterface {
 			$packages['sub'] = wp_list_filter( $this->file_meta['docblock']['tags'], array( 'name' => 'subpackage' ) );
 		}
 
-		$main_package_id   = false;
+		$main_package_id  = false;
 		$package_term_ids = array();
 
 		// If the item has any @package/@subpackage markup (or has inherited it from file scope), assign the taxonomy.
 		foreach ( $packages as $pack_name => $pack_value ) {
-
 			if ( empty( $pack_value ) ) {
 				continue;
 			}
@@ -691,8 +749,9 @@ class Importer implements LoggerAwareInterface {
 			$pack_value = $pack_value['content'];
 
 			$package_term_args = array( 'parent' => 0 );
+
 			// Set the parent term_id to look for, as the package taxonomy is hierarchical.
-			if ( 'sub' === $pack_name && is_int( $main_package_id ) ) {
+			if ( $pack_name === 'sub' && is_int( $main_package_id ) ) {
 				$package_term_args = array( 'parent' => $main_package_id );
 			}
 
@@ -700,20 +759,24 @@ class Importer implements LoggerAwareInterface {
 			$package_term = $this->insert_term( $pack_value, $this->taxonomy_package, $package_term_args );
 			$package_term_ids[] = (int) $package_term['term_id'];
 
-			if ( 'main' === $pack_name && false === $main_package_id && ! is_wp_error( $package_term ) ) {
+			if ( $pack_name === 'main' && $main_package_id === false && ! is_wp_error( $package_term ) ) {
 				$main_package_id = (int) $package_term['term_id'];
 			}
 
-			if ( is_wp_error( $package_term ) ) {
-				if ( is_int( $main_package_id ) ) {
-					$this->logger->warning( "\tCannot create @subpackage term: " . $package_term->get_error_message() );
-				} else {
-					$this->logger->warning( "\tCannot create @package term: " . $package_term->get_error_message() );
-				}
+			if ( ! is_wp_error( $package_term ) ) {
+				continue;
+			}
+
+			if ( is_int( $main_package_id ) ) {
+				$this->output_warning( "Cannot create @subpackage term: " . $package_term->get_error_message(), 1 );
+			} else {
+				$this->output_warning( "Cannot create @package term: " . $package_term->get_error_message(), 1 );
 			}
 		}
+
 		$added_term_relationship = did_action( 'added_term_relationship' );
 		wp_set_object_terms( $post_id, $package_term_ids, $this->taxonomy_package );
+
 		if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
 			$anything_updated[] = true;
 		}
@@ -721,6 +784,7 @@ class Importer implements LoggerAwareInterface {
 		// Set other taxonomy and post meta to use in the theme templates
 		$added_item = did_action( 'added_term_relationship' );
 		wp_set_object_terms( $post_id, $this->file_meta['term_id'], $this->taxonomy_file );
+
 		if ( did_action( 'added_term_relationship' ) > $added_item ) {
 			$anything_updated[] = true;
 		}
@@ -739,7 +803,7 @@ class Importer implements LoggerAwareInterface {
 			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_aliases', (array) $data['aliases'] );
 		}
 
-		// Recored the namespace if there is one.
+		// Record the namespace if there is one.
 		if ( ! empty( $data['namespace'] ) ) {
 			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_namespace', (string) addslashes( $data['namespace'] ) );
 		}
@@ -757,20 +821,19 @@ class Importer implements LoggerAwareInterface {
 
 		switch ( $post_data['post_type'] ) {
 			case $this->post_type_class:
-				$this->logger->info( "\t" . sprintf( '%1$s class "%2$s"', $action, $ns_name ) );
+				$this->output_message( sprintf( '%1$s class "%2$s"', $action, $namespace ), 1 );
 				break;
 
 			case $this->post_type_hook:
-				$indent = ( $parent_post_id ) ? "\t\t" : "\t";
-				$this->logger->info( $indent . sprintf( '%1$s hook "%2$s"', $action, $ns_name ) );
+				$this->output_message( sprintf( '%1$s hook "%2$s"', $action, $namespace ), ( $parent_post_id ) ? 2 : 1 );
 				break;
 
 			case $this->post_type_method:
-				$this->logger->info( "\t\t" . sprintf( '%1$s method "%2$s"', $action, $ns_name ) );
+				$this->output_message( sprintf( '%1$s method "%2$s"', $action, $namespace ), 2 );
 				break;
 
 			default:
-				$this->logger->info( "\t" . sprintf( '%1$s function "%2$s"', $action, $ns_name ) );
+				$this->output_message( sprintf( '%1$s function "%2$s"', $action, $namespace ), 1 );
 		}
 
 		/**
@@ -786,6 +849,78 @@ class Importer implements LoggerAwareInterface {
 	}
 
 	/**
+	 * Indents the passed text with the amount of tabs specified.
+	 *
+	 * @param string $text    The text to indent.
+	 * @param int    $indents The amount of indentations to add.
+	 *
+	 * @return string The indented text.
+	 */
+	private function indent_text( $text, $indents ) {
+		$indents_to_add = str_repeat( "\t", $indents );
+
+		return $indents_to_add . $text;
+	}
+
+	/**
+	 * Adds the passed message to the error log.
+	 *
+	 * @param string $message The message to add to the error log.
+	 * @param int 	 $indents The amount of indentations to add.
+	 *
+	 * @return void
+	 */
+	private function log_error( $message, $indents = 0 ) {
+		$this->errors[] = $this->indent_text( $message, $indents );
+	}
+
+	/**
+	 * Sends the passed message to the logger as a warning.
+	 *
+	 * @param string $message The message to log as a warning.
+	 * @param int 	 $indents The amount of indentations to add.
+	 *
+	 * @return void
+	 */
+	private function output_warning( $message, $indents = 0 ) {
+		$this->logger->warning( $this->indent_text( $message, $indents ) );
+	}
+
+	/**
+	 * Sends the passed message to the logger as a generic info message.
+	 *
+	 * @param string $message The message to log.
+	 * @param int 	 $indents The amount of indentations to add.
+	 *
+	 * @return void
+	 */
+	private function output_message( $message, $indents = 0 ) {
+		$this->logger->info( $this->indent_text( $message, $indents ) );
+	}
+
+	/**
+	 * Inserts a post with the passed post data.
+	 *
+	 * @param array $post_data The post data to add.
+	 *
+	 * @return int The newly inserted post ID.
+	 */
+	private function insert_post( $post_data ) {
+		return wp_insert_post( wp_slash( $post_data ), true );
+	}
+
+	/**
+	 * Updates a post based on the passed post data.
+	 *
+	 * @param array $post_data The post data to update.
+	 *
+	 * @return int The post ID of the updated post.
+	 */
+	private function update_post( $post_data ) {
+		return wp_update_post( wp_slash( $post_data ), true );
+	}
+
+	/**
 	 * Process the Namespace of items and add them to the correct taxonomy terms.
 	 *
 	 * This creates terms for each of the namespace terms in a hierachical tree
@@ -795,8 +930,9 @@ class Importer implements LoggerAwareInterface {
 	 * @param array $namespaces An array of namespaces strings
 	 */
 	protected function _set_namespaces( $post_id, $namespaces ) {
-		$ns_term = false;
+		$ns_term  = false;
 		$ns_terms = array();
+
 		foreach ( $namespaces as $namespace ) {
 			$ns_term = $this->insert_term(
 				$namespace,
@@ -806,10 +942,11 @@ class Importer implements LoggerAwareInterface {
 					'parent' => ( $ns_term ) ? $ns_term['term_id'] : 0,
 				)
 			);
+
 			if ( ! is_wp_error( $ns_term ) ) {
 				$ns_terms[] = (int) $ns_term['term_id'];
 			} else {
-				$this->logger->warning( "\tCannot set namespace term: " . $ns_term->get_error_message() );
+				$this->output_warning( "Cannot set namespace term: " . $ns_term->get_error_message(), 1 );
 				$ns_term = false;
 			}
 		}
@@ -817,6 +954,7 @@ class Importer implements LoggerAwareInterface {
 		if ( ! empty( $ns_terms ) ) {
 			$added_term_relationship = did_action( 'added_term_relationship' );
 			wp_set_object_terms( $post_id, $ns_terms, $this->taxonomy_namespace );
+
 			if( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
 				$this->anything_updated[] = true;
 			}

@@ -13,14 +13,20 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate a JSON file containing the PHPDoc markup, and save to filesystem.
 	 *
-	 * @synopsis <directory> [<output_file>]
+	 * @synopsis <directory> [<output_file>] [--ignore_files]
 	 *
-	 * @param array $args
+	 * @param array $args		The arguments to pass to the command.
+	 * @param array $assoc_args The associated arguments to pass to the command.
+	 *
+	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
+	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
 	 */
-	public function export( $args ) {
+	public function export( $args, $assoc_args ) {
 		$directory   = realpath( $args[0] );
 		$output_file = empty( $args[1] ) ? 'phpdoc.json' : $args[1];
-		$json        = $this->_get_phpdoc_data( $directory );
+		$ignore_files = empty( $assoc_args['ignore_files'] ) ? array() : explode( ',', $assoc_args['ignore_files'] );
+
+		$json        = $this->_get_phpdoc_data( $directory, 'json', $ignore_files );
 		$result      = file_put_contents( $output_file, $json );
 		WP_CLI::line();
 
@@ -38,8 +44,8 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @synopsis <file> [--quick] [--import-internal]
 	 *
-	 * @param array $args
-	 * @param array $assoc_args
+	 * @param array $args		The arguments to pass to the command.
+	 * @param array $assoc_args The associated arguments to pass to the command.
 	 */
 	public function import( $args, $assoc_args ) {
 		list( $file ) = $args;
@@ -71,10 +77,13 @@ class Command extends WP_CLI_Command {
 	 * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
 	 *
 	 * @subcommand create
-	 * @synopsis   <directory> [--quick] [--import-internal] [--user]
+	 * @synopsis   <directory> [--quick] [--import-internal] [--user] [--ignore_files]
 	 *
-	 * @param array $args
-	 * @param array $assoc_args
+	 * @param array $args		The arguments to pass to the command.
+	 * @param array $assoc_args The associated arguments to pass to the command.
+	 *
+	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
+	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
 	 */
 	public function create( $args, $assoc_args ) {
 		list( $directory ) = $args;
@@ -87,24 +96,28 @@ class Command extends WP_CLI_Command {
 
 		WP_CLI::line();
 
+		$data = $this->_get_phpdoc_data( $directory, 'array', $assoc_args['ignore_files'] );
+
 		// Import data
-		$this->_do_import( $this->_get_phpdoc_data( $directory, 'array' ), isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
+		$this->_do_import( $data, isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
 	}
 
 	/**
 	 * Generate the data from the PHPDoc markup.
 	 *
-	 * @param string $path   Directory or file to scan for PHPDoc
-	 * @param string $format What format the data is returned in: [json|array].
+	 * @param string $path   		Directory or file to scan for PHPDoc
+	 * @param string $format 		What format the data is returned in: [json|array].
+	 * @param array  $ignore_files 	What files to ignore.
 	 *
 	 * @return string|array
 	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
 	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
 	 */
-	protected function _get_phpdoc_data( $path, $format = 'json' ) {
-		$runner = new Runner();
+	protected function _get_phpdoc_data( $path, $format = 'json', $ignore_files = array() ) {
+		$runner = new Runner( $ignore_files );
 
 		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $path ) );
+
 		$is_file = is_file( $path );
 		$files   = $is_file ? array( $path ) : $runner->get_wp_files( $path );
 		$path    = $is_file ? dirname( $path ) : $path;
@@ -116,7 +129,7 @@ class Command extends WP_CLI_Command {
 
 		$output = $runner->parse_files( $files, $path );
 
-		if ( 'json' == $format ) {
+		if ( $format === 'json' ) {
 			return json_encode( $output, JSON_PRETTY_PRINT );
 		}
 
@@ -138,7 +151,7 @@ class Command extends WP_CLI_Command {
 		}
 
 		// Run the importer
-		$importer = new Importer;
+		$importer = new Importer();
 		$importer->setLogger( new WP_CLI_Logger() );
 		$importer->import( $data, $skip_sleep, $import_ignored );
 

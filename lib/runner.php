@@ -12,12 +12,17 @@ use WP_CLI;
 class Runner {
 	// CLI config + config file
 	protected $exclude_directories = array( 'vendor', 'vendor_prefixed', 'node_modules', 'tests', 'build' );
+
 	private $exporter;
+	private $ignore_files;
 
 	/**
 	 * Runner constructor.
+	 *
+	 * @param array $ignore_files Files to ignore.
 	 */
-	public function __construct() {
+	public function __construct( $ignore_files = array() ) {
+		$this->ignore_files = $ignore_files;
 		$this->exporter = new Exporter();
 	}
 
@@ -34,7 +39,7 @@ class Runner {
 	 * @return bool Whether or not the passed file is a valid PHP file.
 	 */
 	public function filter( $file, $key, $iterator ) {
-		if ( $iterator->hasChildren() && ! in_array( $file->getFilename(), $this->exclude_directories, true ) ) {
+		if ( $iterator->hasChildren() && ! in_array( $file->getFilename(), $this->ignore_files, true ) ) {
 			return true;
 		}
 
@@ -84,6 +89,9 @@ class Runner {
 	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile Thrown if the file can't be read.
 	 */
 	public function parse_files( $files, $root ) {
+
+		var_dump(get_plugin_data($root));die;
+
 		$output = array();
 
 		foreach ( $files as $filename ) {
