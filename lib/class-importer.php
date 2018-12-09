@@ -42,6 +42,13 @@ class Importer implements LoggerAwareInterface {
 	public $taxonomy_package;
 
 	/**
+	 * Taxonomy name for an item's programming language
+	 *
+	 * @var string
+	 */
+	public $taxonomy_programming_language;
+
+	/**
 	 * Post type name for functions
 	 *
 	 * @var string
@@ -82,6 +89,11 @@ class Importer implements LoggerAwareInterface {
 	public $errors = array();
 
 	/**
+	 * @var array The programming language term.
+	 */
+	public $programming_language_term;
+
+	/**
 	 * @var array Cached items of inserted terms
 	 */
 	protected $inserted_terms = array();
@@ -96,14 +108,15 @@ class Importer implements LoggerAwareInterface {
 		$properties = wp_parse_args(
 			$args,
 			array(
-				'post_type_class'        => 'wp-parser-class',
-				'post_type_method'       => 'wp-parser-method',
-				'post_type_function'     => 'wp-parser-function',
-				'post_type_hook'         => 'wp-parser-hook',
-				'taxonomy_file'          => 'wp-parser-source-file',
-				'taxonomy_namespace'     => 'wp-parser-namespace',
-				'taxonomy_package'       => 'wp-parser-package',
-				'taxonomy_since_version' => 'wp-parser-since',
+				'post_type_class'               => 'wp-parser-class',
+				'post_type_method'              => 'wp-parser-method',
+				'post_type_function'            => 'wp-parser-function',
+				'post_type_hook'                => 'wp-parser-hook',
+				'taxonomy_file'                 => 'wp-parser-source-file',
+				'taxonomy_namespace'            => 'wp-parser-namespace',
+				'taxonomy_package'              => 'wp-parser-package',
+				'taxonomy_since_version'        => 'wp-parser-since',
+				'taxonomy_programming_language' => 'wp-parser-programming-language',
 			)
 		);
 
@@ -117,11 +130,12 @@ class Importer implements LoggerAwareInterface {
 	/**
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
-	 * @param array $data
-	 * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
-	 * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
+	 * @param array  $data
+	 * @param bool   $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool   $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
+	 * @param string $language                 Optional; defaults to 'PHP'. The programming language of the documentation being imported.
 	 */
-	public function import( array $data, $skip_sleep = false, $import_ignored_functions = false ) {
+	public function import( array $data, $skip_sleep = false, $import_ignored_functions = false, $language = 'PHP' ) {
 		global $wpdb;
 
 		$time_start = microtime(true);
@@ -147,20 +161,65 @@ class Importer implements LoggerAwareInterface {
 		delete_option( 'wp_parser_root_import_dir' );
 
 		// Sanity check -- do the required post types exist?
-		if ( ! post_type_exists( $this->post_type_class ) || ! post_type_exists( $this->post_type_function ) || ! post_type_exists( $this->post_type_hook ) ) {
-			$this->logger->error( sprintf( 'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook ) );
+		if (
+			! post_type_exists( $this->post_type_class ) ||
+			! post_type_exists( $this->post_type_function ) ||
+			! post_type_exists( $this->post_type_hook )
+		) {
+			$this->logger->error(
+				sprintf(
+					'Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.',
+					$this->post_type_class,
+					$this->post_type_function,
+					$this->post_type_hook
+				)
+			);
 			exit;
 		}
 
 		// Sanity check -- do the required taxonomies exist?
-		if ( ! taxonomy_exists( $this->taxonomy_file ) || ! taxonomy_exists( $this->taxonomy_since_version ) || ! taxonomy_exists( $this->taxonomy_package ) ) {
-			$this->logger->error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $this->taxonomy_file ) );
+		if (
+			! taxonomy_exists( $this->taxonomy_file ) ||
+			! taxonomy_exists( $this->taxonomy_since_version ) ||
+			! taxonomy_exists( $this->taxonomy_package ) ||
+			! taxonomy_exists( $this->taxonomy_programming_language )
+		) {
+			$this->logger->error(
+				sprintf(
+					'Missing taxonomy; check that "%1$s", "%2$s", "%3$s", and "%4$s" are registered.',
+					$this->taxonomy_file,
+					$this->taxonomy_since_version,
+					$this->taxonomy_package,
+					$this->taxonomy_programming_language
+				)
+			);
 			exit;
+		}
+
+		$this->programming_language_term = $this->insert_term(
+			$language,
+			$this->taxonomy_programming_language,
+			array( 'slug' => $language )
+		);
+
+		if ( is_wp_error( $this->programming_language_term ) ) {
+			$this->errors[] = sprintf(
+				'Problem creating programming language tax item "%1$s": %2$s',
+				$language,
+				$this->programming_language_term->get_error_message()
+			);
+			return;
 		}
 
 		$root = '';
 		foreach ( $data as $file ) {
-			$this->logger->info( sprintf( 'Processing file %1$s of %2$s "%3$s".', number_format_i18n( $file_number ), number_format_i18n( $num_of_files ), $file['path'] ) );
+			$this->logger->info(
+				sprintf(
+					'Processing file %1$s of %2$s "%3$s".',
+					number_format_i18n( $file_number ),
+					number_format_i18n( $num_of_files ), $file['path']
+				)
+			);
 			$file_number ++;
 
 			$this->import_file( $file, $skip_sleep, $import_ignored_functions );
@@ -514,7 +573,8 @@ class Importer implements LoggerAwareInterface {
 
 		$is_new_post = true;
 		$ns_name     = ( empty( $data['namespace'] ) || 'global' === $data['namespace'] ) ? $data['name'] :  $data['namespace'] . '\\' . $data['name'];
-		$slug        = sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $ns_name ) ) );
+		$pl_name     = $this->programming_language_term['slug'] . '-' . $ns_name;
+		$slug        = sanitize_title( str_replace( '\\', '-', str_replace( '::', '-', $pl_name ) ) );
 
 		$post_data   = wp_parse_args(
 			$arg_overrides,
@@ -722,6 +782,12 @@ class Importer implements LoggerAwareInterface {
 		$added_item = did_action( 'added_term_relationship' );
 		wp_set_object_terms( $post_id, $this->file_meta['term_id'], $this->taxonomy_file );
 		if ( did_action( 'added_term_relationship' ) > $added_item ) {
+			$anything_updated[] = true;
+		}
+
+		$added_programming_language = did_action( 'added_term_relationship' );
+		wp_set_object_terms( $post_id, $this->programming_language_term['term_id'], $this->taxonomy_programming_language );
+		if ( did_action( 'added_term_relationship' ) > $added_programming_language ) {
 			$anything_updated[] = true;
 		}
 
