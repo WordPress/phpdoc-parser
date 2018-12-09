@@ -24,7 +24,7 @@ class Plugin {
 		add_filter( 'wp_parser_get_arguments', array( $this, 'make_args_safe' ) );
 		add_filter( 'wp_parser_return_type', array( $this, 'humanize_separator' ) );
 
-		add_filter( 'post_type_link', array( $this, 'method_permalink' ), 10, 2 );
+		add_filter( 'post_type_link', array( $this, 'scoped_permalink' ), 10, 2 );
 	}
 
 	/**
@@ -187,22 +187,51 @@ class Plugin {
 				)
 			);
 		}
+
+		if ( ! taxonomy_exists( 'wp-parser-programming-language' ) ) {
+
+			register_taxonomy(
+				'wp-parser-programming-language',
+				$object_types,
+				array(
+					'hierarchical'          => true,
+					'label'                 => __( 'Programming language', 'wp-parser' ),
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'programming-language' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
 	}
 
 	/**
+	 * Changes permalinks for doc post types to the format language/type/namespace/name.
+	 * If no namespace is present the format will be language/type/name.
+	 *
 	 * @param string   $link
 	 * @param \WP_Post $post
 	 *
 	 * @return string|void
 	 */
-	public function method_permalink( $link, $post ) {
+	public function scoped_permalink( $link, $post ) {
+		$object_types = array( 'wp-parser-class', 'wp-parser-method', 'wp-parser-function', 'wp-parser-hook' );
 
-		if ( 'wp-parser-method' !== $post->post_type || 0 == $post->post_parent ) {
+		if ( ! in_array( $post->post_type, $object_types, true ) ) {
 			return $link;
 		}
 
-		list( $class, $method ) = explode( '-', $post->post_name );
-		$link = home_url( user_trailingslashit( "method/$class/$method" ) );
+		$parts     = explode( '-', $post->post_name );
+		$language  = array_shift( $parts );
+		$name      = array_pop( $parts );
+		$namespace = implode( '-', $parts );
+		$type      = substr( $post->post_type, 10 ); // strip 'wp-parser-'.
+
+		if ( empty( $namespace ) ) {
+			$link = home_url( user_trailingslashit( "$language/$type/$name" ) );
+		} else {
+			$link = home_url( user_trailingslashit( "$language/$type/$namespace/$name" ) );
+		}
 
 		return $link;
 	}

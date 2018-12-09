@@ -63,8 +63,13 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
+		$language = 'PHP';
+		if ( isset( $assoc_args['language'] ) ) {
+			$language = $assoc_args['language'];
+		}
+
 		// Import data
-		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );
+		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ), $language );
 	}
 
 	/**
@@ -122,11 +127,12 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
-	 * @param array $data
-	 * @param bool  $skip_sleep     If true, the sleep() calls are skipped.
-	 * @param bool  $import_ignored If true, functions marked `@ignore` will be imported.
+	 * @param array  $data
+	 * @param bool   $skip_sleep     Optional; defaults to false. If true, the sleep() calls are skipped.
+	 * @param bool   $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
+	 * @param string $language       Optional; defaults to 'PHP'. The programming language of the documentation being imported.
 	 */
-	protected function _do_import( array $data, $skip_sleep = false, $import_ignored = false ) {
+	protected function _do_import( array $data, $skip_sleep = false, $import_ignored = false, $language = 'PHP' ) {
 
 		if ( ! wp_get_current_user()->exists() ) {
 			WP_CLI::error( 'Please specify a valid user: --user=<id|login>' );
@@ -136,7 +142,7 @@ class Command extends WP_CLI_Command {
 		// Run the importer
 		$importer = new Importer;
 		$importer->setLogger( new WP_CLI_Logger() );
-		$importer->import( $data, $skip_sleep, $import_ignored );
+		$importer->import( $data, $skip_sleep, $import_ignored, $language );
 
 		WP_CLI::line();
 	}
