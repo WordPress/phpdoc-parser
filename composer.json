@@ -26,10 +26,15 @@
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
-		"psr/log"                  : "~1.0"
+		"psr/log"                  : "~1.0",
+		"symfony/yaml": "^4.2",
+		"symfony/finder": "^4.2"
 	},
 	"autoload"   : {
-		"classmap": ["lib"],
-		"files"   : ["lib/runner.php", "lib/template.php"]
+		"classmap": ["src"],
+		"files"   : ["src/runner.php", "src/template.php"],
+		"psr-4": {
+			"WP_Parser\\": "src"
+		}
 	}
 }

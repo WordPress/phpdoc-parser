@@ -42,6 +42,13 @@ class Importer implements LoggerAwareInterface {
 	public $taxonomy_package;
 
 	/**
+	 * Taxonomy name for an item's plugin tags
+	 *
+	 * @var string
+	 */
+	public $taxonomy_plugin;
+
+	/**
 	 * Post type name for functions
 	 *
 	 * @var string
@@ -104,6 +111,7 @@ class Importer implements LoggerAwareInterface {
 				'taxonomy_namespace'     => 'wp-parser-namespace',
 				'taxonomy_package'       => 'wp-parser-package',
 				'taxonomy_since_version' => 'wp-parser-since',
+				'taxonomy_plugin' 		 => 'wp-parser-plugin',
 			)
 		);
 
@@ -117,11 +125,11 @@ class Importer implements LoggerAwareInterface {
 	/**
 	 * Import the PHPDoc $data into WordPress posts and taxonomies
 	 *
-	 * @param array $data
+	 * @param array $files
 	 * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
 	 * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 */
-	public function import( array $data, $skip_sleep = false, $import_ignored_functions = false ) {
+	public function import( array $files, $skip_sleep = false, $import_ignored_functions = false ) {
 		global $wpdb;
 
 		$time_start = microtime(true);
@@ -130,7 +138,7 @@ class Importer implements LoggerAwareInterface {
 		$this->logger->info( 'Starting import. This will take some time…' );
 
 		$file_number  = 1;
-		$num_of_files = count( $data );
+		$num_of_files = count( $files );
 
 		do_action( 'wp_parser_starting_import' );
 
@@ -160,7 +168,7 @@ class Importer implements LoggerAwareInterface {
 
 		$root = '';
 
-		foreach ( $data as $file ) {
+		foreach ( $files as $file ) {
 			$this->logger->info(
 				sprintf(
 					'Processing file %1$s of %2$s "%3$s".',
@@ -305,6 +313,7 @@ class Importer implements LoggerAwareInterface {
 					$term->get_error_message()
 				)
 			);
+
 			return;
 		}
 
@@ -377,7 +386,7 @@ class Importer implements LoggerAwareInterface {
 	 * @param int   $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
 	 * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
 	 *
-	 * @return bool|int Post ID of this function, false if any failure.
+	 * @return void Post ID of this function, false if any failure.
 	 */
 	public function import_function( array $data, $parent_post_id = 0, $import_ignored = false ) {
 		$function_id = $this->import_item( $data, $parent_post_id, $import_ignored );
@@ -393,6 +402,7 @@ class Importer implements LoggerAwareInterface {
 	 * @param array $data           Hook.
 	 * @param int   $parent_post_id Optional; post ID of the parent (function) this item belongs to. Defaults to zero (no parent).
 	 * @param bool  $import_ignored Optional; defaults to false. If true, hooks marked `@ignore` will be imported.
+	 *
 	 * @return bool|int Post ID of this hook, false if any failure.
 	 */
 	public function import_hook( array $data, $parent_post_id = 0, $import_ignored = false ) {
@@ -409,15 +419,15 @@ class Importer implements LoggerAwareInterface {
 		$skip_duplicates = apply_filters( 'wp_parser_skip_duplicate_hooks', false );
 
 		if ( false !== $skip_duplicates ) {
-			if ( 0 === strpos( $data['doc']['description'], 'This action is documented in' ) ) {
+			if ( strpos( $data['doc']['description'], 'This action is documented in' ) === 0 ) {
 				return false;
 			}
 
-			if ( 0 === strpos( $data['doc']['description'], 'This filter is documented in' ) ) {
+			if ( strpos( $data['doc']['description'], 'This filter is documented in' ) === 0 ) {
 				return false;
 			}
 
-			if ( '' === $data['doc']['description'] && '' === $data['doc']['long_description'] ) {
+			if ( $data['doc']['description'] === '' && $data['doc']['long_description'] === '' ) {
 				return false;
 			}
 		}
@@ -552,12 +562,12 @@ class Importer implements LoggerAwareInterface {
 		/** @var \wpdb $wpdb */
 		global $wpdb;
 
-		$is_new_post = true;
+		$is_new_post 		= true;
 		$post_needed_update = false;
-		$namespace     = $this->get_namespace( $data );
-		$slug        = $this->get_slug_from_namespace( $namespace );
+		$namespace     		= $this->get_namespace( $data );
+		$slug        		= $this->get_slug_from_namespace( $namespace );
 
-		$post_data   = wp_parse_args(
+		$post_data = wp_parse_args(
 			$arg_overrides,
 			array(
 				'post_content' => $data['doc']['long_description'],
@@ -806,6 +816,12 @@ class Importer implements LoggerAwareInterface {
 		// Record the namespace if there is one.
 		if ( ! empty( $data['namespace'] ) ) {
 			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_namespace', (string) addslashes( $data['namespace'] ) );
+		}
+
+		// Record the plugin if there is one.
+		if ( ! empty( $data['plugin'] ) ) {
+			$this->insert_term( $data['plugin'], $this->taxonomy_plugin );
+			wp_set_object_terms( $post_id, $data['plugin'], $this->taxonomy_plugin );
 		}
 
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );

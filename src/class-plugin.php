@@ -1,5 +1,4 @@
-<?php
-namespace WP_Parser;
+<?php namespace WP_Parser;
 
 /**
  * Main plugin's class. Registers things and adds WP CLI command.
@@ -11,19 +10,43 @@ class Plugin {
 	 */
 	public $relationships;
 
+	/**
+	 * @var array
+	 */
+	private $taxonomy_object_types = array(
+		'wp-parser-class',
+		'wp-parser-method',
+		'wp-parser-function',
+		'wp-parser-hook'
+	);
+
+	/**
+	 * @var array
+	 */
+	private $post_type_support = array(
+		'comments',
+		'custom-fields',
+		'editor',
+		'excerpt',
+		'revisions',
+		'title',
+	);
+
+	public function __construct() {
+		$this->relationships = new Relationships();
+	}
+
 	public function on_load() {
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'parser', __NAMESPACE__ . '\\Command' );
 		}
 
-		$this->relationships = new Relationships;
-
 		add_action( 'init', array( $this, 'register_post_types' ), 11 );
 		add_action( 'init', array( $this, 'register_taxonomies' ), 11 );
+
 		add_filter( 'wp_parser_get_arguments', array( $this, 'make_args_safe' ) );
 		add_filter( 'wp_parser_return_type', array( $this, 'humanize_separator' ) );
-
 		add_filter( 'post_type_link', array( $this, 'method_permalink' ), 10, 2 );
 	}
 
@@ -31,15 +54,6 @@ class Plugin {
 	 * Register the function and class post types
 	 */
 	public function register_post_types() {
-
-		$supports = array(
-			'comments',
-			'custom-fields',
-			'editor',
-			'excerpt',
-			'revisions',
-			'title',
-		);
 
 		if ( ! post_type_exists( 'wp-parser-function' ) ) {
 
@@ -54,15 +68,13 @@ class Plugin {
 						'slug'       => 'function',
 						'with_front' => false,
 					),
-					'supports'    => $supports,
+					'supports'    => $this->post_type_support,
 				)
 			);
 		}
 
-
 		if ( ! post_type_exists( 'wp-parser-method' ) ) {
-
-			add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wp-parser-method&name=$matches[1]-$matches[2]', 'top' );
+//			add_rewrite_rule( 'method/([^/]+)/([^/]+)/?$', 'index.php?post_type=wp-parser-method&name=$matches[1]-$matches[2]', 'top' );
 
 			register_post_type(
 				'wp-parser-method',
@@ -75,7 +87,7 @@ class Plugin {
 						'slug'       => 'method',
 						'with_front' => false,
 					),
-					'supports'    => $supports,
+					'supports'    => $this->post_type_support,
 				)
 			);
 		}
@@ -94,7 +106,7 @@ class Plugin {
 						'slug'       => 'class',
 						'with_front' => false,
 					),
-					'supports'    => $supports,
+					'supports'    => $this->post_type_support,
 				)
 			);
 		}
@@ -112,7 +124,7 @@ class Plugin {
 						'slug'       => 'hook',
 						'with_front' => false,
 					),
-					'supports'    => $supports,
+					'supports'    => $this->post_type_support,
 				)
 			);
 		}
@@ -123,13 +135,11 @@ class Plugin {
 	 */
 	public function register_taxonomies() {
 
-		$object_types = array( 'wp-parser-class', 'wp-parser-method', 'wp-parser-function', 'wp-parser-hook' );
-
 		if ( ! taxonomy_exists( 'wp-parser-source-file' ) ) {
 
 			register_taxonomy(
 				'wp-parser-source-file',
-				$object_types,
+				$this->taxonomy_object_types,
 				array(
 					'label'                 => __( 'Files', 'wp-parser' ),
 					'public'                => true,
@@ -144,7 +154,7 @@ class Plugin {
 
 			register_taxonomy(
 				'wp-parser-package',
-				$object_types,
+				$this->taxonomy_object_types,
 				array(
 					'hierarchical'          => true,
 					'label'                 => '@package',
@@ -160,7 +170,7 @@ class Plugin {
 
 			register_taxonomy(
 				'wp-parser-since',
-				$object_types,
+				$this->taxonomy_object_types,
 				array(
 					'hierarchical'          => true,
 					'label'                 => __( '@since', 'wp-parser' ),
@@ -176,12 +186,28 @@ class Plugin {
 
 			register_taxonomy(
 				'wp-parser-namespace',
-				$object_types,
+				$this->taxonomy_object_types,
 				array(
 					'hierarchical'          => true,
 					'label'                 => __( 'Namespaces', 'wp-parser' ),
 					'public'                => true,
 					'rewrite'               => array( 'slug' => 'namespace' ),
+					'sort'                  => false,
+					'update_count_callback' => '_update_post_term_count',
+				)
+			);
+		}
+
+		if ( ! taxonomy_exists( 'wp-parser-plugin' ) ) {
+
+			register_taxonomy(
+				'wp-parser-plugin',
+				$this->taxonomy_object_types,
+				array(
+					'hierarchical'          => true,
+					'label'                 => __( 'Plugins', 'wp-parser' ),
+					'public'                => true,
+					'rewrite'               => array( 'slug' => 'plugin' ),
 					'sort'                  => false,
 					'update_count_callback' => '_update_post_term_count',
 				)
@@ -202,7 +228,7 @@ class Plugin {
 		}
 
 		list( $class, $method ) = explode( '-', $post->post_name );
-
+		
 		return home_url( user_trailingslashit( "method/$class/$method" ) );
 	}
 

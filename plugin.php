@@ -14,6 +14,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 global $wp_parser;
+
 $wp_parser = new WP_Parser\Plugin();
 $wp_parser->on_load();
 

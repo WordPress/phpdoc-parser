@@ -1,6 +1,4 @@
-<?php
-
-namespace WP_Parser;
+<?php namespace WP_Parser;
 
 use WP_CLI;
 
@@ -10,71 +8,17 @@ use WP_CLI;
  * @package WP_Parser
  */
 class Runner {
-	// CLI config + config file
-	protected $exclude_directories = array( 'vendor', 'vendor_prefixed', 'node_modules', 'tests', 'build' );
-
 	private $exporter;
-	private $ignore_files;
+	private $plugin_data;
 
 	/**
 	 * Runner constructor.
 	 *
-	 * @param array $ignore_files Files to ignore.
+	 * @param array $plugin_data The plugin data to use.
 	 */
-	public function __construct( $ignore_files = array() ) {
-		$this->ignore_files = $ignore_files;
+	public function __construct( $plugin_data = array() ) {
 		$this->exporter = new Exporter();
-	}
-
-	/**
-	 * Filters out files that shouldn't be parsed.
-	 *
-	 * Determines whether the passed file is a directory that hasn't been excluded.
-	 * If it's a file, the filter determines whether or not we're dealing with a PHP file.
-	 *
-	 * @param \SplFileInfo 	$file 		The file to check.
-	 * @param string 	 	$key  		The key of the passed file.
-	 * @param \Iterator	 	$iterator	The iterator object used to traverse the files.
-	 *
-	 * @return bool Whether or not the passed file is a valid PHP file.
-	 */
-	public function filter( $file, $key, $iterator ) {
-		if ( $iterator->hasChildren() && ! in_array( $file->getFilename(), $this->ignore_files, true ) ) {
-			return true;
-		}
-
-		return $file->isFile() && $file->getExtension() === 'php';
-	}
-
-	/**
-	 * Collects all applicable files for later parsing.
-	 *
-	 * @param string $directory The directory to get the files from.
-	 *
-	 * @return array|\WP_Error The parsable files. Returns an error if a directory can't be recursed into.
-	 */
-	public function get_wp_files( $directory ) {
-		$iterableFiles = new \RecursiveDirectoryIterator( $directory, \RecursiveDirectoryIterator::SKIP_DOTS );
-
-		$filteredFiles = new \RecursiveIteratorIterator(
-			new \RecursiveCallbackFilterIterator( $iterableFiles, array( $this, 'filter' ) )
-		);
-
-		$files = array();
-
-		try {
-			/* @var $file \SplFileInfo */
-			foreach ( $filteredFiles as $file ) {
-				$files[] = $file->getPathname();
-			}
-		} catch ( \UnexpectedValueException $exc ) {
-			return new \WP_Error(
-				'unexpected_value_exception',
-				sprintf( 'Directory [%s] contained a directory we can not recurse into', $directory )
-			);
-		}
-
-		return $files;
+		$this->plugin_data = $plugin_data;
 	}
 
 	/**
@@ -90,14 +34,13 @@ class Runner {
 	 */
 	public function parse_files( $files, $root ) {
 
-		var_dump(get_plugin_data($root));die;
-
 		$output = array();
 
 		foreach ( $files as $filename ) {
-			$file = new File_Reflector( $filename );
+			$filename = $filename->getPathname();
+			$file 	  = new File_Reflector( $filename );
+			$path 	  = ltrim( substr( $filename, strlen( $root ) ), DIRECTORY_SEPARATOR );
 
-			$path = ltrim( substr( $filename, strlen( $root ) ), DIRECTORY_SEPARATOR );
 			$file->setFilename( $path );
 			$file->process();
 
@@ -111,20 +54,36 @@ class Runner {
 				$out['uses'] = $this->exporter->export_uses( $file->uses );
 			}
 
+			if ( ! empty( $this->plugin_data ) ) {
+				$out['plugin'] = $this->plugin_data['Name'];
+			}
+
 			foreach ( $file->getIncludes() as $include ) {
-				$out['includes'][] = array(
+				$include_data = array(
 					'name' => $include->getName(),
 					'line' => $include->getLineNumber(),
 					'type' => $include->getType(),
 				);
+
+				if ( ! empty( $this->plugin_data ) ) {
+					$include_data['plugin'] = $this->plugin_data['Name'];
+				}
+
+				$out['includes'][] = $include_data;
 			}
 
 			foreach ( $file->getConstants() as $constant ) {
-				$out['constants'][] = array(
+				$constant_data = array(
 					'name'  => $constant->getShortName(),
 					'line'  => $constant->getLineNumber(),
 					'value' => $constant->getValue(),
 				);
+
+				if ( ! empty( $this->plugin_data ) ) {
+					$constant_data['plugin'] = $this->plugin_data['Name'];
+				}
+
+				$out['constants'][] = $constant_data;
 			}
 
 			if ( ! empty( $file->uses['hooks'] ) ) {
@@ -151,6 +110,10 @@ class Runner {
 					}
 				}
 
+				if ( ! empty( $this->plugin_data ) ) {
+					$func['plugin'] = $this->plugin_data['Name'];
+				}
+
 				$out['functions'][] = $func;
 			}
 
@@ -168,6 +131,10 @@ class Runner {
 					'methods'    => $this->exporter->export_methods( $class->getMethods() ),
 					'doc'        => $this->exporter->export_docblock( $class ),
 				);
+
+				if ( ! empty( $this->plugin_data ) ) {
+					$class_data['plugin'] = $this->plugin_data['Name'];
+				}
 
 				$out['classes'][] = $class_data;
 			}
