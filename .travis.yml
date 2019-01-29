@@ -12,8 +12,6 @@ matrix:
     - php: hhvm
 
 before_install:
-    - export PATH="$HOME/.composer/vendor/bin:$PATH"
-    - composer global require "phpunit/phpunit=4.8.*"
     # Setup WP_TESTS_DIR (needed to bootstrap WP PHPUnit tests). 
     - export WP_TESTS_DIR=/tmp/wordpress/tests/phpunit/
     # Clone the WordPress develop repo.
