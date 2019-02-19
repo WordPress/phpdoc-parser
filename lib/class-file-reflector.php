@@ -40,7 +40,7 @@ class File_Reflector extends FileReflector {
 	/**
 	 * Last DocBlock associated with a non-documentable element.
 	 *
-	 * @var \PHPParser_Comment_Doc
+	 * @var \PhpParser\Comment\Doc
 	 */
 	protected $last_doc = null;
 
