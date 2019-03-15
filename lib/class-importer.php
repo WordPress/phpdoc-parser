@@ -194,6 +194,7 @@ class Importer implements LoggerAwareInterface {
 		 */
 		delete_option( "{$this->taxonomy_package}_children" );
 		delete_option( "{$this->taxonomy_since_version}_children" );
+		delete_option( "{$this->taxonomy_namespace}_children" );
 
 		/**
 		 * Action at the end of a complete import
