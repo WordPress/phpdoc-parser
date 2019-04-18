@@ -1,9 +1,8 @@
-<?php
-
-namespace WP_Parser;
+<?php namespace WP_Parser\Reflectors;
 
 use phpDocumentor\Reflection\BaseReflector;
 use PHPParser_PrettyPrinter_Default;
+use WP_Parser\Pretty_Printer;
 
 /**
  * Custom reflector for WordPress hooks.
@@ -15,6 +14,7 @@ class Hook_Reflector extends BaseReflector {
 	 */
 	public function getName() {
 		$printer = new PHPParser_PrettyPrinter_Default;
+
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 
@@ -24,7 +24,7 @@ class Hook_Reflector extends BaseReflector {
 	 * @return string
 	 */
 	private function cleanupName( $name ) {
-		$matches = array();
+		$matches = [];
 
 		// quotes on both ends of a string
 		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $matches ) ) {
@@ -59,7 +59,6 @@ class Hook_Reflector extends BaseReflector {
 	 * @return string
 	 */
 	public function getType() {
-		$type = 'filter';
 		switch ( (string) $this->node->name ) {
 			case 'do_action':
 				$type = 'action';
@@ -76,6 +75,9 @@ class Hook_Reflector extends BaseReflector {
 			case 'apply_filters_deprecated';
 				$type = 'filter_deprecated';
 				break;
+			default:
+				$type = 'filter';
+				break;
 		}
 
 		return $type;
@@ -85,8 +87,9 @@ class Hook_Reflector extends BaseReflector {
 	 * @return array
 	 */
 	public function getArgs() {
-		$printer = new Pretty_Printer;
-		$args    = array();
+		$printer = new Pretty_Printer();
+		$args    = [];
+
 		foreach ( $this->node->args as $arg ) {
 			$args[] = $printer->prettyPrintArg( $arg );
 		}

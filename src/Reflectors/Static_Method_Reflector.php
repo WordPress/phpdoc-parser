@@ -1,11 +1,9 @@
-<?php
-
-namespace WP_Parser;
+<?php namespace WP_Parser\Reflectors;
 
 /**
  * A reflection of a method call expression.
  */
-class Static_Method_Call_Reflector extends Method_Call_Reflector {
+class Static_Method_Reflector extends Method_Reflector {
 
 	/**
 	 * Returns the name for this Reflector instance.

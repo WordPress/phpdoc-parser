@@ -20,21 +20,20 @@
 		"issues": "https://github.com/WordPress/phpdoc-parser/issues"
 	},
 	"require"    : {
-		"php"                      : ">=5.4",
+		"php"                      : ">=7.0",
 		"composer/installers"      : "~1.0",
 		"phpdocumentor/reflection" : "~3.0",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
 		"psr/log"                  : "~1.0",
-		"symfony/yaml": "^4.2",
 		"symfony/finder": "^4.2"
 	},
 	"autoload"   : {
-		"classmap": ["src"],
-		"files"   : ["src/runner.php", "src/template.php"],
+		"classmap": ["lib"],
+		"files"   : ["lib/template.php"],
 		"psr-4": {
-			"WP_Parser\\": "src"
+			"WP_Parser\\": "src/"
 		}
 	}
 }

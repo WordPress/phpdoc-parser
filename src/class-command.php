@@ -2,6 +2,8 @@
 
 namespace WP_Parser;
 
+use phpDocumentor\Reflection\Exception\UnparsableFile;
+use phpDocumentor\Reflection\Exception\UnreadableFile;
 use WP_CLI;
 use WP_CLI_Command;
 
@@ -21,8 +23,8 @@ class Command extends WP_CLI_Command {
 	 * @param array $args       The arguments to pass to the command.
 	 * @param array $assoc_args The associated arguments to pass to the command.
 	 *
-	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
-	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
+	 * @throws UnparsableFile
+	 * @throws UnreadableFile
 	 */
 	public function export( $args, $assoc_args ) {
 		$directory    = realpath( $args[0] );
@@ -33,7 +35,7 @@ class Command extends WP_CLI_Command {
 		$result      = file_put_contents( $output_file, $json );
 		WP_CLI::line();
 
-		if ( false === $result ) {
+		if ( $result === false ) {
 			WP_CLI::error( sprintf( 'Problem writing %1$s bytes of data to %2$s', strlen( $json ), $output_file ) );
 			exit;
 		}
@@ -85,8 +87,8 @@ class Command extends WP_CLI_Command {
 	 * @param array $args       The arguments to pass to the command.
 	 * @param array $assoc_args The associated arguments to pass to the command.
 	 *
-	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
-	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
+	 * @throws UnparsableFile
+	 * @throws UnreadableFile
 	 */
 	public function create( $args, $assoc_args ) {
 		list( $directory ) = $args;
@@ -114,8 +116,8 @@ class Command extends WP_CLI_Command {
 	 * @param array  $ignore_files What files to ignore.
 	 *
 	 * @return string|array
-	 * @throws \phpDocumentor\Reflection\Exception\UnparsableFile
-	 * @throws \phpDocumentor\Reflection\Exception\UnreadableFile
+	 * @throws UnparsableFile
+	 * @throws UnreadableFile
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json', $ignore_files = array() ) {
 
@@ -137,7 +139,7 @@ class Command extends WP_CLI_Command {
 		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $path ) );
 
 		$is_file = is_file( $path );
-		$files   = $is_file ? array( $path ) : Utils::get_files( $path, $ignore_files );
+		$files   = $is_file ? [ $path ] : $runner->get_wp_files( $path );
 		$path    = $is_file ? dirname( $path ) : $path;
 
 		if ( $files instanceof \WP_Error ) {
