@@ -7,9 +7,6 @@ use phpDocumentor\Reflection\Exception\UnreadableFile;
 use WP_CLI;
 use WP_CLI_Command;
 
-// Temporary toggle until we figure out what's going wrong with the plugins taxonomy.
-const USE_PLUGIN_PREFIX = false;
-
 /**
  * Converts PHPDoc markup into a template ready for import to a WordPress blog.
  */
@@ -20,16 +17,16 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @synopsis <directory> [<output_file>] [--ignore_files]
 	 *
-	 * @param array $args       The arguments to pass to the command.
+	 * @param array $args		The arguments to pass to the command.
 	 * @param array $assoc_args The associated arguments to pass to the command.
 	 *
 	 * @throws UnparsableFile
 	 * @throws UnreadableFile
 	 */
 	public function export( $args, $assoc_args ) {
-		$directory    = realpath( $args[0] );
-		$output_file  = empty( $args[1] ) ? 'phpdoc.json' : $args[1];
-		$ignore_files = empty( $assoc_args['ignore_files'] ) ? array() : explode( ',', $assoc_args['ignore_files'] );
+		$directory   = realpath( $args[0] );
+		$output_file = empty( $args[1] ) ? 'phpdoc.json' : $args[1];
+		$ignore_files = empty( $assoc_args['ignore_files'] ) ? [] : explode( ',', $assoc_args['ignore_files'] );
 
 		$json        = $this->_get_phpdoc_data( $directory, 'json', $ignore_files );
 		$result      = file_put_contents( $output_file, $json );
@@ -84,7 +81,7 @@ class Command extends WP_CLI_Command {
 	 * @subcommand create
 	 * @synopsis   <directory> [--quick] [--import-internal] [--user] [--ignore_files]
 	 *
-	 * @param array $args       The arguments to pass to the command.
+	 * @param array $args		The arguments to pass to the command.
 	 * @param array $assoc_args The associated arguments to pass to the command.
 	 *
 	 * @throws UnparsableFile
@@ -111,30 +108,16 @@ class Command extends WP_CLI_Command {
 	/**
 	 * Generate the data from the PHPDoc markup.
 	 *
-	 * @param string $path         Directory or file to scan for PHPDoc
-	 * @param string $format       What format the data is returned in: [json|array].
-	 * @param array  $ignore_files What files to ignore.
+	 * @param string $path   		Directory or file to scan for PHPDoc
+	 * @param string $format 		What format the data is returned in: [json|array].
+	 * @param array  $ignore_files 	What files to ignore.
 	 *
 	 * @return string|array
 	 * @throws UnparsableFile
 	 * @throws UnreadableFile
 	 */
 	protected function _get_phpdoc_data( $path, $format = 'json', $ignore_files = array() ) {
-
-		if ( USE_PLUGIN_PREFIX === true ) {
-			// Determine whether this is a plugin we can parse.
-			$plugin_finder = new PluginFinder( $path, $ignore_files );
-			$plugin_finder->find();
-
-			if ( ! $plugin_finder->is_valid_plugin() ) {
-				WP_CLI::error( "Sorry, the directory you selected doesn't contain a valid Yoast plugin" );
-				exit;
-			}
-
-			$runner = new Runner( $plugin_finder->get_plugin() );
-		} else {
-			$runner = new Runner();
-		}
+		$runner = new Runner( $ignore_files );
 
 		WP_CLI::line( sprintf( 'Extracting PHPDoc from %1$s. This may take a few minutes...', $path ) );
 

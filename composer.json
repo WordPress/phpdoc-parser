@@ -30,8 +30,7 @@
 		"symfony/finder": "^4.2"
 	},
 	"autoload"   : {
-		"classmap": ["lib"],
-		"files"   : ["lib/template.php"],
+		"files"   : ["template.php"],
 		"psr-4": {
 			"WP_Parser\\": "src/"
 		}
