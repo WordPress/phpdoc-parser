@@ -82,6 +82,13 @@ class Importer implements LoggerAwareInterface {
 	public $errors = array();
 
 	/**
+	 * Version number of codebase being parsed.
+	 *
+	 * @var string
+	 */
+	public $version;
+
+	/**
 	 * @var array Cached items of inserted terms
 	 */
 	protected $inserted_terms = array();
@@ -156,6 +163,12 @@ class Importer implements LoggerAwareInterface {
 		if ( ! taxonomy_exists( $this->taxonomy_file ) || ! taxonomy_exists( $this->taxonomy_since_version ) || ! taxonomy_exists( $this->taxonomy_package ) ) {
 			$this->logger->error( sprintf( 'Missing taxonomy; check that "%1$s" is registered.', $this->taxonomy_file ) );
 			exit;
+		}
+
+		// Specifically import WP version file first to get version number.
+		$ver_file = array_filter( $data, function( $f ) { return 'wp-includes/version.php' === $f['path']; } );
+		if ( $ver_file ) {
+			$this->version = $this->import_version( reset( $ver_file ) );
 		}
 
 		$root = '';
@@ -336,10 +349,6 @@ class Importer implements LoggerAwareInterface {
 				sleep( 3 );
 			}
 		}
-
-		if ( 'wp-includes/version.php' === $file['path'] ) {
-			$this->import_version( $file );
-		}
 	}
 
 	/**
@@ -477,13 +486,14 @@ class Importer implements LoggerAwareInterface {
 	 * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
 	 *
 	 * @param array   $data Data
+	 * @return string|false WordPress version number, or false if not known.
 	 */
 	protected function import_version( $data ) {
 
 		$version_path = $data['root'] . '/' . $data['path'];
 
 		if ( ! is_readable( $version_path ) ) {
-			return;
+			return false;
 		}
 
 		include $version_path;
@@ -491,7 +501,10 @@ class Importer implements LoggerAwareInterface {
 		if ( isset( $wp_version ) && $wp_version ) {
 			update_option( 'wp_parser_imported_wp_version', $wp_version );
 			$this->logger->info( "\t" . sprintf( 'Updated option wp_parser_imported_wp_version to "%1$s"', $wp_version ) );
+			return $wp_version;
 		}
+
+		return false;
 	}
 
 	/**
@@ -747,6 +760,7 @@ class Importer implements LoggerAwareInterface {
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_last_parsed_wp_version', $this->version );
 
 		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
 		if ( ! $is_new_post && ! $post_needed_update && array_filter( $anything_updated ) ) {
