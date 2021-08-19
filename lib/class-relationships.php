@@ -126,17 +126,15 @@ class Relationships {
 	 * Runs at import start.
 	 */
 	public function wp_parser_starting_import() {
-		$importer = new Importer;
-
 		if ( ! $this->p2p_tables_exist() ) {
 			\P2P_Storage::init();
 			\P2P_Storage::install();
 		}
 
 		$this->post_types = array(
-			'hook' => $importer->post_type_hook,
-			'method' => $importer->post_type_method,
-			'function' => $importer->post_type_function,
+			'hook' => Importer::PROPERTY_MAP['post_type_hook'],
+			'method' => Importer::PROPERTY_MAP['post_type_method'],
+			'function' => Importer::PROPERTY_MAP['post_type_function'],
 		);
 	}
 
