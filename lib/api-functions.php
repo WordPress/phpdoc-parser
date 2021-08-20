@@ -57,3 +57,35 @@ function avcpdp_get_post_source_type_terms($post_id = null) {
 
     return $res;
 }
+
+/**
+ * Retrieve the root directory of the parsed WP code.
+ *
+ * If the option 'wp_parser_root_import_dir' (as set by the parser) is not
+ * set, then assume ABSPATH.
+ *
+ * @param int|null $post_id
+ * @return string
+ */
+function avcpdp_get_source_code_root_dir($post_id = null) {
+    $root_dir = get_option('wp_parser_root_import_dir');
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+        if (!empty($post_id)) {
+            $sourceterms = avcpdp_get_post_source_type_terms($post_id);
+            if (!empty($sourceterms['name'])) {
+                $dir = get_term_meta(
+                    $sourceterms['name']->term_id,
+                    'wp_parser_root_import_dir',
+                    true
+                );
+                $root_dir = !empty($dir) ? $dir : $root_dir;
+            }
+        }
+    }
+    if (isset($_ENV['AVC_NODE_ENV']) && $_ENV['AVC_NODE_ENV'] === 'development') {
+        $root_dir = str_replace('/app/', '/var/www/html/', $root_dir);
+    }
+
+    return $root_dir ? trailingslashit($root_dir) : ABSPATH;
+}

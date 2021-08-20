@@ -289,7 +289,7 @@ class Relationships
                 'methods_to_hooks',
             ] as $p2p_type
         ) {
-            $res = $wpdb->query(
+            $wpdb->query(
                 $wpdb->prepare(
                     "DELETE p2p, p2p_meta FROM {$p2p} p2p
                     INNER JOIN {$wtr} wtr ON wtr.object_id = p2p.p2p_from
