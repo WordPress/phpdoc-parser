@@ -76,10 +76,19 @@ class Relationships
             'name' => 'functions_to_functions',
             'from' => 'wp-parser-function',
             'to' => 'wp-parser-function',
-            'self_connections' => 'true',
+            'can_create_post' => false,
+            'self_connections' => true,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Uses Functions',
-                'to' => 'Used by Functions',
+                'from' => __('Uses Functions', 'wporg'),
+                'to' => __('Used by Functions', 'wporg'),
             ],
         ]);
 
@@ -87,9 +96,18 @@ class Relationships
             'name' => 'functions_to_methods',
             'from' => 'wp-parser-function',
             'to' => 'wp-parser-method',
+            'can_create_post' => false,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Uses Methods',
-                'to' => 'Used by Functions',
+                'from' => __('Uses Methods', 'wporg'),
+                'to' => __('Used by Functions', 'wporg'),
             ],
         ]);
 
@@ -97,9 +115,18 @@ class Relationships
             'name' => 'functions_to_hooks',
             'from' => 'wp-parser-function',
             'to' => 'wp-parser-hook',
+            'can_create_post' => false,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Uses Hooks',
-                'to' => 'Used by Functions',
+                'from' => __('Uses Hooks', 'wporg'),
+                'to' => __('Used by Functions', 'wporg'),
             ],
         ]);
 
@@ -110,9 +137,18 @@ class Relationships
             'name' => 'methods_to_functions',
             'from' => 'wp-parser-method',
             'to' => 'wp-parser-function',
+            'can_create_post' => false,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Uses Functions',
-                'to' => 'Used by Methods',
+                'from' => __('Uses Functions', 'wporg'),
+                'to' => __('Used by Methods', 'wporg'),
             ],
         ]);
 
@@ -120,10 +156,19 @@ class Relationships
             'name' => 'methods_to_methods',
             'from' => 'wp-parser-method',
             'to' => 'wp-parser-method',
-            'self_connections' => 'true',
+            'can_create_post' => false,
+            'self_connections' => true,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Uses Methods',
-                'to' => 'Used by Methods',
+                'from' => __('Uses Methods', 'wporg'),
+                'to' => __('Used by Methods', 'wporg'),
             ],
         ]);
 
@@ -131,9 +176,18 @@ class Relationships
             'name' => 'methods_to_hooks',
             'from' => 'wp-parser-method',
             'to' => 'wp-parser-hook',
+            'can_create_post' => false,
+            'from_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
+            'to_query_vars' => [
+                'orderby' => 'post_title',
+                'order' => 'ASC',
+            ],
             'title' => [
-                'from' => 'Used by Methods',
-                'to' => 'Uses Hooks',
+                'from' => __('Used by Methods', 'wporg'),
+                'to' => __('Uses Hooks', 'wporg'),
             ],
         ]);
     }

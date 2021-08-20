@@ -37,8 +37,11 @@
     "files": [
       "lib/runner.php",
       "lib/template.php",
-      "lib/api-functions.php",
-      "lib/template-functions.php"
-    ]
+      "src/api-functions.php",
+      "src/template-functions.php"
+    ],
+    "psr-4": {
+      "Aivec\\Plugins\\DocParser\\": "src"
+    }
   }
 }
