@@ -258,6 +258,11 @@ class Importer implements LoggerAwareInterface
 
         if (!empty($root)) {
             update_option('wp_parser_root_import_dir', $root);
+            update_term_meta(
+                $this->source_type_meta['type_term_id'],
+                'wp_parser_root_import_dir',
+                $root
+            );
             $this->logger->info('Updated option wp_parser_root_import_dir: ' . $root);
         }
 
@@ -284,7 +289,7 @@ class Importer implements LoggerAwareInterface
         /*
          * Action at the end of a complete import
          */
-        do_action('wp_parser_ending_import');
+        do_action('wp_parser_ending_import', $this);
 
         // Start counting again
         wp_defer_term_counting(false);

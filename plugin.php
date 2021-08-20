@@ -16,9 +16,6 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require __DIR__ . '/vendor/autoload.php';
 }
 
-require_once(__DIR__ . '/lib/api-functions.php');
-require_once(__DIR__ . '/lib/template-functions.php');
-
 global $wp_parser;
 $wp_parser = new WP_Parser\Plugin();
 $wp_parser->on_load();
