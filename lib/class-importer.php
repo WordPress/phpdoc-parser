@@ -283,6 +283,7 @@ class Importer implements LoggerAwareInterface
          * https://core.trac.wordpress.org/ticket/14485
          * http://wordpress.stackexchange.com/questions/8357/inserting-terms-in-an-hierarchical-taxonomy
          */
+        delete_option("{$this->taxonomy_source_type}_children");
         delete_option("{$this->taxonomy_package}_children");
         delete_option("{$this->taxonomy_since_version}_children");
 

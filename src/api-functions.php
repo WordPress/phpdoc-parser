@@ -71,6 +71,29 @@ function avcpdp_get_post_source_type_terms($post_id = null) {
 }
 
 /**
+ * Returns list of child terms for the source type taxonomy "plugin" term
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return array
+ */
+function avcpdp_get_source_type_plugin_terms() {
+    $term = get_term_by('slug', 'plugin', WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    if (empty($term)) {
+        return [];
+    }
+
+    $pterms = get_terms([
+        'parent' => $term->term_id,
+        'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+    ]);
+    if (empty($pterms) || $pterms instanceof WP_Error) {
+        return [];
+    }
+
+    return $pterms;
+}
+
+/**
  * Retrieve the root directory of the parsed WP code.
  *
  * If the option 'wp_parser_root_import_dir' (as set by the parser) is not
