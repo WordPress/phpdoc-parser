@@ -1,6 +1,16 @@
 <?php
 
 /**
+ * Returns the slug for the source type taxonomy
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return string
+ */
+function avcpdp_get_source_type_taxonomy_slug() {
+    return WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG;
+}
+
+/**
  * Get an array of all parsed post types.
  *
  * @param string $labels If set to 'labels' post types with their labels are returned.
@@ -71,13 +81,23 @@ function avcpdp_get_post_source_type_terms($post_id = null) {
 }
 
 /**
+ * Returns source type taxonomy "plugin" term
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return WP_Term|false
+ */
+function avcpdp_get_source_type_plugin_term() {
+    return get_term_by('slug', 'plugin', WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+}
+
+/**
  * Returns list of child terms for the source type taxonomy "plugin" term
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
  * @return array
  */
 function avcpdp_get_source_type_plugin_terms() {
-    $term = get_term_by('slug', 'plugin', WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    $term = avcpdp_get_source_type_plugin_term();
     if (empty($term)) {
         return [];
     }
