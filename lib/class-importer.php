@@ -509,6 +509,20 @@ class Importer implements LoggerAwareInterface
         update_post_meta($class_id, '_wp-parser_abstract', (string)$data['abstract']);
         update_post_meta($class_id, '_wp-parser_extends', $data['extends']);
         update_post_meta($class_id, '_wp-parser_implements', $data['implements']);
+
+        // Add slashes to types so that wp_unslash in update_post_meta doesnt remove them.
+        // Without the slashes it's impossible to create the reference page link
+        foreach ($data['properties'] as &$prop) {
+            if (!empty($prop['doc']) && !empty($prop['doc']['tags'])) {
+                foreach ($prop['doc']['tags'] as &$tag) {
+                    if (!empty($tag['types'])) {
+                        foreach ($tag['types'] as &$type) {
+                            $type = addslashes($type);
+                        }
+                    }
+                }
+            }
+        }
         update_post_meta($class_id, '_wp-parser_properties', $data['properties']);
 
         // Now add the methods
@@ -830,6 +844,18 @@ class Importer implements LoggerAwareInterface
         // Recored the namespace if there is one.
         if (!empty($data['namespace'])) {
             $anything_updated[] = update_post_meta($post_id, '_wp_parser_namespace', (string)addslashes($data['namespace']));
+        }
+
+        // Add slashes to types so that wp_unslash in update_post_meta doesnt remove them.
+        // Without the slashes it's impossible to create the reference page link
+        if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
+            foreach ($data['doc']['tags'] as &$tag) {
+                if (!empty($tag['types'])) {
+                    foreach ($tag['types'] as &$type) {
+                        $type = addslashes($type);
+                    }
+                }
+            }
         }
 
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_line_num', (string)$data['line']);
