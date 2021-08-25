@@ -8,6 +8,21 @@ namespace WP_Parser;
 class Plugin
 {
     const SOURCE_TYPE_TAX_SLUG = 'wp-parser-source-type';
+    const SOURCE_TYPE_TERM_SLUGS = ['composer-package', 'plugin', 'theme'];
+    const WP_PARSER_PT_MAP = [
+        'wp-parser-function' => [
+            'urlpiece' => 'functions',
+            'post_type' => 'wp-parser-function',
+        ],
+        'wp-parser-class' => [
+            'urlpiece' => 'classes',
+            'post_type' => 'wp-parser-class',
+        ],
+        'wp-parser-hook' => [
+            'urlpiece' => 'hooks',
+            'post_type' => 'wp-parser-hook',
+        ],
+    ];
 
     /**
      * @var \WP_Parser\Relationships
@@ -31,6 +46,50 @@ class Plugin
     }
 
     /**
+     * Adds rewrite rules for the `wp-parser-(function|method|class|hook)` post
+     * types.
+     *
+     * Rewrites URLs to be unique on a per source-type basis.
+     *
+     * For example, given a source type of `plugin`, a `plugin` child term slug of `my-plugin`,
+     * and a function named `my-function`, the URL would be `/reference/plugin/my-plugin/functions/my-function`.
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @return void
+     */
+    public static function addRewriteRules() {
+        // Add rewrite rules for Functions, Classes, and Hooks
+        $sttax = self::SOURCE_TYPE_TAX_SLUG;
+        $stterms = implode('|', self::SOURCE_TYPE_TERM_SLUGS);
+        foreach (self::WP_PARSER_PT_MAP as $key => $info) {
+            $urlpiece = $info['urlpiece'];
+            $ptype = $info['post_type'];
+            add_rewrite_rule(
+                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/([^/]+)/?",
+                "index.php?post_type={$ptype}&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]",
+                'top'
+            );
+            add_rewrite_rule(
+                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/?",
+                "index.php?post_type={$ptype}&taxonomy={$sttax}&term=\$matches[1],\$matches[2]",
+                'top'
+            );
+        }
+
+        // Add rewrite rules for Methods
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/classes/page/([0-9]{1,})/?\$",
+            "index.php?post_type=wp-parser-class&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&paged=\$matches[3]",
+            'top'
+        );
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
+            'top'
+        );
+    }
+
+    /**
      * Register the function and class post types
      */
     public function register_post_types() {
@@ -42,6 +101,8 @@ class Plugin
             'revisions',
             'title',
         ];
+
+        self::addRewriteRules();
 
         // Functions
         if (!post_type_exists('wp-parser-function')) {
@@ -77,8 +138,6 @@ class Plugin
 
         // Methods
         if (!post_type_exists('wp-parser-method')) {
-            add_rewrite_rule('reference/classes/page/([0-9]{1,})/?$', 'index.php?post_type=wp-parser-class&paged=$matches[1]', 'top');
-            add_rewrite_rule('reference/classes/([^/]+)/([^/]+)/?$', 'index.php?post_type=wp-parser-method&name=$matches[1]-$matches[2]', 'top');
             register_post_type('wp-parser-method', [
                 'has_archive' => 'reference/methods',
                 'label' => __('Methods', 'wporg'),
@@ -330,15 +389,50 @@ class Plugin
     public function method_permalink($link, $post) {
         global $wp_rewrite;
 
-        if (!$wp_rewrite->using_permalinks() || ('wp-parser-method' !== $post->post_type)) {
+        if (!$wp_rewrite->using_permalinks()) {
             return $link;
         }
 
-        $parts = explode('-', $post->post_name);
-        $method = array_pop($parts);
-        $class = implode('-', $parts);
+        $post_types = ['wp-parser-function', 'wp-parser-hook', 'wp-parser-class', 'wp-parser-method'];
 
-        return home_url(user_trailingslashit("reference/classes/$class/$method"));
+        $stterm = null;
+        $stchildterm = null;
+        if (in_array($post->post_type, $post_types, true)) {
+            $stterms = wp_get_post_terms($post->ID, self::SOURCE_TYPE_TAX_SLUG);
+            foreach ($stterms as $t) {
+                if (
+                    $t->parent === 0 &&
+                    in_array($t->slug, self::SOURCE_TYPE_TERM_SLUGS, true)
+                ) {
+                    $stterm = $t;
+                } else {
+                    $stchildterm = $t;
+                }
+            }
+        }
+
+        if ($stterm === null || $stchildterm === null) {
+            return $link;
+        }
+
+        if ('wp-parser-method' === $post->post_type) {
+            $parts = explode('-', $post->post_name);
+            $method = array_pop($parts);
+            $class = implode('-', $parts);
+            return home_url(user_trailingslashit(
+                "reference/{$stterm->slug}/{$stchildterm->slug}/classes/{$class}/{$method}"
+            ));
+        }
+
+        array_pop($post_types);
+        if (in_array($post->post_type, $post_types, true)) {
+            $urlpiece = self::WP_PARSER_PT_MAP[$post->post_type]['urlpiece'];
+            return home_url(user_trailingslashit(
+                "reference/{$stterm->slug}/{$stchildterm->slug}/{$urlpiece}/{$post->post_name}"
+            ));
+        }
+
+        return $link;
     }
 
     public function taxonomy_permalink($link, $term, $taxonomy) {

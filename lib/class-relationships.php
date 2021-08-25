@@ -317,7 +317,7 @@ class Relationships
             WP_CLI::log('Removing current relationships...');
         }
 
-        /**
+        /*
          * The following lines delete connections for ALL sources which
          * is why we delete with a custom query below.
          */
@@ -343,6 +343,10 @@ class Relationships
                 'methods_to_hooks',
             ] as $p2p_type
         ) {
+            /*
+             * This query deletes only associations for the current plugin/theme/composer-package
+             * being imported.
+             */
             $wpdb->query(
                 $wpdb->prepare(
                     "DELETE p2p, p2p_meta FROM {$p2p} p2p

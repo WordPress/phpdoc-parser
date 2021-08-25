@@ -36,6 +36,14 @@ add_filter('wp_parser_exclude_directories_strict', function () {
 
 register_activation_hook(__FILE__, ['P2P_Storage', 'init']);
 register_activation_hook(__FILE__, ['P2P_Storage', 'install']);
+register_activation_hook(__FILE__, function () {
+    (new WP_Parser\Plugin())->register_post_types();
+    flush_rewrite_rules();
+});
+
+register_deactivation_hook(__FILE__, function () {
+    flush_rewrite_rules();
+});
 
 // TODO safer handling for uninstall
 // register_uninstall_hook( __FILE__, array( 'P2P_Storage', 'uninstall' ) );
