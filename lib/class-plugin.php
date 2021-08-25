@@ -7,6 +7,7 @@ namespace WP_Parser;
  */
 class Plugin
 {
+    const ROLE_TAX_SLUG = 'wp-parser-role';
     const SOURCE_TYPE_TAX_SLUG = 'wp-parser-source-type';
     const SOURCE_TYPE_TERM_SLUGS = ['composer-package', 'plugin', 'theme'];
     const WP_PARSER_PT_MAP = [
@@ -58,9 +59,22 @@ class Plugin
      * @return void
      */
     public static function addRewriteRules() {
-        // Add rewrite rules for Functions, Classes, and Hooks
         $sttax = self::SOURCE_TYPE_TAX_SLUG;
         $stterms = implode('|', self::SOURCE_TYPE_TERM_SLUGS);
+
+        // Add rewrite rules for Methods
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/classes/page/([0-9]{1,})/?\$",
+            "index.php?post_type=wp-parser-class&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&paged=\$matches[3]",
+            'top'
+        );
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
+            'top'
+        );
+
+        // Add rewrite rules for Functions, Classes, and Hooks
         foreach (self::WP_PARSER_PT_MAP as $key => $info) {
             $urlpiece = $info['urlpiece'];
             $ptype = $info['post_type'];
@@ -75,18 +89,6 @@ class Plugin
                 'top'
             );
         }
-
-        // Add rewrite rules for Methods
-        add_rewrite_rule(
-            "reference/($stterms)/([a-z_\-]{1,32})/classes/page/([0-9]{1,})/?\$",
-            "index.php?post_type=wp-parser-class&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&paged=\$matches[3]",
-            'top'
-        );
-        add_rewrite_rule(
-            "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
-            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
-            'top'
-        );
     }
 
     /**
@@ -334,6 +336,7 @@ class Plugin
             );
         }
 
+        // Source Type
         if (!taxonomy_exists(self::SOURCE_TYPE_TAX_SLUG)) {
             register_taxonomy(
                 self::SOURCE_TYPE_TAX_SLUG,
@@ -376,6 +379,40 @@ class Plugin
                 self::SOURCE_TYPE_TAX_SLUG,
                 ['slug' => 'composer-package']
             );
+        }
+
+        // Role
+        if (!taxonomy_exists(self::ROLE_TAX_SLUG)) {
+            register_taxonomy(
+                self::ROLE_TAX_SLUG,
+                ['wp-parser-function', 'wp-parser-method'],
+                [
+                    'hierarchical' => true,
+                    'label' => __('Role', 'wporg'),
+                    'public' => true,
+                    'rewrite' => [
+                        'with_front' => false,
+                        'slug' => 'reference/role',
+                    ],
+                    'sort' => false,
+                    'update_count_callback' => '_update_post_term_count',
+                    'show_in_rest' => true,
+                ]
+            );
+        }
+
+        // Add default role terms
+        $roles = [
+            'display' => __('Display', 'wp-parser'),
+            'condition' => __('Condition', 'wp-parser'),
+            'utility' => __('Utility', 'wp-parser'),
+            'setter' => __('Setter', 'wp-parser'),
+            'getter' => __('Getter', 'wp-parser'),
+        ];
+        foreach ($roles as $slug => $label) {
+            if (!term_exists($slug, self::ROLE_TAX_SLUG)) {
+                wp_insert_term($label, self::ROLE_TAX_SLUG, ['slug' => $slug]);
+            }
         }
     }
 
