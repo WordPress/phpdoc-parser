@@ -14,7 +14,7 @@ class Importer implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     /**
-     * 
+     *
      */
     const PROPERTY_MAP = [
         'post_type_class' => 'wp-parser-class',
@@ -286,6 +286,7 @@ class Importer implements LoggerAwareInterface
         delete_option("{$this->taxonomy_source_type}_children");
         delete_option("{$this->taxonomy_package}_children");
         delete_option("{$this->taxonomy_since_version}_children");
+        delete_option("{$this->taxonomy_namespace}_children");
 
         /*
          * Action at the end of a complete import
@@ -846,7 +847,7 @@ class Importer implements LoggerAwareInterface
             $anything_updated[] = update_post_meta($post_id, '_wp_parser_namespace', (string)addslashes($data['namespace']));
         }
 
-        // Add slashes to types so that wp_unslash in update_post_meta doesnt remove them.
+        // Add extra namespace slashes to types so that wp_unslash in update_post_meta doesnt remove them.
         // Without the slashes it's impossible to create the reference page link
         if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
             foreach ($data['doc']['tags'] as &$tag) {
