@@ -14,6 +14,7 @@ class Master
      * @return void
      */
     public static function init() {
+        add_action('parse_tax_query', [get_class(), 'taxQueryNoChildren'], 10, 1);
         add_filter('pre_handle_404', [get_class(), 'force404onWrongSourceType'], 10, 2);
         add_action('init', function () {
             add_action('pre_get_posts', [get_class(), 'preGetPosts'], 10, 1);
@@ -40,6 +41,24 @@ class Master
         }
 
         // For search query modifications see DevHub_Search.
+    }
+
+    public static function taxQueryNoChildren(\WP_Query $query) {
+        if (!$query->tax_query) {
+            return;
+        }
+        if (empty($query->query['taxonomy']) || $query->query['taxonomy'] !== \WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG) {
+            return;
+        }
+        if (empty($query->tax_query->queries)) {
+            return;
+        }
+        if ($query->tax_query->queries[0]['taxonomy'] !== \WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG) {
+            return;
+        }
+
+        $query->tax_query->queries[0]['operator'] = 'AND';
+        $query->tax_query->queries[0]['include_children'] = false;
     }
 
     /**
@@ -84,14 +103,15 @@ class Master
         if (!in_array($query->post->post_type, avcpdp_get_parsed_post_types(), true)) {
             return $bool;
         }
-        if (empty($query->query['taxonomy']) || empty($query->query['term'])) {
+        $taxslug = \WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG;
+        if (empty($query->query['taxonomy']) || empty($query->query[$taxslug])) {
             return $bool;
         }
-        $tax = $query->query['taxonomy'];
-        if ($tax !== \WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG) {
+        $qtax = $query->query['taxonomy'];
+        if ($qtax !== $taxslug) {
             return $bool;
         }
-        $terms = explode(',', $query->query['term']);
+        $terms = explode(',', $query->query[$taxslug]);
         if (count($terms) < 2) {
             return $bool;
         }

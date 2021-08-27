@@ -8,6 +8,7 @@ namespace WP_Parser;
 class Plugin
 {
     const ROLE_TAX_SLUG = 'wp-parser-role';
+    const CODE_REFERENCE_POST_TYPE = 'code-reference';
     const SOURCE_TYPE_TAX_SLUG = 'wp-parser-source-type';
     const SOURCE_TYPE_TERM_SLUGS = ['composer-package', 'plugin', 'theme'];
     const WP_PARSER_PT_MAP = [
@@ -42,7 +43,7 @@ class Plugin
         add_filter('wp_parser_get_arguments', [$this, 'make_args_safe']);
         add_filter('wp_parser_return_type', [$this, 'humanize_separator']);
 
-        add_filter('post_type_link', [$this, 'method_permalink'], 10, 2);
+        add_filter('post_type_link', [$this, 'post_permalink'], 10, 2);
         add_filter('term_link', [$this, 'taxonomy_permalink'], 10, 3);
     }
 
@@ -61,16 +62,22 @@ class Plugin
     public static function addRewriteRules() {
         $sttax = self::SOURCE_TYPE_TAX_SLUG;
         $stterms = implode('|', self::SOURCE_TYPE_TERM_SLUGS);
+        $stterms = str_replace('-', '\-', $stterms);
 
         // Add rewrite rules for Methods
         add_rewrite_rule(
-            "reference/($stterms)/([a-z_\-]{1,32})/classes/page/([0-9]{1,})/?\$",
-            "index.php?post_type=wp-parser-class&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&paged=\$matches[3]",
+            "reference/($stterms)/([a-z_\-]{1,32})/methods/page/([0-9]{1,})/?",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&paged=\$matches[3]",
             'top'
         );
         add_rewrite_rule(
             "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
-            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
+            'top'
+        );
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/methods/?\$",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]",
             'top'
         );
 
@@ -79,13 +86,18 @@ class Plugin
             $urlpiece = $info['urlpiece'];
             $ptype = $info['post_type'];
             add_rewrite_rule(
-                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/([^/]+)/?",
-                "index.php?post_type={$ptype}&taxonomy={$sttax}&term=\$matches[1],\$matches[2]&name=\$matches[3]",
+                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/page/([0-9]{1,})/?",
+                "index.php?post_type={$ptype}&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&paged=\$matches[3]",
                 'top'
             );
             add_rewrite_rule(
-                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/?",
-                "index.php?post_type={$ptype}&taxonomy={$sttax}&term=\$matches[1],\$matches[2]",
+                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/([^/]+)/?\$",
+                "index.php?post_type={$ptype}&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&name=\$matches[3]",
+                'top'
+            );
+            add_rewrite_rule(
+                "reference/($stterms)/([a-z_\-]{1,32})/$urlpiece/?\$",
+                "index.php?post_type={$ptype}&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]",
                 'top'
             );
         }
@@ -107,7 +119,7 @@ class Plugin
         self::addRewriteRules();
 
         // Functions
-        if (!post_type_exists('wp-parser-function')) {
+        // if (!post_type_exists('wp-parser-function')) {
             register_post_type('wp-parser-function', [
                 'has_archive' => 'reference/functions',
                 'label' => __('Functions', 'wporg'),
@@ -136,10 +148,10 @@ class Plugin
                 'supports' => $supports,
                 'show_in_rest' => true,
             ]);
-        }
+        // }
 
         // Methods
-        if (!post_type_exists('wp-parser-method')) {
+        // if (!post_type_exists('wp-parser-method')) {
             register_post_type('wp-parser-method', [
                 'has_archive' => 'reference/methods',
                 'label' => __('Methods', 'wporg'),
@@ -162,16 +174,16 @@ class Plugin
                 'public' => true,
                 'rewrite' => [
                     'feeds' => false,
-                    'slug' => 'classes',
+                    'slug' => 'reference/methods',
                     'with_front' => false,
                 ],
                 'supports' => $supports,
                 'show_in_rest' => true,
             ]);
-        }
+        // }
 
         // Classes
-        if (!post_type_exists('wp-parser-class')) {
+        // if (!post_type_exists('wp-parser-class')) {
             register_post_type('wp-parser-class', [
                 'has_archive' => 'reference/classes',
                 'label' => __('Classes', 'wporg'),
@@ -200,10 +212,10 @@ class Plugin
                 'supports' => $supports,
                 'show_in_rest' => true,
             ]);
-        }
+        // }
 
         // Hooks
-        if (!post_type_exists('wp-parser-hook')) {
+        // if (!post_type_exists('wp-parser-hook')) {
             register_post_type('wp-parser-hook', [
                 'has_archive' => 'reference/hooks',
                 'label' => __('Hooks', 'wporg'),
@@ -232,6 +244,62 @@ class Plugin
                 'supports' => $supports,
                 'show_in_rest' => true,
             ]);
+        // }
+
+        // Reference Landing Pages
+        // if (!post_type_exists('code-reference')) {
+            register_post_type('code-reference', [
+                'has_archive' => false,
+                'exclude_from_search' => true,
+                'publicly_queryable' => true,
+                'hierarchical' => true,
+                'label' => __('Reference Landing Pages', 'wporg'),
+                'labels' => [
+                    'name' => __('Reference Landing Pages', 'wporg'),
+                    'singular_name' => __('Reference Landing Page', 'wporg'),
+                    'all_items' => __('Reference Landing Pages', 'wporg'),
+                    'new_item' => __('New Reference Landing Page', 'wporg'),
+                    'add_new' => __('Add New', 'wporg'),
+                    'add_new_item' => __('Add New Reference Landing Page', 'wporg'),
+                    'edit_item' => __('Edit Reference Landing Page', 'wporg'),
+                    'view_item' => __('View Reference Landing Page', 'wporg'),
+                    'search_items' => __('Search Reference Landing Pages', 'wporg'),
+                    'not_found' => __('No Pages found', 'wporg'),
+                    'not_found_in_trash' => __('No Pages found in trash', 'wporg'),
+                    'menu_name' => __('Reference Landing Pages', 'wporg'),
+                ],
+                'menu_icon' => 'dashicons-admin-page',
+                'menu_position' => 20,
+                'public' => true,
+                'rewrite' => [
+                    'slug' => 'reference',
+                    'with_front' => false,
+                    'pages' => false,
+                ],
+                'supports' => [
+                    'page-attributes',
+                    'custom-fields',
+                    'editor',
+                    'excerpt',
+                    'revisions',
+                    'title',
+                ],
+                'show_in_rest' => false,
+            ]);
+        // }
+
+        // Add default source-type landing pages
+        $parentpostmap = self::getCodeReferenceSourceTypePostMap();
+        foreach ($parentpostmap as $slug => $info) {
+            if (empty($parentpostmap[$slug]['post_id'])) {
+                wp_insert_post([
+                    'post_name' => $slug,
+                    'post_title' => $info['title'],
+                    'post_content' => '',
+                    'post_status' => 'publish',
+                    'post_type' => self::CODE_REFERENCE_POST_TYPE,
+                ]);
+            }
         }
     }
 
@@ -242,7 +310,7 @@ class Plugin
         $object_types = avcpdp_get_parsed_post_types();
 
         // Files
-        if (!taxonomy_exists('wp-parser-source-file')) {
+        // if (!taxonomy_exists('wp-parser-source-file')) {
             register_taxonomy(
                 'wp-parser-source-file',
                 $object_types,
@@ -278,10 +346,10 @@ class Plugin
                     'show_in_rest' => true,
                 ]
             );
-        }
+        // }
 
         // Package
-        if (!taxonomy_exists('wp-parser-package')) {
+        // if (!taxonomy_exists('wp-parser-package')) {
             register_taxonomy(
                 'wp-parser-package',
                 $object_types,
@@ -298,10 +366,10 @@ class Plugin
                     'show_in_rest' => true,
                 ]
             );
-        }
+        // }
 
         // @since
-        if (!taxonomy_exists('wp-parser-since')) {
+        // if (!taxonomy_exists('wp-parser-since')) {
             register_taxonomy(
                 'wp-parser-since',
                 $object_types,
@@ -318,10 +386,10 @@ class Plugin
                     'show_in_rest' => true,
                 ]
             );
-        }
+        // }
 
         // Namespaces
-        if (!taxonomy_exists('wp-parser-namespace')) {
+        // if (!taxonomy_exists('wp-parser-namespace')) {
             register_taxonomy(
                 'wp-parser-namespace',
                 $object_types,
@@ -334,13 +402,13 @@ class Plugin
                     'update_count_callback' => '_update_post_term_count',
                 ]
             );
-        }
+        // }
 
         // Source Type
-        if (!taxonomy_exists(self::SOURCE_TYPE_TAX_SLUG)) {
+        // if (!taxonomy_exists(self::SOURCE_TYPE_TAX_SLUG)) {
             register_taxonomy(
                 self::SOURCE_TYPE_TAX_SLUG,
-                $object_types,
+                array_merge($object_types, ['code-reference']),
                 [
                     'hierarchical' => true,
                     'label' => __('Source Type', 'wporg'),
@@ -348,13 +416,14 @@ class Plugin
                     'rewrite' => [
                         'with_front' => false,
                         'slug' => 'reference/source-type',
+                        'hierarchical' => false,
                     ],
                     'sort' => false,
                     'update_count_callback' => '_update_post_term_count',
                     'show_in_rest' => true,
                 ]
             );
-        }
+        // }
 
         // Add default source-type terms
         if (!term_exists('plugin', self::SOURCE_TYPE_TAX_SLUG)) {
@@ -382,7 +451,7 @@ class Plugin
         }
 
         // Role
-        if (!taxonomy_exists(self::ROLE_TAX_SLUG)) {
+        // if (!taxonomy_exists(self::ROLE_TAX_SLUG)) {
             register_taxonomy(
                 self::ROLE_TAX_SLUG,
                 ['wp-parser-function', 'wp-parser-method'],
@@ -399,7 +468,7 @@ class Plugin
                     'show_in_rest' => true,
                 ]
             );
-        }
+        // }
 
         // Add default role terms
         $roles = [
@@ -414,16 +483,69 @@ class Plugin
                 wp_insert_term($label, self::ROLE_TAX_SLUG, ['slug' => $slug]);
             }
         }
+
+        $parentpostmap = self::getCodeReferenceSourceTypePostMap();
+        foreach ($parentpostmap as $slug => $info) {
+            if (empty($parentpostmap[$slug]['post_id'])) {
+                continue;
+            }
+
+            $parent_term = get_terms([
+                'fields' => 'ids',
+                'parent' => 0,
+                'hide_empty' => false,
+                'slug' => $slug,
+                'taxonomy' => self::SOURCE_TYPE_TAX_SLUG,
+            ]);
+            if (empty($parent_term) || ($parent_term instanceof \WP_Error)) {
+                continue;
+            }
+            $parent_term_id = $parent_term[0];
+            // Assign `wp-parser-source-type` term
+            wp_set_object_terms(
+                $parentpostmap[$slug]['post_id'],
+                [$parent_term_id],
+                self::SOURCE_TYPE_TAX_SLUG
+            );
+        }
+    }
+
+    public static function getCodeReferenceSourceTypePostMap() {
+        $parentpostmap = [
+            'plugin' => [
+                'title' => __('Plugin', 'wp-parser'),
+                'post_id' => null,
+            ],
+            'theme' => [
+                'title' => __('Theme', 'wp-parser'),
+                'post_id' => null,
+            ],
+            'composer-package' => [
+                'title' => __('Composer Package', 'wp-parser'),
+                'post_id' => null,
+            ],
+        ];
+        foreach ($parentpostmap as $slug => $info) {
+            $posts = get_posts([
+                'name' => $slug,
+                'post_type' => self::CODE_REFERENCE_POST_TYPE,
+            ]);
+            if (!empty($posts)) {
+                $parentpostmap[$slug]['post_id'] = $posts[0]->ID;
+            }
+        }
+
+        return $parentpostmap;
     }
 
     /**
-     * Filters the permalink for a wp-parser-method post.
+     * Filters the permalink for a wp-parser-* post.
      *
      * @param string   $link The post's permalink.
      * @param \WP_Post $post The post in question.
      * @return string
      */
-    public function method_permalink($link, $post) {
+    public function post_permalink($link, $post) {
         global $wp_rewrite;
 
         if (!$wp_rewrite->using_permalinks()) {

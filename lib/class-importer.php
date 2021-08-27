@@ -201,23 +201,40 @@ class Importer implements LoggerAwareInterface
             }
         }
 
-        $parent_term = get_term_by('slug', $this->source_type_meta['type'], $this->taxonomy_source_type);
-        if (empty($parent_term)) {
+        $parent_term = get_terms([
+            'fields' => 'ids',
+            'parent' => 0,
+            'hide_empty' => false,
+            'slug' => $this->source_type_meta['type'],
+            'taxonomy' => $this->taxonomy_source_type,
+        ]);
+        if (empty($parent_term) || ($parent_term instanceof \WP_Error)) {
             $this->logger->error(sprintf(
                 "Missing term for {$this->taxonomy_source_type}; check that '%1\$s' is registered.",
                 $this->source_type_meta['type']
             ));
             exit;
         }
+        $parent_term_id = $parent_term[0];
 
         // Create a child term for the corresponding `wp-parser-source-type` taxonomy default term, if necessary
         $source_term_id = null;
-        $source_type_term = get_term_by('slug', $this->source_type_meta['name'], $this->taxonomy_source_type);
+        $source_type_term = get_terms([
+            'fields' => 'ids',
+            'parent' => $parent_term_id,
+            'hide_empty' => false,
+            'slug' => $this->source_type_meta['name'],
+            'taxonomy' => $this->taxonomy_source_type,
+        ]);
+        if ($source_type_term instanceof \WP_Error) {
+            $this->logger->error("An error occured getting the {$this->source_type_meta['name']} term.");
+            exit;
+        }
         if (empty($source_type_term)) {
             $source_type_term = wp_insert_term(
                 $this->source_type_meta['name'],
                 $this->taxonomy_source_type,
-                ['parent' => $parent_term->term_id]
+                ['parent' => $parent_term_id]
             );
 
             if ($source_type_term instanceof \WP_Error) {
@@ -229,12 +246,35 @@ class Importer implements LoggerAwareInterface
             }
             $source_term_id = $source_type_term['term_id'];
         } else {
-            $source_term_id = $source_type_term->term_id;
+            $source_term_id = $source_type_term[0];
         }
 
         // Set term data so we can create relationships later
         $this->source_type_meta['type_term_id'] = $source_term_id;
-        $this->source_type_meta['type_parent_term_id'] = $parent_term->term_id;
+        $this->source_type_meta['type_parent_term_id'] = $parent_term_id;
+
+        // Create code-reference child page for the current plugin/theme/composer-package
+        $pageslug = $this->source_type_meta['type'];
+        $parentpostmap = Plugin::getCodeReferenceSourceTypePostMap();
+        if (!empty($parentpostmap[$pageslug]['post_id'])) {
+            $post_id = wp_insert_post([
+                'post_parent' => $parentpostmap[$pageslug]['post_id'],
+                'post_name' => $this->source_type_meta['name'],
+                'post_title' => $this->source_type_meta['name'],
+                'post_content' => '',
+                'post_status' => 'publish',
+                'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+            ]);
+
+            if (!empty($post_id) && !($post_id instanceof \WP_Error)) {
+                // Assign `wp-parser-source-type` term
+                wp_set_object_terms(
+                    $post_id,
+                    [$this->source_type_meta['type_parent_term_id'], $this->source_type_meta['type_term_id']],
+                    $this->taxonomy_source_type
+                );
+            }
+        }
 
         // Specifically import WP version file first to get version number.
         $ver_file = array_filter($data, function ($f) {
