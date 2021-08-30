@@ -257,22 +257,29 @@ class Importer implements LoggerAwareInterface
         $pageslug = $this->source_type_meta['type'];
         $parentpostmap = Plugin::getCodeReferenceSourceTypePostMap();
         if (!empty($parentpostmap[$pageslug]['post_id'])) {
-            $post_id = wp_insert_post([
+            $refpage = get_posts([
+                'name' => $this->source_type_meta['name'],
                 'post_parent' => $parentpostmap[$pageslug]['post_id'],
-                'post_name' => $this->source_type_meta['name'],
-                'post_title' => $this->source_type_meta['name'],
-                'post_content' => '',
-                'post_status' => 'publish',
                 'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
             ]);
+            if (empty($refpage)) {
+                $post_id = wp_insert_post([
+                    'post_parent' => $parentpostmap[$pageslug]['post_id'],
+                    'post_name' => $this->source_type_meta['name'],
+                    'post_title' => $this->source_type_meta['name'],
+                    'post_content' => '',
+                    'post_status' => 'publish',
+                    'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                ]);
 
-            if (!empty($post_id) && !($post_id instanceof \WP_Error)) {
-                // Assign `wp-parser-source-type` term
-                wp_set_object_terms(
-                    $post_id,
-                    [$this->source_type_meta['type_parent_term_id'], $this->source_type_meta['type_term_id']],
-                    $this->taxonomy_source_type
-                );
+                if (!empty($post_id) && !($post_id instanceof \WP_Error)) {
+                    // Assign `wp-parser-source-type` term
+                    wp_set_object_terms(
+                        $post_id,
+                        [$this->source_type_meta['type_parent_term_id'], $this->source_type_meta['type_term_id']],
+                        $this->taxonomy_source_type
+                    );
+                }
             }
         }
 
