@@ -280,6 +280,47 @@ class Importer implements LoggerAwareInterface
                         $this->taxonomy_source_type
                     );
                 }
+            } else {
+                $post_id = $refpage[0]->ID;
+            }
+
+            // Create Functions/Methods and Hooks landing pages
+            if (!empty($post_id)) {
+                $childpages = [
+                    [
+                        'slug' => 'functions-home',
+                        'title' => __('Functions Reference', 'wp-parser'),
+                    ],
+                    [
+                        'slug' => 'hooks-home',
+                        'title' => __('Hooks Reference', 'wp-parser'),
+                    ],
+                ];
+                foreach ($childpages as $childpage) {
+                    $childrefpage = get_posts([
+                        'name' => $childpage['slug'],
+                        'post_parent' => $post_id,
+                        'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                    ]);
+                    if (empty($childrefpage)) {
+                        $childlandingpageid = wp_insert_post([
+                            'post_parent' => $post_id,
+                            'post_name' => $childpage['slug'],
+                            'post_title' => $childpage['title'],
+                            'post_content' => '',
+                            'post_status' => 'publish',
+                            'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                        ]);
+                    }
+                    if (!empty($childlandingpageid) && !($childlandingpageid instanceof \WP_Error)) {
+                        // Assign `wp-parser-source-type` term
+                        wp_set_object_terms(
+                            $childlandingpageid,
+                            [$this->source_type_meta['type_parent_term_id'], $this->source_type_meta['type_term_id']],
+                            $this->taxonomy_source_type
+                        );
+                    }
+                }
             }
         }
 

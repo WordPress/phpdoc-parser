@@ -94,6 +94,93 @@ function avcpdp_get_post_source_type_terms($post_id = null) {
 }
 
 /**
+ * Checks whether the source type terms are valid for a post
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int|null $post_id
+ * @return bool
+ */
+function avcpdp_source_type_terms_are_valid_for_post($post_id = null) {
+    if ($post_id === null) {
+        $post_id = get_the_ID();
+    }
+
+    if (empty($post_id)) {
+        return false;
+    }
+
+    $terms = wp_get_post_terms($post_id, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+
+    return avcpdp_source_type_terms_are_valid($terms);
+}
+
+/**
+ * Checks whether an array of source type term slugs is a valid combination
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array $termslugs
+ * @return bool
+ */
+function avcpdp_source_type_term_slugs_are_valid($termslugs) {
+    if (empty($termslugs)) {
+        return false;
+    }
+
+    if (count($termslugs) > 2) {
+        // a post can only have one source type and one source type name
+        return false;
+    }
+    $terms = [];
+    foreach ($termslugs as $termslug) {
+        $term = get_term_by('slug', $termslug, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+        if (empty($term)) {
+            return false;
+        }
+        $terms[] = $term;
+    }
+
+    return avcpdp_source_type_terms_are_valid($terms);
+}
+
+/**
+ * Checks whether an array of source types is a valid combination
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array $terms
+ * @return bool
+ */
+function avcpdp_source_type_terms_are_valid($terms) {
+    if (empty($terms)) {
+        return false;
+    }
+
+    if (count($terms) > 2) {
+        // a post can only have one source type and one source type name
+        return false;
+    }
+    $res = [];
+    foreach ($terms as $term) {
+        if ($term->parent === 0) {
+            $res['type'] = $term;
+        } else {
+            $res['name'] = $term;
+        }
+    }
+
+    if (empty($res['type']) || empty($res['name'])) {
+        // source type and source type name are required
+        return false;
+    }
+
+    if ($res['name']->parent !== $res['type']->term_id) {
+        // source type name must be a child of source type
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Returns source type taxonomy "plugin" term
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
@@ -147,6 +234,94 @@ function avcpdp_get_reference_post_list_by_role($role, $posts_per_page = 20) {
             ],
         ],
     ]);
+}
+
+/**
+ * Returns list of role terms
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $fields
+ * @param bool   $hide_empty
+ * @return WP_Term[]
+ */
+function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
+    $terms = get_terms([
+        'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
+        'hide_empty' => $hide_empty,
+        'fields' => $fields,
+    ]);
+    if ($terms instanceof WP_Error) {
+        return [];
+    }
+
+    return $terms;
+}
+
+/**
+ * Returns list of reference post type posts that have at least one role assigned to them
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int $posts_per_page
+ * @return int[]
+ */
+function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
+    return get_posts([
+        'fields' => 'ids',
+        'post_type' => avcpdp_get_parsed_post_types(),
+        'posts_per_page' => $posts_per_page,
+        'tax_query' => [
+            [
+                'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => avcpdp_get_role_terms('slugs'),
+            ],
+        ],
+    ]);
+}
+
+/**
+ * Returns list of hook reference post IDs
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $hook_type
+ * @param int    $posts_per_page
+ * @return int[]
+ */
+function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 50) {
+    $params = [
+        'fields' => 'ids',
+        'post_type' => 'wp-parser-hook',
+        'posts_per_page' => $posts_per_page,
+    ];
+    if ($hook_type === 'filter' || $hook_type === 'action') {
+        $params['meta_key'] = '_wp-parser_hook_type';
+        $params['meta_value'] = $hook_type;
+    }
+
+    return get_posts($params);
+}
+
+/**
+ * Returns list of reference post type posts that have at least one role assigned to them
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int|null $post_id
+ * @return WP_Term[]
+ */
+function avcpdp_get_reference_post_roles($post_id = null) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+    if (empty($post_id)) {
+        return [];
+    }
+
+    $terms = wp_get_post_terms($post_id, WP_Parser\Plugin::ROLE_TAX_SLUG);
+    if ($terms instanceof WP_Error) {
+        return [];
+    }
+
+    return $terms;
 }
 
 /**

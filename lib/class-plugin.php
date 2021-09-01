@@ -508,6 +508,11 @@ class Plugin
                 self::SOURCE_TYPE_TAX_SLUG
             );
         }
+
+        // Link tags to reference post types
+        foreach (avcpdp_get_parsed_post_types() as $post_type) {
+            register_taxonomy_for_object_type('post_tag', $post_type);
+        }
     }
 
     public static function getCodeReferenceSourceTypePostMap() {
