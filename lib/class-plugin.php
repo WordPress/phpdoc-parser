@@ -42,6 +42,7 @@ class Plugin
 
         $this->relationships = new Relationships();
 
+        // add_filter('rewrite_rules_array', [$this, 'removeDefaultParserPostTypeRewriteRules'], 10, 1);
         add_action('init', [$this, 'register_post_types'], 11);
         add_action('init', [$this, 'register_taxonomies'], 11);
         add_filter('wp_parser_get_arguments', [$this, 'make_args_safe']);
@@ -50,6 +51,8 @@ class Plugin
         add_filter('post_type_link', [$this, 'post_permalink'], 10, 2);
         add_filter('term_link', [$this, 'taxonomy_permalink'], 10, 3);
     }
+
+    // public static function removeDefaultParserPostTypeRewriteRules($rules)
 
     /**
      * Adds rewrite rules for the `wp-parser-(function|method|class|hook)` post
@@ -540,6 +543,7 @@ class Plugin
         foreach ($parentpostmap as $slug => $info) {
             $posts = get_posts([
                 'name' => $slug,
+                'post_status' => 'any',
                 'post_type' => self::CODE_REFERENCE_POST_TYPE,
             ]);
             if (!empty($posts)) {

@@ -57,6 +57,43 @@ function avcpdp_is_reference_landing_page_post_type($post_id = null) {
 }
 
 /**
+ * Get the specific type of hook.
+ *
+ * @param int|WP_Post|null $post Optional. Post ID or post object. Default is global $post.
+ * @return string          Either 'action', 'filter', or an empty string if not a hook post type.
+ */
+function avcpdp_get_hook_type($post = null) {
+    $hook = '';
+
+    if ('wp-parser-hook' === get_post_type($post)) {
+        $hook = get_post_meta(get_post_field('ID', $post), '_wp-parser_hook_type', true);
+    }
+
+    return $hook;
+}
+
+/**
+ * Returns the array of post types that have source code.
+ *
+ * @return array
+ */
+function avcpdp_get_post_types_with_source_code() {
+    return ['wp-parser-class', 'wp-parser-method', 'wp-parser-function'];
+}
+
+/**
+ * Does the post type have source code?
+ *
+ * @param  null|string $post_type Optional. The post type name. If null, assumes current post type. Default null.
+ * @return bool
+ */
+function avcpdp_post_type_has_source_code($post_type = null) {
+    $post_type = $post_type ? $post_type : get_post_type();
+
+    return in_array($post_type, avcpdp_get_post_types_with_source_code());
+}
+
+/**
  * Returns the base URL for the `wp-parser-*` post type currently being queried
  *
  * This function will return an empty string if the current main query is not related
@@ -122,6 +159,75 @@ function avcpdp_get_reference_single_base_url($pid = null) {
     $baseurl = home_url("/reference/{$type}/{$name}");
 
     return $baseurl;
+}
+
+/**
+ * Returns hierarchical descending array of reference landing page posts tied to the current reference
+ * single post via the source type taxonomy
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int|null $pid Optional. Post ID. Defaults to current post
+ * @return array
+ */
+function avcpdp_get_reference_landing_page_posts_from_reference_single_post($pid = null) {
+    if (empty($pid)) {
+        $pid = get_the_ID();
+    }
+    if (empty($pid)) {
+        return [];
+    }
+    if (!is_single($pid)) {
+        return [];
+    }
+    if (!avcpdp_is_parsed_post_type()) {
+        return [];
+    }
+    if (!avcpdp_source_type_terms_are_valid_for_post($pid)) {
+        return [];
+    }
+
+    $trail = [];
+    $stterms = avcpdp_get_post_source_type_terms($pid);
+    $stypelanding = get_posts([
+        'order' => 'ASC',
+        'orderby' => 'parent',
+        'post_status' => ['publish', 'private'],
+        'post_type' => WP_Parser\Plugin::CODE_REFERENCE_POST_TYPE,
+        'tax_query' => [
+            [
+                'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'term_id',
+                'terms' => $stterms['type']->term_id,
+                'include_children' => false,
+            ],
+        ],
+    ]);
+    if (!empty($stypelanding)) {
+        if ($stypelanding[0]->post_status === 'publish') {
+            $trail[] = $stypelanding[0];
+        }
+
+        $sourcelanding = get_posts([
+            'post_parent' => $stypelanding[0]->ID,
+            'post_status' => 'publish',
+            'post_type' => WP_Parser\Plugin::CODE_REFERENCE_POST_TYPE,
+            'tax_query' => [
+                [
+                    'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                    'field' => 'term_id',
+                    'terms' => $stterms['name']->term_id,
+                    'include_children' => false,
+                ],
+            ],
+        ]);
+        if (!empty($sourcelanding)) {
+            $trail[] = $sourcelanding[0];
+        }
+
+        $parsertype = \WP_Parser\Plugin::WP_PARSER_PT_MAP[get_post_type()]['urlpiece'];
+    }
+
+    return $trail;
 }
 
 /**
@@ -472,6 +578,68 @@ function avcpdp_get_line_number($post_id = null, $type = 'start') {
     $meta_key = ('end' == $type) ? '_wp-parser_end_line_num' : '_wp-parser_line_num';
 
     return (int)get_post_meta($post_id, $meta_key, true);
+}
+
+/**
+ * Retrieve source code for a function or method.
+ *
+ * @param int  $post_id     Optional. The post ID.
+ * @param bool $force_parse Optional. Ignore potential value in post meta and reparse source file for source code?
+ *
+ * @return string The source code.
+ */
+function avcpdp_get_source_code($post_id = null, $force_parse = false) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+
+    // Get the source code stored in post meta.
+    $meta_key = '_wp-parser_source_code';
+    if (!$force_parse && $source_code = get_post_meta($post_id, $meta_key, true)) {
+        return $source_code;
+    }
+
+    /* Source code hasn't been stored in post meta, so parse source file to get it. */
+
+    // Get the name of the source file.
+    $source_file = avcpdp_get_source_file($post_id);
+
+    // Get the start and end lines.
+    $start_line = intval(get_post_meta($post_id, '_wp-parser_line_num', true)) - 1;
+    $end_line = intval(get_post_meta($post_id, '_wp-parser_end_line_num', true));
+
+    // Sanity check to ensure proper conditions exist for parsing
+    if (!$source_file || !$start_line || !$end_line || ($start_line > $end_line)) {
+        return '';
+    }
+
+    // Find just the relevant source code
+    $source_code = '';
+    $handle = @fopen(avcpdp_get_source_code_root_dir() . $source_file, 'r');
+    if ($handle) {
+        $line = -1;
+        while (!feof($handle)) {
+            $line++;
+            $source_line = fgets($handle);
+
+            // Stop reading file once end_line is reached.
+            if ($line >= $end_line) {
+                break;
+            }
+
+            // Skip lines until start_line is reached.
+            if ($line < $start_line) {
+                continue;
+            }
+
+            $source_code .= $source_line;
+        }
+        fclose($handle);
+    }
+
+    update_post_meta($post_id, $meta_key, addslashes($source_code));
+
+    return $source_code;
 }
 
 /**
