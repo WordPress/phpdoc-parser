@@ -12,6 +12,10 @@ class Plugin
     const SOURCE_TYPE_TAX_SLUG = 'wp-parser-source-type';
     const SOURCE_TYPE_TERM_SLUGS = ['composer-package', 'plugin', 'theme'];
     const WP_PARSER_PT_MAP = [
+        'wp-parser-method' => [
+            'urlpiece' => 'methods',
+            'post_type' => 'wp-parser-method',
+        ],
         'wp-parser-function' => [
             'urlpiece' => 'functions',
             'post_type' => 'wp-parser-function',
@@ -83,6 +87,9 @@ class Plugin
 
         // Add rewrite rules for Functions, Classes, and Hooks
         foreach (self::WP_PARSER_PT_MAP as $key => $info) {
+            if ($key === 'wp-parser-method') {
+                continue;
+            }
             $urlpiece = $info['urlpiece'];
             $ptype = $info['post_type'];
             add_rewrite_rule(

@@ -57,6 +57,74 @@ function avcpdp_is_reference_landing_page_post_type($post_id = null) {
 }
 
 /**
+ * Returns the base URL for the `wp-parser-*` post type currently being queried
+ *
+ * This function will return an empty string if the current main query is not related
+ * to a reference post type
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return string
+ */
+function avcpdp_get_reference_archive_base_url() {
+    if (!is_archive()) {
+        // not a code reference archive, cannot determine URL
+        return '';
+    }
+    $ptype = get_query_var('post_type');
+    if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
+        // only show filter by category section for `wp-parser-*` post types
+        return '';
+    }
+    $stype = get_query_var(\WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    if (empty($stype)) {
+        // source type not queried for, cannot determine URL
+        return '';
+    }
+    $stypepieces = explode(',', $stype);
+    if (!avcpdp_source_type_term_slugs_are_valid($stypepieces)) {
+        // the combination of source type terms are not valid
+        return '';
+    }
+
+    $type = $stypepieces[0];
+    $name = $stypepieces[1];
+    $parsertype = \WP_Parser\Plugin::WP_PARSER_PT_MAP[$ptype]['urlpiece'];
+    $baseurl = home_url("/reference/{$type}/{$name}/{$parsertype}");
+
+    return $baseurl;
+}
+
+/**
+ * Returns the base URL for the current reference single post.
+ *
+ * The URL is constructed from the source type terms assigned to the post. The
+ * `wp-parser-*` post type URL piece is **not appended**.
+ *
+ * Example: `/reference/plugin/my-plugin`
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int|null $pid Optional. Post ID. Defaults to current post
+ * @return string Returns an empty string if the URL cannot be determined
+ */
+function avcpdp_get_reference_single_base_url($pid = null) {
+    if (!is_single($pid)) {
+        return '';
+    }
+    if (empty($pid)) {
+        $pid = get_the_ID();
+    }
+    if (!avcpdp_source_type_terms_are_valid_for_post($pid)) {
+        return '';
+    }
+    $stterms = avcpdp_get_post_source_type_terms($pid);
+    $type = $stterms['type']->slug;
+    $name = $stterms['name']->slug;
+    $baseurl = home_url("/reference/{$type}/{$name}");
+
+    return $baseurl;
+}
+
+/**
  * Returns source type "type" and "name" terms for the current post
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>

@@ -15,6 +15,7 @@ class Master
      */
     public static function init() {
         add_action('parse_tax_query', [get_class(), 'taxQueryNoChildren'], 10, 1);
+        add_filter('query_vars', [get_class(), 'addHookTypeQueryVar'], 10, 1);
         add_filter('pre_handle_404', [get_class(), 'force404onWrongSourceType'], 10, 2);
         add_action('init', function () {
             add_action('pre_get_posts', [get_class(), 'preGetPosts'], 10, 1);
@@ -28,12 +29,31 @@ class Master
     }
 
     /**
+     * Adds `hook_type` query var for filtering hooks by type
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param array $qvars
+     * @return array
+     */
+    public static function addHookTypeQueryVar($qvars) {
+        $qvars[] = 'hook_type';
+        return $qvars;
+    }
+
+    /**
      * @param \WP_Query $query
      */
     public static function preGetPosts($query) {
         if ($query->is_main_query() && $query->is_post_type_archive()) {
             $query->set('orderby', 'title');
             $query->set('order', 'ASC');
+            // $query->set('posts_per_page', 20);
+            $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
+            $hook_type = !empty($query->query['hook_type']) ? $query->query['hook_type'] : '';
+            if ($ptype === 'wp-parser-hook' && ($hook_type === 'filter' || $hook_type === 'action')) {
+                $query->query_vars['meta_key'] = '_wp-parser_hook_type';
+                $query->query_vars['meta_value'] = $hook_type;
+            }
         }
 
         if ($query->is_main_query() && $query->is_tax() && $query->get('wp-parser-source-file')) {
