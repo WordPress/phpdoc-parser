@@ -65,7 +65,7 @@ class ParsedContent
     public function add_meta_boxes() {
         if (in_array($screen = get_current_screen()->id, $this->post_types)) {
             remove_meta_box('postexcerpt', $screen, 'normal');
-            add_meta_box('wporg_parsed_content', __('Parsed Content', 'wporg'), [$this, 'parsed_meta_box_cb'], $screen, 'normal');
+            add_meta_box('wporg_parsed_content', __('Parsed Content', 'wp-parser'), [$this, 'parsed_meta_box_cb'], $screen, 'normal');
         }
     }
 
@@ -86,8 +86,8 @@ class ParsedContent
             $src = "https://core.trac.wordpress.org/ticket/{$ticket}";
             $ticket_message = sprintf('<a href="%1$s">%2$s</a>', esc_url($src), apply_filters('the_title', $ticket_label));
         } else {
-            $link = sprintf('<a href="https://core.trac.wordpress.org/newticket">%s</a>', __('Core Trac', 'wporg'));
-            $ticket_message = sprintf(__('A valid, open ticket from %s is required to edit parsed content.', 'wporg'), $link);
+            $link = sprintf('<a href="https://core.trac.wordpress.org/newticket">%s</a>', __('Core Trac', 'wp-parser'));
+            $ticket_message = sprintf(__('A valid, open ticket from %s is required to edit parsed content.', 'wp-parser'), $link);
         }
         wp_nonce_field('wporg-parsed-content', 'wporg-parsed-content-nonce');
         ?>
@@ -95,7 +95,7 @@ class ParsedContent
             <tbody>
             <tr valign="top">
                 <th scope="row">
-                    <label for="excerpt"><?php _e('Parsed Summary:', 'wporg'); ?></label>
+                    <label for="excerpt"><?php _e('Parsed Summary:', 'wp-parser'); ?></label>
                 </th>
                 <td>
                     <div class="wporg_parsed_readonly <?php echo $ticket ? 'hidden' : ''; ?>"><?php echo apply_filters('the_content', $post->post_excerpt); ?></div>
@@ -104,7 +104,7 @@ class ParsedContent
             </tr><!-- .wporg_parsed_content -->
             <tr valign="top" data-id="<?php the_id(); ?>">
                 <th scope="row">
-                    <label for="wporg_parsed_content"><?php _e('Parsed Description:', 'wporg'); ?></label>
+                    <label for="wporg_parsed_content"><?php _e('Parsed Description:', 'wp-parser'); ?></label>
                 </th>
                 <td>
                     <div class="wporg_parsed_readonly <?php echo $ticket ? 'hidden' : ''; ?>"><?php echo apply_filters('the_content', $content); ?></div>
@@ -124,16 +124,16 @@ class ParsedContent
             <?php if (current_user_can('manage_options')) : ?>
                 <tr valign="top" id="ticket_controls">
                     <th scope="row">
-                        <label for="wporg_parsed_ticket"><?php _e('Trac Ticket Number:', 'wporg'); ?></label>
+                        <label for="wporg_parsed_ticket"><?php _e('Trac Ticket Number:', 'wp-parser'); ?></label>
                     </th>
                     <td>
                         <span class="attachment_controls">
                             <input type="text" name="wporg_parsed_ticket" id="wporg_parsed_ticket" value="<?php echo esc_attr($ticket); ?>" />
-                            <a href="#attach-ticket" class="button secondary <?php echo $ticket ? 'hidden' : ''; ?>" id="wporg_ticket_attach" name="wporg_ticket_attach" aria-label="<?php esc_attr_e('Attach a Core Trac ticket', 'wporg'); ?>" data-nonce="<?php echo wp_create_nonce('wporg-attach-ticket'); ?>" data-id="<?php the_ID(); ?>">
-                                <?php esc_attr_e('Attach Ticket', 'wporg'); ?>
+                            <a href="#attach-ticket" class="button secondary <?php echo $ticket ? 'hidden' : ''; ?>" id="wporg_ticket_attach" name="wporg_ticket_attach" aria-label="<?php esc_attr_e('Attach a Core Trac ticket', 'wp-parser'); ?>" data-nonce="<?php echo wp_create_nonce('wporg-attach-ticket'); ?>" data-id="<?php the_ID(); ?>">
+                                <?php esc_attr_e('Attach Ticket', 'wp-parser'); ?>
                             </a>
-                            <a href="#detach-ticket" class="button secondary <?php echo $ticket ? '' : 'hidden'; ?>" id="wporg_ticket_detach" name="wporg_ticket_detach" aria-label="<?php esc_attr_e('Detach the Trac ticket', 'wporg'); ?>" data-nonce="<?php echo wp_create_nonce('wporg-detach-ticket'); ?>" data-id="<?php the_ID(); ?>">
-                                <?php esc_attr_e('Detach Ticket', 'wporg'); ?>
+                            <a href="#detach-ticket" class="button secondary <?php echo $ticket ? '' : 'hidden'; ?>" id="wporg_ticket_detach" name="wporg_ticket_detach" aria-label="<?php esc_attr_e('Detach the Trac ticket', 'wp-parser'); ?>" data-nonce="<?php echo wp_create_nonce('wporg-detach-ticket'); ?>" data-id="<?php the_ID(); ?>">
+                                <?php esc_attr_e('Detach Ticket', 'wp-parser'); ?>
                             </a>
                             <span class="spinner"></span>
                         </span>
@@ -180,8 +180,8 @@ class ParsedContent
 
             wp_localize_script('wporg-parsed-content', 'wporgParsedContent', [
                 'ajaxURL' => admin_url('admin-ajax.php'),
-                'searchText' => __('Searching ...', 'wporg'),
-                'retryText' => __('Invalid ticket number, please try again.', 'wporg'),
+                'searchText' => __('Searching ...', 'wp-parser'),
+                'retryText' => __('Invalid ticket number, please try again.', 'wp-parser'),
             ]);
         }
     }
@@ -235,7 +235,7 @@ class ParsedContent
         } else {
             // Ticket number is invalid.
             wp_send_json_error([
-                'message' => __('Invalid ticket number.', 'wporg'),
+                'message' => __('Invalid ticket number.', 'wp-parser'),
                 'new_nonce' => wp_create_nonce('wporg-attach-ticket'),
             ]);
         }
@@ -260,13 +260,13 @@ class ParsedContent
         ) {
             // Success!
             wp_send_json_success([
-                'message' => __('Ticket detached.', 'wporg'),
+                'message' => __('Ticket detached.', 'wp-parser'),
                 'new_nonce' => wp_create_nonce('wporg-detach-ticket'),
             ]);
         } else {
             // Still attached.
             wp_send_json_error([
-                'message' => __('Ticket still attached.', 'wporg'),
+                'message' => __('Ticket still attached.', 'wp-parser'),
                 'new_nonce' => wp_create_nonce('wporg-detach-ticket'),
             ]);
         }

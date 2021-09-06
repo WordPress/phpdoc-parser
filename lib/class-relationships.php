@@ -87,8 +87,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Uses Functions', 'wporg'),
-                'to' => __('Used by Functions', 'wporg'),
+                'from' => __('Uses Functions', 'wp-parser'),
+                'to' => __('Used by Functions', 'wp-parser'),
             ],
         ]);
 
@@ -106,8 +106,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Uses Methods', 'wporg'),
-                'to' => __('Used by Functions', 'wporg'),
+                'from' => __('Uses Methods', 'wp-parser'),
+                'to' => __('Used by Functions', 'wp-parser'),
             ],
         ]);
 
@@ -125,8 +125,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Uses Hooks', 'wporg'),
-                'to' => __('Used by Functions', 'wporg'),
+                'from' => __('Uses Hooks', 'wp-parser'),
+                'to' => __('Used by Functions', 'wp-parser'),
             ],
         ]);
 
@@ -147,8 +147,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Uses Functions', 'wporg'),
-                'to' => __('Used by Methods', 'wporg'),
+                'from' => __('Uses Functions', 'wp-parser'),
+                'to' => __('Used by Methods', 'wp-parser'),
             ],
         ]);
 
@@ -167,8 +167,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Uses Methods', 'wporg'),
-                'to' => __('Used by Methods', 'wporg'),
+                'from' => __('Uses Methods', 'wp-parser'),
+                'to' => __('Used by Methods', 'wp-parser'),
             ],
         ]);
 
@@ -186,8 +186,8 @@ class Relationships
                 'order' => 'ASC',
             ],
             'title' => [
-                'from' => __('Used by Methods', 'wporg'),
-                'to' => __('Uses Hooks', 'wporg'),
+                'from' => __('Used by Methods', 'wp-parser'),
+                'to' => __('Uses Hooks', 'wp-parser'),
             ],
         ]);
     }

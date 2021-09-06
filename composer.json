@@ -30,6 +30,9 @@
     "scribu/scb-framework": "dev-master@dev",
     "psr/log": "~1.0"
   },
+  "require-dev": {
+    "wp-cli/i18n-command": "^2.2"
+  },
   "autoload": {
     "classmap": [
       "lib"
@@ -43,5 +46,10 @@
     "psr-4": {
       "Aivec\\Plugins\\DocParser\\": "src"
     }
+  },
+  "scripts": {
+    "i18n:create-pot": "./vendor/bin/wp i18n make-pot . languages/messages.pot",
+    "i18n:update-pos": "@composer i18n:create-pot && find ./languages -name \"*.po\" | xargs -I % msgmerge -o % % languages/messages.pot",
+    "i18n:make-mo": "./vendor/bin/wp i18n make-mo languages"
   }
 }

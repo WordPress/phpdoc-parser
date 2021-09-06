@@ -109,7 +109,7 @@ class Admin
         if (0 !== $count) {
             $html .= '<div class="misc-pub-section misc-pub-reset_votes">';
             $html .= '<input id="reset_votes" type="checkbox" name="reset_votes" value="on" />';
-            $html .= '<label for="reset_votes">' . sprintf(__('Reset votes (%d)', 'wporg'), $count) . '</label>';
+            $html .= '<label for="reset_votes">' . sprintf(__('Reset votes (%d)', 'wp-parser'), $count) . '</label>';
             $html .= '</div>';
         }
 

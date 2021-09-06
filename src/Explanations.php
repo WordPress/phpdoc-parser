@@ -88,14 +88,14 @@ class Explanations
     public function register_post_type() {
         register_post_type($this->exp_post_type, [
             'labels' => [
-                'name' => __('Explanations', 'wporg'),
-                'singular_name' => __('Explanation', 'wporg'),
-                'all_items' => __('Explanations', 'wporg'),
-                'edit_item' => __('Edit Explanation', 'wporg'),
-                'view_item' => __('View Explanation', 'wporg'),
-                'search_items' => __('Search Explanations', 'wporg'),
-                'not_found' => __('No Explanations found', 'wporg'),
-                'not_found_in_trash' => __('No Explanations found in trash', 'wporg'),
+                'name' => __('Explanations', 'wp-parser'),
+                'singular_name' => __('Explanation', 'wp-parser'),
+                'all_items' => __('Explanations', 'wp-parser'),
+                'edit_item' => __('Edit Explanation', 'wp-parser'),
+                'view_item' => __('View Explanation', 'wp-parser'),
+                'search_items' => __('Search Explanations', 'wp-parser'),
+                'not_found' => __('No Explanations found', 'wp-parser'),
+                'not_found_in_trash' => __('No Explanations found in trash', 'wp-parser'),
             ],
             'public' => false,
             'publicly_queryable' => true,
@@ -186,7 +186,7 @@ class Explanations
                 if ($menu_slug == $item[2]) {
                     // Modify it to include the pending count.
                     $menu[$i][0] = sprintf(
-                        __('Explanations %s', 'wporg'),
+                        __('Explanations %s', 'wp-parser'),
                         "<span class='update-plugins count-{$count}'><span class='plugin-count'>" . number_format_i18n($count) . '</span></span>'
                     );
                     break;
@@ -228,13 +228,13 @@ class Explanations
         ?>
         <div class="postbox-container" style="margin-top:20px;">
             <div class="postbox">
-                <h3 class="hndle"><?php _e('Explanation', 'wporg'); ?></h3>
+                <h3 class="hndle"><?php _e('Explanation', 'wp-parser'); ?></h3>
                 <div class="inside">
                     <table class="form-table explanation-meta">
                         <tbody>
                         <tr valign="top">
                             <th scope="row">
-                                <label for="explanation-status"><?php _e('Status:', 'wporg'); ?></label>
+                                <label for="explanation-status"><?php _e('Status:', 'wp-parser'); ?></label>
                             </th>
                             <td class="explanation-status" name="explanation-status">
                                 <div class="status-links">
@@ -245,7 +245,7 @@ class Explanations
                         <?php if ($explanation) : ?>
                             <tr valign="top">
                                 <th scope="row">
-                                    <label for="expl-modified"><?php _e('Last Modified:', 'wporg'); ?></label>
+                                    <label for="expl-modified"><?php _e('Last Modified:', 'wp-parser'); ?></label>
                                 </th>
                                 <td name="expl-modified">
                                     <p><?php echo get_post_modified_time($date_format, false, $post->ID); ?></p>
@@ -275,7 +275,7 @@ class Explanations
         <div class="postbox-container" style="margin-top:20px;width:100%;">
             <div class="postbox">
                 <div class="inside" style="padding-bottom:0;">
-                    <strong><?php _e('Associated with: ', 'wporg'); ?></strong>
+                    <strong><?php _e('Associated with: ', 'wp-parser'); ?></strong>
                     <?php
                     printf(
                         '<a href="%1$s">%2$s</a>',
@@ -328,7 +328,7 @@ class Explanations
     public function add_roles() {
         add_role(
             'expl_editor',
-            __('Explanation Editor', 'wporg'),
+            __('Explanation Editor', 'wp-parser'),
             [
                 'unfiltered_html' => true,
                 'read' => true,
@@ -415,15 +415,15 @@ class Explanations
             $expl_action['edit-expl'] = sprintf(
                 '<a href="%1$s" alt="%2$s">%3$s</a>',
                 esc_url(get_edit_post_link($expl->ID)),
-                esc_attr__('Edit Explanation', 'wporg'),
-                __('Edit Explanation', 'wporg')
+                esc_attr__('Edit Explanation', 'wp-parser'),
+                __('Edit Explanation', 'wp-parser')
             );
         } else {
             $expl_action['add-expl'] = sprintf(
                 '<a href="" class="create-expl" data-nonce="%1$s" data-id="%2$s">%3$s</a>',
                 esc_attr(wp_create_nonce('create-expl')),
                 esc_attr($post->ID),
-                __('Add Explanation', 'wporg')
+                __('Add Explanation', 'wp-parser')
             );
         }
 
@@ -445,19 +445,19 @@ class Explanations
             ?>
             <span id="expl-row-actions" class="expl-row-actions">
                 <a id="edit-expl" href="<?php echo get_edit_post_link($explanation->ID); ?>">
-                    <?php _e('Edit Explanation', 'wporg'); ?>
+                    <?php _e('Edit Explanation', 'wp-parser'); ?>
                 </a>
                 <?php if ('publish' == get_post_status($explanation)) : ?>
                     <a href="#unpublish" id="unpublish-expl" data-nonce="<?php echo wp_create_nonce('unpublish-expl'); ?>" data-id="<?php the_ID(); ?>">
-                        <?php _e('Unpublish', 'wporg'); ?>
+                        <?php _e('Unpublish', 'wp-parser'); ?>
                     </a>
                 <?php endif; ?>
             </span><!-- .expl-row-actions -->
         <?php else : ?>
-            <p class="status" id="status-label"><?php _e('None', 'wporg'); ?></p>
+            <p class="status" id="status-label"><?php _e('None', 'wp-parser'); ?></p>
             <span id="expl-row-actions" class="expl-row-actions">
                 <a id="create-expl" href="" data-nonce="<?php echo wp_create_nonce('create-expl'); ?>" data-id="<?php the_ID(); ?>">
-                    <?php _e('Add Explanation', 'wporg'); ?>
+                    <?php _e('Add Explanation', 'wp-parser'); ?>
                 </a><!-- #create-explanation -->
             </span><!-- expl-row-actions -->
             <?php
@@ -479,17 +479,17 @@ class Explanations
 
         switch ($status = $post->post_status) {
             case 'draft':
-                $label = __('Draft', 'wporg');
+                $label = __('Draft', 'wp-parser');
                 break;
             case 'pending':
-                $label = __('Pending Review', 'wporg');
+                $label = __('Pending Review', 'wp-parser');
                 break;
             case 'publish':
-                $label = __('Published', 'wporg');
+                $label = __('Published', 'wp-parser');
                 break;
             default:
                 $status = '';
-                $label = __('None', 'wporg');
+                $label = __('None', 'wp-parser');
                 break;
         }
 
@@ -525,11 +525,11 @@ class Explanations
             wp_enqueue_script('wporg-explanations', AVCPDP_PLUGIN_URL . '/src/js/explanations.js', ['jquery', 'wp-util'], '20160630', true);
 
             wp_localize_script('wporg-explanations', 'wporg', [
-                'editContentLabel' => __('Edit Explanation', 'wporg'),
+                'editContentLabel' => __('Edit Explanation', 'wp-parser'),
                 'statusLabel' => [
-                    'draft' => __('Draft', 'wporg'),
-                    'pending' => __('Pending Review', 'wporg'),
-                    'publish' => __('Published', 'wporg'),
+                    'draft' => __('Draft', 'wp-parser'),
+                    'pending' => __('Pending Review', 'wp-parser'),
+                    'publish' => __('Published', 'wp-parser'),
                 ],
             ]);
         }
@@ -547,7 +547,7 @@ class Explanations
         $context = empty($_REQUEST['context']) ? '' : sanitize_text_field($_REQUEST['context']);
 
         if (avcpdp_get_explanation($post_id)) {
-            wp_send_json_error(new WP_Error('post_exists', __('Explanation already exists.', 'wporg')));
+            wp_send_json_error(new WP_Error('post_exists', __('Explanation already exists.', 'wp-parser')));
         } else {
             $title = get_post_field('post_title', $post_id);
 
@@ -566,7 +566,7 @@ class Explanations
                 ]);
             } else {
                 wp_send_json_error(
-                    new WP_Error('post_error', __('Explanation could not be created.', 'wporg'))
+                    new WP_Error('post_error', __('Explanation could not be created.', 'wp-parser'))
                 );
             }
         }
@@ -592,7 +592,7 @@ class Explanations
                 wp_send_json_success(['post_id' => $update]);
             } else {
                 wp_send_json_error(
-                    new WP_Error('unpublish_error', __('Explanation could not be un-published.', 'wporg'))
+                    new WP_Error('unpublish_error', __('Explanation could not be un-published.', 'wp-parser'))
                 );
             }
         }
@@ -617,8 +617,8 @@ class Explanations
             $col_data = [
                 'has_explanation' => sprintf(
                     '<span class="dashicons dashicons-info" title="%s"></span><span class="screen-reader-text">%s</span>',
-                    esc_attr__('Has explanation?', 'wporg'),
-                    esc_html__('Explanation?', 'wporg')
+                    esc_attr__('Has explanation?', 'wp-parser'),
+                    esc_html__('Explanation?', 'wp-parser')
                 ),
             ];
             $columns = array_merge(array_slice($columns, 0, $pos), $col_data, array_slice($columns, $pos));
@@ -642,7 +642,7 @@ class Explanations
                     '<a href="%s">%s%s</a>',
                     get_edit_post_link($explanation),
                     '<span class="dashicons dashicons-info" aria-hidden="true"></span>',
-                    '<span class="screen-reader-text">' . __('Post has an explanation.', 'wporg') . '</span>'
+                    '<span class="screen-reader-text">' . __('Post has an explanation.', 'wp-parser') . '</span>'
                 );
             }
         }

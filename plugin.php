@@ -3,11 +3,12 @@
 /**
  * Plugin Name: AVC WP Parser
  * Description: Create a plugin/theme/composer-package source reference site powered by WordPress
- * Author: Ryan McCue, Paul Gibbs, Andrey "Rarst" Savchenko and Contributors
- * Author URI: https://github.com/WordPress/phpdoc-parser/graphs/contributors
- * Plugin URI: https://github.com/WordPress/phpdoc-parser
+ * Author: Evan Shaw, Ryan McCue, Paul Gibbs, Andrey "Rarst" Savchenko and Contributors
+ * Author URI: https://github.com/aivec/phpdoc-parser/graphs/contributors
+ * Plugin URI: https://github.com/aivec/phpdoc-parser
  * Version: %%VERSION%%
  * Text Domain: wp-parser
+ * Domain Path: /languages/
  */
 
 define('AVC_WP_PARSER', true);
@@ -15,6 +16,7 @@ define('AVCPDP_VERSION', '%%VERSION%%');
 define('AVCPDP_LANG_DIR', __DIR__ . '/languages');
 define('AVCPDP_PLUGIN_DIR', ABSPATH . 'wp-content/plugins/' . plugin_basename(dirname(__FILE__)));
 define('AVCPDP_PLUGIN_URL', site_url() . '/wp-content/plugins/' . plugin_basename(dirname(__FILE__)));
+load_plugin_textdomain('wp-parser', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require __DIR__ . '/vendor/autoload.php';

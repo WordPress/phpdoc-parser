@@ -94,6 +94,38 @@ function avcpdp_post_type_has_source_code($post_type = null) {
 }
 
 /**
+ * Returns the source type terms for the `wp-parser-*` post type currently being queried
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return WP_Term[]
+ */
+function avcpdp_get_reference_archive_source_type_terms() {
+    if (!is_archive()) {
+        // not a code reference archive, cannot get source type terms
+        return [];
+    }
+    $ptype = get_query_var('post_type');
+    if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
+        // only get source type terms from `wp-parser-*` post types
+        return [];
+    }
+    $stype = get_query_var(\WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    if (empty($stype)) {
+        // source type not queried for, cannot determine URL
+        return [];
+    }
+    $stypepieces = explode(',', $stype);
+    if (!avcpdp_source_type_term_slugs_are_valid($stypepieces)) {
+        // the combination of source type terms are not valid
+        return [];
+    }
+
+    $terms = avcpdp_get_source_type_terms_from_slug_pair($stypepieces);
+
+    return $terms;
+}
+
+/**
  * Returns the base URL for the `wp-parser-*` post type currently being queried
  *
  * This function will return an empty string if the current main query is not related
@@ -186,8 +218,36 @@ function avcpdp_get_reference_landing_page_posts_from_reference_single_post($pid
         return [];
     }
 
-    $trail = [];
     $stterms = avcpdp_get_post_source_type_terms($pid);
+
+    return avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms);
+}
+
+/**
+ * Returns hierarchical descending array of reference landing page posts tied to the source types terms
+ * of the current `wp-parser-*` post type currently being queired
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return array
+ */
+function avcpdp_get_reference_landing_page_posts_from_archive() {
+    $stterms = avcpdp_get_reference_archive_source_type_terms();
+    if (empty($stterms)) {
+        return [];
+    }
+
+    return avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms);
+}
+
+/**
+ * Returns hierarchical descending array of reference landing page posts tied to the given source types terms
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array $stterms
+ * @return array
+ */
+function avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms) {
+    $trail = [];
     $stypelanding = get_posts([
         'order' => 'ASC',
         'orderby' => 'parent',
@@ -223,8 +283,6 @@ function avcpdp_get_reference_landing_page_posts_from_reference_single_post($pid
         if (!empty($sourcelanding)) {
             $trail[] = $sourcelanding[0];
         }
-
-        $parsertype = \WP_Parser\Plugin::WP_PARSER_PT_MAP[get_post_type()]['urlpiece'];
     }
 
     return $trail;
@@ -289,6 +347,30 @@ function avcpdp_source_type_terms_are_valid_for_post($post_id = null) {
 }
 
 /**
+ * Returns an array of source type terms given an array of source type slugs
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array $termslugs
+ * @return WP_Term[]
+ */
+function avcpdp_get_source_type_terms_from_slug_pair($termslugs) {
+    $terms = [];
+    foreach ($termslugs as $termslug) {
+        $term = get_term_by('slug', $termslug, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+        if (empty($term)) {
+            return false;
+        }
+        if ($term->parent === 0) {
+            $terms['type'] = $term;
+        } else {
+            $terms['name'] = $term;
+        }
+    }
+
+    return $terms;
+}
+
+/**
  * Checks whether an array of source type term slugs is a valid combination
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
@@ -304,14 +386,7 @@ function avcpdp_source_type_term_slugs_are_valid($termslugs) {
         // a post can only have one source type and one source type name
         return false;
     }
-    $terms = [];
-    foreach ($termslugs as $termslug) {
-        $term = get_term_by('slug', $termslug, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
-        if (empty($term)) {
-            return false;
-        }
-        $terms[] = $term;
-    }
+    $terms = avcpdp_get_source_type_terms_from_slug_pair($termslugs);
 
     return avcpdp_source_type_terms_are_valid($terms);
 }
@@ -391,20 +466,30 @@ function avcpdp_get_source_type_plugin_terms() {
  * Returns list of reference post type posts for a given role slug
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param string $role
- * @param int    $posts_per_page
+ * @param WP_Term[] $stterms
+ * @param string    $role
+ * @param int       $posts_per_page
  * @return int[]
  */
-function avcpdp_get_reference_post_list_by_role($role, $posts_per_page = 20) {
+function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 20) {
     return get_posts([
         'fields' => 'ids',
         'post_type' => avcpdp_get_parsed_post_types(),
         'posts_per_page' => $posts_per_page,
         'tax_query' => [
+            'relation' => 'AND',
             [
                 'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
                 'field' => 'slug',
                 'terms' => $role,
+                'include_children' => true,
+            ],
+            [
+                'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                'include_children' => false,
+                'operator' => 'AND',
             ],
         ],
     ]);

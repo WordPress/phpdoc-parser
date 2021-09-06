@@ -1,0 +1,542 @@
+# Copyright (C) 2021 Aivec LLC.
+# This file is distributed under the same license as the AVC WP Parser plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: AVC WP Parser %%VERSION%%\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
+"POT-Creation-Date: 2021-09-06T11:47:24+09:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: WP-CLI 2.4.0\n"
+
+#. Plugin Name of the plugin
+msgid "AVC WP Parser"
+msgstr "AVC WP Parser"
+
+#. Plugin URI of the plugin
+msgid "https://github.com/aivec/phpdoc-parser"
+msgstr "https://github.com/aivec/phpdoc-parser"
+
+#. Description of the plugin
+msgid ""
+"Create a plugin/theme/composer-package source reference site powered by "
+"WordPress"
+msgstr ""
+"Create a plugin/theme/composer-package source reference site powered by "
+"WordPress"
+
+#. Author of the plugin
+msgid ""
+"Evan Shaw, Ryan McCue, Paul Gibbs, Andrey \"Rarst\" Savchenko and "
+"Contributors"
+msgstr ""
+"Evan Shaw, Ryan McCue, Paul Gibbs, Andrey \"Rarst\" Savchenko and "
+"Contributors"
+
+#. Author URI of the plugin
+msgid "https://github.com/aivec/phpdoc-parser/graphs/contributors"
+msgstr "https://github.com/aivec/phpdoc-parser/graphs/contributors"
+
+#: lib/class-importer.php:292
+msgid "Functions Reference"
+msgstr "ファンクション・レファレンス"
+
+#: lib/class-importer.php:296
+msgid "Hooks Reference"
+msgstr "フック・レファレンス"
+
+#: lib/class-plugin.php:135 lib/class-plugin.php:137 lib/class-plugin.php:139
+#: lib/class-plugin.php:149 src/api-functions.php:22
+msgid "Functions"
+msgstr "ファンクション"
+
+#: lib/class-plugin.php:138
+msgid "Function"
+msgstr "ファンクション"
+
+#: lib/class-plugin.php:140
+msgid "New Function"
+msgstr "ファンクションを新規追加"
+
+#: lib/class-plugin.php:141 lib/class-plugin.php:173 lib/class-plugin.php:205
+#: lib/class-plugin.php:237 lib/class-plugin.php:272
+msgid "Add New"
+msgstr "新規追加"
+
+#: lib/class-plugin.php:142
+msgid "Add New Function"
+msgstr "ファンクションを新規追加"
+
+#: lib/class-plugin.php:143
+msgid "Edit Function"
+msgstr "ファンクションを編集"
+
+#: lib/class-plugin.php:144
+msgid "View Function"
+msgstr "ファンクションを見る"
+
+#: lib/class-plugin.php:145
+msgid "Search Functions"
+msgstr "ファンクションを検索"
+
+#: lib/class-plugin.php:146
+msgid "No Functions found"
+msgstr "ファンクションの結果がありません"
+
+#: lib/class-plugin.php:147
+msgid "No Functions found in trash"
+msgstr "ゴミ箱の中にファンクションがありません"
+
+#: lib/class-plugin.php:148
+msgid "Parent Function"
+msgstr "親ファンクション"
+
+#: lib/class-plugin.php:167 lib/class-plugin.php:169 lib/class-plugin.php:171
+#: lib/class-plugin.php:181 src/api-functions.php:24
+msgid "Methods"
+msgstr "関数"
+
+#: lib/class-plugin.php:170
+msgid "Method"
+msgstr "関数"
+
+#: lib/class-plugin.php:172
+msgid "New Method"
+msgstr "関数を新規追加"
+
+#: lib/class-plugin.php:174
+msgid "Add New Method"
+msgstr "関数を新規追加"
+
+#: lib/class-plugin.php:175
+msgid "Edit Method"
+msgstr "関数を編集"
+
+#: lib/class-plugin.php:176
+msgid "View Method"
+msgstr "関数を見る"
+
+#: lib/class-plugin.php:177
+msgid "Search Methods"
+msgstr "関数を検索"
+
+#: lib/class-plugin.php:178
+msgid "No Methods found"
+msgstr "関数の結果がありません"
+
+#: lib/class-plugin.php:179
+msgid "No Methods found in trash"
+msgstr "ゴミ箱の中に関数がありません"
+
+#: lib/class-plugin.php:180
+msgid "Parent Method"
+msgstr "親関数"
+
+#: lib/class-plugin.php:199 lib/class-plugin.php:201 lib/class-plugin.php:203
+#: lib/class-plugin.php:213 src/api-functions.php:21
+msgid "Classes"
+msgstr "クラス"
+
+#: lib/class-plugin.php:202
+msgid "Class"
+msgstr "クラス"
+
+#: lib/class-plugin.php:204
+msgid "New Class"
+msgstr "クラスを新規追加"
+
+#: lib/class-plugin.php:206
+msgid "Add New Class"
+msgstr "クラスを新規追加"
+
+#: lib/class-plugin.php:207
+msgid "Edit Class"
+msgstr "クラスを編集"
+
+#: lib/class-plugin.php:208
+msgid "View Class"
+msgstr "クラスを見る"
+
+#: lib/class-plugin.php:209
+msgid "Search Classes"
+msgstr "クラスを検索"
+
+#: lib/class-plugin.php:210
+msgid "No Classes found"
+msgstr "クラスの結果がありません"
+
+#: lib/class-plugin.php:211
+msgid "No Classes found in trash"
+msgstr "ゴミ箱の中にクラスがありません"
+
+#: lib/class-plugin.php:212
+msgid "Parent Class"
+msgstr "親クラス"
+
+#: lib/class-plugin.php:231 lib/class-plugin.php:233 lib/class-plugin.php:235
+#: lib/class-plugin.php:245 src/api-functions.php:23
+msgid "Hooks"
+msgstr "フック"
+
+#: lib/class-plugin.php:234
+msgid "Hook"
+msgstr "フック"
+
+#: lib/class-plugin.php:236
+msgid "New Hook"
+msgstr "フックを新規追加"
+
+#: lib/class-plugin.php:238
+msgid "Add New Hook"
+msgstr "フックを新規追加"
+
+#: lib/class-plugin.php:239
+msgid "Edit Hook"
+msgstr "フックを編集"
+
+#: lib/class-plugin.php:240
+msgid "View Hook"
+msgstr "フックを見る"
+
+#: lib/class-plugin.php:241
+msgid "Search Hooks"
+msgstr "フックを検索"
+
+#: lib/class-plugin.php:242
+msgid "No Hooks found"
+msgstr "フックの結果がありません"
+
+#: lib/class-plugin.php:243
+msgid "No Hooks found in trash"
+msgstr "ゴミ箱の中にフックがありません"
+
+#: lib/class-plugin.php:244
+msgid "Parent Hook"
+msgstr "親フック"
+
+#: lib/class-plugin.php:266 lib/class-plugin.php:268 lib/class-plugin.php:270
+#: lib/class-plugin.php:279
+msgid "Reference Landing Pages"
+msgstr "レファレンスのランディングページ"
+
+#: lib/class-plugin.php:269
+msgid "Reference Landing Page"
+msgstr "レファレンスのランディングページ"
+
+#: lib/class-plugin.php:271
+msgid "New Reference Landing Page"
+msgstr "レファレンスのランディングページを新規追加"
+
+#: lib/class-plugin.php:273
+msgid "Add New Reference Landing Page"
+msgstr "レファレンスのランディングページを新規追加"
+
+#: lib/class-plugin.php:274
+msgid "Edit Reference Landing Page"
+msgstr "レファレンスのランディングページを編集"
+
+#: lib/class-plugin.php:275
+msgid "View Reference Landing Page"
+msgstr "レファレンスのランディングページを見る"
+
+#: lib/class-plugin.php:276
+msgid "Search Reference Landing Pages"
+msgstr "レファレンスのランディングページを検索"
+
+#: lib/class-plugin.php:277
+msgid "No Pages found"
+msgstr "レファレンスのランディングページの結果がありません"
+
+#: lib/class-plugin.php:278
+msgid "No Pages found in trash"
+msgstr "ゴミ箱の中にレファレンスのランディングページがありません"
+
+#: lib/class-plugin.php:328 lib/class-plugin.php:330 lib/class-plugin.php:344
+msgid "Files"
+msgstr "ファイル"
+
+#: lib/class-plugin.php:331
+msgctxt "taxonomy general name"
+msgid "File"
+msgstr "ファイル"
+
+#: lib/class-plugin.php:332
+msgid "Search Files"
+msgstr "ファイルを検索"
+
+#: lib/class-plugin.php:334
+msgid "All Files"
+msgstr "全てのファイル"
+
+#: lib/class-plugin.php:335
+msgid "Parent File"
+msgstr "親ファイル"
+
+#: lib/class-plugin.php:336
+msgid "Parent File:"
+msgstr "親ファイル:"
+
+#: lib/class-plugin.php:337
+msgid "Edit File"
+msgstr "ファイルを編集"
+
+#: lib/class-plugin.php:338
+msgid "Update File"
+msgstr "ファイルを更新"
+
+#: lib/class-plugin.php:339 lib/class-plugin.php:340
+msgid "New File"
+msgstr "ファイルを新規追加"
+
+#: lib/class-plugin.php:341
+msgid "Files separated by comma"
+msgstr "コンマで区切られているファイル"
+
+#: lib/class-plugin.php:342
+msgid "Add or remove Files"
+msgstr "ファイルを新規追加・削除する"
+
+#: lib/class-plugin.php:343
+msgid "Choose from the most used Files"
+msgstr "よく使われているファイルから選択"
+
+#: lib/class-plugin.php:388
+msgid "@since"
+msgstr "@since"
+
+#: lib/class-plugin.php:408
+msgid "Namespaces"
+msgstr "ネームスペース"
+
+#: lib/class-plugin.php:424
+msgid "Source Type"
+msgstr "ソースタイプ"
+
+#: lib/class-plugin.php:441 lib/class-plugin.php:531
+msgid "Plugin"
+msgstr "プラグイン"
+
+#: lib/class-plugin.php:449 lib/class-plugin.php:535
+msgid "Theme"
+msgstr "テーマ"
+
+#: lib/class-plugin.php:457 lib/class-plugin.php:539
+msgid "Composer Package"
+msgstr "Composerパッケージ"
+
+#: lib/class-plugin.php:470
+msgid "Role"
+msgstr "区分"
+
+#: lib/class-plugin.php:485
+msgid "Display"
+msgstr "表示系"
+
+#: lib/class-plugin.php:486
+msgid "Condition"
+msgstr "条件判断"
+
+#: lib/class-plugin.php:487
+msgid "Utility"
+msgstr "ユーティリティー"
+
+#: lib/class-plugin.php:488
+msgid "Setter"
+msgstr "データセット"
+
+#: lib/class-plugin.php:489
+msgid "Getter"
+msgstr "デート取得"
+
+#: lib/class-plugin.php:677
+msgctxt "separator"
+msgid " or "
+msgstr ""
+
+#: lib/class-relationships.php:90 lib/class-relationships.php:150
+msgid "Uses Functions"
+msgstr "利用しているファンクション"
+
+#: lib/class-relationships.php:91 lib/class-relationships.php:110
+#: lib/class-relationships.php:129
+msgid "Used by Functions"
+msgstr "利用されているファンクション"
+
+#: lib/class-relationships.php:109 lib/class-relationships.php:170
+msgid "Uses Methods"
+msgstr "利用している関数"
+
+#: lib/class-relationships.php:128 lib/class-relationships.php:190
+msgid "Uses Hooks"
+msgstr "利用しているフック"
+
+#: lib/class-relationships.php:151 lib/class-relationships.php:171
+#: lib/class-relationships.php:189
+msgid "Used by Methods"
+msgstr "利用されている関数"
+
+#: src/Admin.php:112
+msgid "Reset votes (%d)"
+msgstr ""
+
+#: src/Explanations.php:91 src/Explanations.php:93
+msgid "Explanations"
+msgstr "説明文"
+
+#: src/Explanations.php:92 src/Explanations.php:231
+msgid "Explanation"
+msgstr "説明文"
+
+#: src/Explanations.php:94 src/Explanations.php:418 src/Explanations.php:419
+#: src/Explanations.php:448 src/Explanations.php:528
+msgid "Edit Explanation"
+msgstr "説明文を編集"
+
+#: src/Explanations.php:95
+msgid "View Explanation"
+msgstr "説明文を見る"
+
+#: src/Explanations.php:96
+msgid "Search Explanations"
+msgstr "説明文を検索"
+
+#: src/Explanations.php:97
+msgid "No Explanations found"
+msgstr "説明文の結果がありません"
+
+#: src/Explanations.php:98
+msgid "No Explanations found in trash"
+msgstr "ゴミ箱の中に説明文がありません"
+
+#: src/Explanations.php:189
+msgid "Explanations %s"
+msgstr "説明: %s"
+
+#: src/Explanations.php:237
+msgid "Status:"
+msgstr "ステータス:"
+
+#: src/Explanations.php:248
+msgid "Last Modified:"
+msgstr "更新日時:"
+
+#: src/Explanations.php:278
+msgid "Associated with: "
+msgstr "関連資料: "
+
+#: src/Explanations.php:331
+msgid "Explanation Editor"
+msgstr "説明文エディター"
+
+#: src/Explanations.php:426 src/Explanations.php:460
+msgid "Add Explanation"
+msgstr "説明文を新規追加"
+
+#: src/Explanations.php:452
+msgid "Unpublish"
+msgstr "非公開"
+
+#: src/Explanations.php:457 src/Explanations.php:492
+msgid "None"
+msgstr "なし"
+
+#: src/Explanations.php:482 src/Explanations.php:530
+msgid "Draft"
+msgstr ""
+
+#: src/Explanations.php:485 src/Explanations.php:531
+msgid "Pending Review"
+msgstr ""
+
+#: src/Explanations.php:488 src/Explanations.php:532
+msgid "Published"
+msgstr "公開済み"
+
+#: src/Explanations.php:550
+msgid "Explanation already exists."
+msgstr ""
+
+#: src/Explanations.php:569
+msgid "Explanation could not be created."
+msgstr ""
+
+#: src/Explanations.php:595
+msgid "Explanation could not be un-published."
+msgstr ""
+
+#: src/Explanations.php:620
+msgid "Has explanation?"
+msgstr ""
+
+#: src/Explanations.php:621
+msgid "Explanation?"
+msgstr ""
+
+#: src/Explanations.php:645
+msgid "Post has an explanation."
+msgstr ""
+
+#: src/ParsedContent.php:68
+msgid "Parsed Content"
+msgstr ""
+
+#: src/ParsedContent.php:89
+msgid "Core Trac"
+msgstr ""
+
+#: src/ParsedContent.php:90
+msgid "A valid, open ticket from %s is required to edit parsed content."
+msgstr ""
+
+#: src/ParsedContent.php:98
+msgid "Parsed Summary:"
+msgstr ""
+
+#: src/ParsedContent.php:107
+msgid "Parsed Description:"
+msgstr ""
+
+#: src/ParsedContent.php:127
+msgid "Trac Ticket Number:"
+msgstr ""
+
+#: src/ParsedContent.php:132
+msgid "Attach a Core Trac ticket"
+msgstr ""
+
+#: src/ParsedContent.php:133
+msgid "Attach Ticket"
+msgstr ""
+
+#: src/ParsedContent.php:135
+msgid "Detach the Trac ticket"
+msgstr ""
+
+#: src/ParsedContent.php:136
+msgid "Detach Ticket"
+msgstr ""
+
+#: src/ParsedContent.php:183
+msgid "Searching ..."
+msgstr ""
+
+#: src/ParsedContent.php:184
+msgid "Invalid ticket number, please try again."
+msgstr ""
+
+#: src/ParsedContent.php:238
+msgid "Invalid ticket number."
+msgstr ""
+
+#: src/ParsedContent.php:263
+msgid "Ticket detached."
+msgstr ""
+
+#: src/ParsedContent.php:269
+msgid "Ticket still attached."
+msgstr ""

@@ -256,9 +256,21 @@ class Importer implements LoggerAwareInterface
         // Create code-reference child page for the current plugin/theme/composer-package
         $pageslug = $this->source_type_meta['type'];
         $parentpostmap = Plugin::getCodeReferenceSourceTypePostMap();
+        if (empty($parentpostmap[$pageslug]['post_id'])) {
+            $toprefpid = wp_insert_post([
+                'post_name' => $pageslug,
+                'post_title' => $parentpostmap[$pageslug]['title'],
+                'post_content' => '',
+                'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+            ]);
+            if (!($toprefpid instanceof \WP_Error)) {
+                $parentpostmap[$pageslug]['post_id'] = $toprefpid;
+            }
+        }
         if (!empty($parentpostmap[$pageslug]['post_id'])) {
             $refpage = get_posts([
                 'name' => $this->source_type_meta['name'],
+                'post_status' => 'any',
                 'post_parent' => $parentpostmap[$pageslug]['post_id'],
                 'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
             ]);
