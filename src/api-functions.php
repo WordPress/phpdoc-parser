@@ -469,10 +469,10 @@ function avcpdp_get_source_type_plugin_terms() {
  * @param WP_Term[] $stterms
  * @param string    $role
  * @param int       $posts_per_page
- * @return int[]
+ * @return WP_Query
  */
-function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 20) {
-    return get_posts([
+function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 10) {
+    $q = new WP_Query([
         'fields' => 'ids',
         'post_type' => avcpdp_get_parsed_post_types(),
         'posts_per_page' => $posts_per_page,
@@ -493,6 +493,8 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
             ],
         ],
     ]);
+
+    return $q;
 }
 
 /**
@@ -544,9 +546,9 @@ function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
  * @author Evan D Shaw <evandanielshaw@gmail.com>
  * @param string $hook_type
  * @param int    $posts_per_page
- * @return int[]
+ * @return WP_Query
  */
-function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 50) {
+function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 20) {
     $params = [
         'fields' => 'ids',
         'post_type' => 'wp-parser-hook',
@@ -557,7 +559,7 @@ function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 5
         $params['meta_value'] = $hook_type;
     }
 
-    return get_posts($params);
+    return new WP_Query($params);
 }
 
 /**
