@@ -28,6 +28,7 @@ class ParsedContent
     public $meta_fields = [
         'translated_summary',
         'translated_description',
+        'translated_return',
     ];
 
     /**
@@ -96,8 +97,11 @@ class ParsedContent
     public function addParsedMetaBox($post) {
         $content = $post->post_content;
         $excerpt = $post->post_excerpt;
+        $params = self::getParams($post->ID);
+        $return = self::getReturn($post->ID);
         $translated_summary = (string)get_post_meta($post->ID, 'translated_summary', true);
         $translated_description = (string)get_post_meta($post->ID, 'translated_description', true);
+        $translated_return = (string)get_post_meta($post->ID, 'translated_return', true);
 
         wp_nonce_field('wporg-parsed-content', 'wporg-parsed-content-nonce');
         ?>
@@ -108,7 +112,7 @@ class ParsedContent
                     <label for="excerpt"><?php _e('Parsed Summary:', 'wp-parser'); ?></label>
                 </th>
                 <td>
-                    <div class="wporg_parsed_readonly"><?php echo apply_filters('the_content', $excerpt); ?></div>
+                    <div class="wporg_parsed_readonly"><?php echo htmlspecialchars(apply_filters('the_content', $excerpt)); ?></div>
                 </td>
             </tr>
             <?php if (current_user_can('manage_options')) : ?>
@@ -135,7 +139,7 @@ class ParsedContent
                     <label for="wporg_parsed_content"><?php _e('Parsed Description:', 'wp-parser'); ?></label>
                 </th>
                 <td>
-                    <div class="wporg_parsed_readonly"><?php echo apply_filters('the_content', $content); ?></div>
+                    <div class="wporg_parsed_readonly"><?php echo htmlspecialchars(apply_filters('the_content', $content)); ?></div>
                 </td>
             </tr>
             <?php if (current_user_can('manage_options')) : ?>
@@ -157,9 +161,184 @@ class ParsedContent
                     </td>
                 </tr>
             <?php endif; ?>
+            <tr class="t-section">
+                <td colspan="2">
+                    <h2><?php _e('Tags (args, return)', 'wp-parser'); ?></h2>
+                </td>
+            </tr>
+            <?php foreach ($params as $name => $data) : ?>
+                <tr>
+                    <tr valign="top">
+                        <th scope="row">
+                            <div class="parser-tags">
+                                <label for="wporg_parsed_content"><?php echo $name; ?></label>
+                                <div class="types">
+                                    <span class="type">
+                                        <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['types'])); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </th>
+                        <td>
+                            <div class="wporg_parsed_readonly"><?php echo $data['content']; ?></div>
+                        </td>
+                    </tr>
+                </tr>
+                <?php if (current_user_can('manage_options')) : ?>
+                    <?php
+                    $clean_name = str_replace('$', '', $name);
+                    $translated_key = "translated_{$clean_name}";
+                    $translated_key_val = (string)get_post_meta($post->ID, $translated_key, true);
+                    ?>
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="<?php echo $translated_key; ?>"><?php printf(__('%s (Translated)', 'wp-parser'), $name); ?></label>
+                        </th>
+                        <td>
+                            <div class="<?php echo $translated_key; ?>">
+                                <?php
+                                wp_editor($translated_key_val, $translated_key, [
+                                    'media_buttons' => false,
+                                    'tinymce' => false,
+                                    'quicktags' => false,
+                                    'textarea_rows' => 2,
+                                ]);
+                                ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            <?php endforeach; ?>
+            <?php if (!empty($return['type'])) : ?>
+                <tr>
+                    <tr valign="top">
+                        <th scope="row">
+                            <div class="parser-tags">
+                                <label for="wporg_parsed_content"><?php _e('Parsed Return:', 'wp-parser'); ?></label>
+                                <div class="types">
+                                    <span class="type">
+                                        <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($return['type'])); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </th>
+                        <td>
+                            <div class="wporg_parsed_readonly"><?php echo $return['content']; ?></div>
+                        </td>
+                    </tr>
+                </tr>
+                <?php if (current_user_can('manage_options')) : ?>
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="translated_return"><?php _e('Translated Return:', 'wp-parser'); ?></label>
+                        </th>
+                        <td>
+                            <div class="translated_return">
+                                <?php
+                                wp_editor($translated_return, 'translated_return', [
+                                    'media_buttons' => false,
+                                    'tinymce' => false,
+                                    'quicktags' => false,
+                                    'textarea_rows' => 2,
+                                ]);
+                                ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            <?php endif; ?>
             </tbody>
         </table>
         <?php
+    }
+
+    /**
+     * Retrieve parameters as a key value array
+     *
+     * @param int $post_id
+     * @return array
+     */
+    public static function getParams($post_id = null) {
+        if (empty($post_id)) {
+            $post_id = get_the_ID();
+        }
+        $params = [];
+        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+
+        if ($tags) {
+            foreach ($tags as $tag) {
+                if (!empty($tag['name']) && 'param' == $tag['name']) {
+                    $params[$tag['variable']] = $tag;
+                    $types = [];
+                    foreach ($tag['types'] as $i => $v) {
+                        if (strpos($v, '\\') !== false) {
+                            $v = ltrim($v, '\\');
+                        }
+                        $types[$i] = sprintf('<span class="%s">%s</span>', $v, $v);
+                    }
+
+                    $params[$tag['variable']]['types'] = implode('|', $types);
+                    $params[$tag['variable']]['content'] = htmlspecialchars($params[$tag['variable']]['content']);
+                }
+            }
+        }
+
+        return $params;
+    }
+
+    /**
+     * Retrieve return type and description if available.
+     *
+     * If there is no explicit return value, or it is explicitly "void", then
+     * an empty string is returned. This rules out display of return type for
+     * classes, hooks, and non-returning functions.
+     *
+     * @param int $post_id
+     * @return string
+     */
+    public static function getReturn($post_id = null) {
+        if (empty($post_id)) {
+            $post_id = get_the_ID();
+        }
+
+        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+        $return = wp_filter_object_list($tags, ['name' => 'return']);
+
+        // If there is no explicit or non-"void" return value, don't display one.
+        if (empty($return)) {
+            return [
+                'type' => '',
+                'content' => '',
+            ];
+        }
+
+        $return = array_shift($return);
+        $types = $return['types'];
+        $type = empty($types) ? '' : esc_html(implode('|', $types));
+
+        return [
+            'type' => $type,
+            'content' => $return['content'],
+        ];
+    }
+
+    /**
+     * Returns indexed array of parameter post meta keys
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param int $post_id
+     * @return array
+     */
+    private function getParamMetaKeys($post_id) {
+        $keys = [];
+        $params = self::getParams($post_id);
+        foreach ($params as $name => $data) {
+            $clean_name = str_replace('$', '', $name);
+            $translated_key = "translated_{$clean_name}";
+            $keys[] = $translated_key;
+        }
+
+        return $keys;
     }
 
     /**
@@ -180,6 +359,7 @@ class ParsedContent
             return;
         }
 
+        $this->meta_fields = array_merge($this->meta_fields, $this->getParamMetaKeys($post_id));
         foreach ($this->meta_fields as $key) {
             // Parsed content.
             empty($_POST[$key]) ? delete_post_meta($post_id, $key) : update_post_meta($post_id, $key, $_POST[$key]);

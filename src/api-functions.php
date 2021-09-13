@@ -958,3 +958,19 @@ function avcpdp_get_explanation_content($_post) {
 
     return $content;
 }
+
+/**
+ * Returns the translated content for a parsed parameter
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int    $post_id
+ * @param string $key
+ * @return string
+ */
+function avcpdp_get_param_translated_content($post_id, $key) {
+    $clean_name = str_replace('$', '', $key);
+    $translated_key = "translated_{$clean_name}";
+    $translated_key_val = (string)get_post_meta($post_id, $translated_key, true);
+
+    return $translated_key_val;
+}

@@ -1,5 +1,28 @@
 /* =Admin CSS
 ----------------------------------------------- */
+
+.post-type-wp-parser-function .form-table .t-section td,
+.post-type-wp-parser-class .form-table .t-section td,
+.post-type-wp-parser-method .form-table .t-section td,
+.post-type-wp-parser-hook .form-table .t-section td {
+  padding: 0;
+}
+
+#poststuff .t-section h2 {
+  padding: 10px 0;
+  border-bottom: 1px solid #c3c4c7;
+  font-weight: 700;
+}
+
+.parser-tags {
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.parser-tags .type {
+  font-weight: 400;
+}
+
 #wporg_parsed_ticket {
   width: 100px;
 }
