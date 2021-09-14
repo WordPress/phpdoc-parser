@@ -201,7 +201,7 @@ class ParsedContent
                                     'media_buttons' => false,
                                     'tinymce' => false,
                                     'quicktags' => false,
-                                    'textarea_rows' => 2,
+                                    'textarea_rows' => 10,
                                 ]);
                                 ?>
                             </div>
@@ -239,7 +239,7 @@ class ParsedContent
                                     'media_buttons' => false,
                                     'tinymce' => false,
                                     'quicktags' => false,
-                                    'textarea_rows' => 2,
+                                    'textarea_rows' => 10,
                                 ]);
                                 ?>
                             </div>
@@ -318,7 +318,7 @@ class ParsedContent
 
         return [
             'type' => $type,
-            'content' => $return['content'],
+            'content' => htmlspecialchars($return['content']),
         ];
     }
 

@@ -922,7 +922,7 @@ function avcpdp_get_explanation_content($_post) {
     global $post;
 
     // Temporarily remove filter.
-    remove_filter('the_content', ['DevHub_Formatting', 'fix_unintended_markdown'], 1);
+    remove_filter('the_content', ['Aivec\Plugins\DocParser\Formatting', 'fixUnintendedMarkdown'], 1);
 
     // Store original global post.
     $orig = $post;
@@ -954,7 +954,7 @@ function avcpdp_get_explanation_content($_post) {
     $post = $orig;
 
     // Restore filter.
-    add_filter('the_content', ['DevHub_Formatting', 'fix_unintended_markdown'], 1);
+    add_filter('the_content', ['Aivec\Plugins\DocParser\Formatting', 'fixUnintendedMarkdown'], 1);
 
     return $content;
 }

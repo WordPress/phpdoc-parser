@@ -23,6 +23,7 @@ class Master
 
         (new Explanations())->init();
         (new ParsedContent())->init();
+        Formatting::init();
         if (is_admin()) {
             Admin::init();
         }
