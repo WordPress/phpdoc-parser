@@ -174,6 +174,7 @@ class ParsedContent
                                 <label for="wporg_parsed_content"><?php echo $name; ?></label>
                                 <div class="types">
                                     <span class="type">
+                                        <?php // translators: the type ?>
                                         <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['types'])); ?>
                                     </span>
                                 </div>
@@ -192,7 +193,10 @@ class ParsedContent
                     ?>
                     <tr valign="top">
                         <th scope="row">
-                            <label for="<?php echo $translated_key; ?>"><?php printf(__('%s (Translated)', 'wp-parser'), $name); ?></label>
+                            <label for="<?php echo $translated_key; ?>">
+                                <?php // translators: the arg name ?>
+                                <?php printf(__('%s (Translated)', 'wp-parser'), $name); ?>
+                            </label>
                         </th>
                         <td>
                             <div class="<?php echo $translated_key; ?>">

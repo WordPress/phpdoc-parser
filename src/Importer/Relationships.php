@@ -43,14 +43,16 @@ class Relationships
 
     /**
      * Adds the actions.
+     *
+     * @return void
      */
     public function init() {
-        add_action('plugins_loaded', [$this, 'require_posts_to_posts']);
-        add_action('wp_loaded', [$this, 'register_post_relationships']);
+        add_action('plugins_loaded', [$this, 'requirePostsToPosts']);
+        add_action('wp_loaded', [$this, 'registerPostRelationships']);
 
-        add_action('wp_parser_import_item', [$this, 'import_item'], 10, 3);
-        add_action('wp_parser_starting_import', [$this, 'wp_parser_starting_import']);
-        add_action('wp_parser_ending_import', [$this, 'wp_parser_ending_import'], 10, 1);
+        add_action('wp_parser_import_item', [$this, 'importItem'], 10, 3);
+        add_action('wp_parser_starting_import', [$this, 'wpParserStartingImport']);
+        add_action('wp_parser_ending_import', [$this, 'wpParserEndingImport'], 10, 1);
     }
 
     /**
@@ -58,7 +60,7 @@ class Relationships
      *
      * @return void
      */
-    public function require_posts_to_posts() {
+    public function requirePostsToPosts() {
         // Initializes the database tables
         \P2P_Storage::init();
 
@@ -73,9 +75,10 @@ class Relationships
      *   'cardinality' => 'many-to-many'
      *   'reciprocal' => false
      *
-     * @link  https://github.com/scribu/wp-posts-to-posts/wiki/p2p_register_connection_type
+     * @link https://github.com/scribu/wp-posts-to-posts/wiki/p2p_register_connection_type
+     * @return void
      */
-    public function register_post_relationships() {
+    public function registerPostRelationships() {
         /*
          * Functions to functions, methods and hooks
          */
@@ -201,10 +204,13 @@ class Relationships
 
     /**
      * Bring Importer post types into this class.
+     *
      * Runs at import start.
+     *
+     * @return void
      */
-    public function wp_parser_starting_import() {
-        if (!$this->p2p_tables_exist()) {
+    public function wpParserStartingImport() {
+        if (!$this->p2pTablesExist()) {
             \P2P_Storage::init();
             \P2P_Storage::install();
         }
@@ -221,7 +227,7 @@ class Relationships
      *
      * @return bool Whether or not the posts 2 posts tables exist.
      */
-    public function p2p_tables_exist() {
+    public function p2pTablesExist() {
         global $wpdb;
 
         $tables = $wpdb->get_col('SHOW TABLES');
@@ -238,8 +244,9 @@ class Relationships
      * @param int   $post_id   Post ID of item just imported.
      * @param array $data      Parser data
      * @param array $post_data Post data
+     * @return void
      */
-    public function import_item($post_id, $data, $post_data) {
+    public function importItem($post_id, $data, $post_data) {
         $from_type = $post_data['post_type'];
         $slug = $post_data['post_name'];
 
@@ -250,7 +257,7 @@ class Relationships
             // Functions to Functions
             $to_type = $this->post_types['function'];
             foreach ((array)@$data['uses']['functions'] as $to_function) {
-                $to_function_slug = $this->names_to_slugs($to_function['name'], $data['namespace']);
+                $to_function_slug = $this->namesToSlugs($to_function['name'], $data['namespace']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_function_slug;
             }
@@ -263,7 +270,7 @@ class Relationships
                 } else {
                     $to_method_slug = $to_method['name'];
                 }
-                $to_method_slug = $this->names_to_slugs($to_method_slug, $data['namespace']);
+                $to_method_slug = $this->namesToSlugs($to_method_slug, $data['namespace']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_method_slug;
             }
@@ -272,7 +279,7 @@ class Relationships
             $to_type = $this->post_types['hook'];
             foreach ((array)@$data['hooks'] as $to_hook) {
                 // Never a namespace on a hook so don't send one.
-                $to_hook_slug = $this->names_to_slugs($to_hook['name']);
+                $to_hook_slug = $this->namesToSlugs($to_hook['name']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_hook_slug;
             }
@@ -282,7 +289,7 @@ class Relationships
             // Methods to Functions
             $to_type = $this->post_types['function'];
             foreach ((array)@$data['uses']['functions'] as $to_function) {
-                $to_function_slug = $this->names_to_slugs($to_function['name'], $data['namespace']);
+                $to_function_slug = $this->namesToSlugs($to_function['name'], $data['namespace']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_function_slug;
             }
@@ -299,7 +306,7 @@ class Relationships
                 } else {
                     $to_method_slug = $to_method['name'];
                 }
-                $to_method_slug = $this->names_to_slugs($to_method_slug, $data['namespace']);
+                $to_method_slug = $this->namesToSlugs($to_method_slug, $data['namespace']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_method_slug;
             }
@@ -307,7 +314,7 @@ class Relationships
             // Methods to Hooks
             $to_type = $this->post_types['hook'];
             foreach ((array)@$data['hooks'] as $to_hook) {
-                $to_hook_slug = $this->names_to_slugs($to_hook['name']);
+                $to_hook_slug = $this->namesToSlugs($to_hook['name']);
 
                 $this->relationships[$from_type][$post_id][$to_type][] = $to_hook_slug;
             }
@@ -316,8 +323,11 @@ class Relationships
 
     /**
      * After import has run, go back and connect all the posts.
+     *
+     * @param Importer $importer
+     * @return void
      */
-    public function wp_parser_ending_import(Importer $importer) {
+    public function wpParserEndingImport(Importer $importer) {
         global $wpdb;
 
         if (defined('WP_CLI') && WP_CLI) {
@@ -334,7 +344,6 @@ class Relationships
         // p2p_delete_connections('methods_to_functions');
         // p2p_delete_connections('methods_to_methods');
         // p2p_delete_connections('methods_to_hooks');
-
         $wtr = $wpdb->prefix . 'term_relationships';
         $wtt = $wpdb->prefix . 'term_taxonomy';
         $wt = $wpdb->prefix . 'terms';
@@ -386,7 +395,7 @@ class Relationships
                         continue;
                     }
 
-                    $this->relationships[$from_type][$from_id][$to_type] = $this->get_ids_for_slugs($to_slugs, $this->slugs_to_ids[$to_type]);
+                    $this->relationships[$from_type][$from_id][$to_type] = $this->getIdsForSlugs($to_slugs, $this->slugs_to_ids[$to_type]);
                 }
             }
         }
@@ -482,21 +491,21 @@ class Relationships
      * namespace `\Foo\Bar\` by just calling `Bar\baz()`. PHP will first look
      * for `\Foo\Bar\baz()` and if it can't find it fall back to `\Bar\baz()`.
      *
-     * @see    Importer::import_item()
-     * @param  string $name      The name of the item a slug is needed for.
-     * @param  string $namespace The namespace the item is in when for context.
-     * @return array             An array of slugs, starting with the context of the
-     *                           namespace, and falling back to the global namespace.
+     * @see Importer::importItem()
+     * @param string $name      The name of the item a slug is needed for.
+     * @param string $namespace The namespace the item is in when for context.
+     * @return array An array of slugs, starting with the context of the
+     *               namespace, and falling back to the global namespace.
      */
-    public function names_to_slugs($name, $namespace = null) {
+    public function namesToSlugs($name, $namespace = null) {
         $fully_qualified = (0 === strpos('\\', $name));
         $name = ltrim($name, '\\');
         $names = [];
 
         if ($namespace && !$fully_qualified) {
-            $names[] = $this->name_to_slug($namespace . '\\' . $name);
+            $names[] = $this->namesToSlug($namespace . '\\' . $name);
         }
-        $names[] = $this->name_to_slug($name);
+        $names[] = $this->namesToSlug($name);
 
         return $names;
     }
@@ -506,10 +515,10 @@ class Relationships
      *
      * Replaces '::' and '\' to dashes and then runs the name through `sanitize_title()`.
      *
-     * @param  string $name Method, function, or hook name
+     * @param string $name Method, function, or hook name
      * @return string       The post slug for the passed name.
      */
-    public function name_to_slug($name) {
+    public function namesToSlug($name) {
         return sanitize_title(str_replace('\\', '-', str_replace('::', '-', $name)));
     }
 
@@ -517,11 +526,11 @@ class Relationships
      * Convert a post slug to an array( 'slug' => id )
      * Ignores slugs that are not found in $slugs_to_ids
      *
-     * @param  array $slugs         Array of post slugs.
-     * @param  array $slugs_to_ids  Map of slugs to IDs.
+     * @param array $slugs         Array of post slugs.
+     * @param array $slugs_to_ids  Map of slugs to IDs.
      * @return array
      */
-    public function get_ids_for_slugs(array $slugs, array $slugs_to_ids) {
+    public function getIdsForSlugs(array $slugs, array $slugs_to_ids) {
         $slugs_with_ids = [];
 
         foreach ($slugs as $index => $scoped_slugs) {

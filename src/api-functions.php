@@ -928,6 +928,7 @@ function avcpdp_get_explanation_content($_post) {
     $orig = $post;
 
     // Set global post to the explanation post.
+    // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited
     $post = avcpdp_get_explanation($_post);
 
     // Get explanation's raw post content.
@@ -952,6 +953,7 @@ function avcpdp_get_explanation_content($_post) {
 
     // Restore original global post.
     $post = $orig;
+    // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
 
     // Restore filter.
     add_filter('the_content', ['Aivec\Plugins\DocParser\Formatting', 'fixUnintendedMarkdown'], 1);

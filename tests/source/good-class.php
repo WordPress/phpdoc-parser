@@ -18,7 +18,7 @@ class Good_Doc_Class
      * @var array
      * @access private
      */
-    private $good_doc_private_property_from_good_doc_class = array();
+    private $good_doc_private_property_from_good_doc_class = [];
 
     /**
      * This is a properly documented protected property.
@@ -27,7 +27,7 @@ class Good_Doc_Class
      * @var array
      * @access protected
      */
-    protected $good_doc_protected_property_from_good_doc_class = array();
+    protected $good_doc_protected_property_from_good_doc_class = [];
 
     /**
      * This is a properly documented public property.
@@ -36,7 +36,7 @@ class Good_Doc_Class
      * @var array
      * @access public
      */
-    public $good_doc_public_property_from_good_doc_class = array();
+    public $good_doc_public_property_from_good_doc_class = [];
 
     /**
      * This is a properly documented public method.
@@ -51,8 +51,7 @@ class Good_Doc_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function good_doc_public_method_from_good_doc_class($code = '', $message = '', $data = '')
-    {
+    public function good_doc_public_method_from_good_doc_class($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -68,8 +67,7 @@ class Good_Doc_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function good_doc_protected_method_from_good_doc_class($code = '', $message = '', $data = '')
-    {
+    protected function good_doc_protected_method_from_good_doc_class($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -85,7 +83,6 @@ class Good_Doc_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function good_doc_private_method_from_good_doc_class($code = '', $message = '', $data = '')
-    {
+    private function good_doc_private_method_from_good_doc_class($code = '', $message = '', $data = '') {
     }
 }

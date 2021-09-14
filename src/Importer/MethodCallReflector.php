@@ -5,6 +5,8 @@ namespace Aivec\Plugins\DocParser\Importer;
 use phpDocumentor\Reflection\BaseReflector;
 use phpDocumentor\Reflection\ClassReflector;
 
+// phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
+
 /**
  * A reflection of a method call expression.
  */
@@ -44,9 +46,8 @@ class MethodCallReflector extends BaseReflector
 
         // If the caller is a function, convert it to the function name
         if (is_a($caller, 'PHPParser_Node_Expr_FuncCall')) {
-            // Add parentheses to signify this is a function call
             /*
-             * @var \PHPParser_Node_Expr_FuncCall $caller
+             * Add parentheses to signify this is a function call
              */
             $caller = implode('\\', $caller->name->parts) . '()';
         }
@@ -65,7 +66,7 @@ class MethodCallReflector extends BaseReflector
      * @param ClassReflector $class
      * @return void
      */
-    public function set_class(ClassReflector $class) {
+    public function setClass(ClassReflector $class) {
         $this->called_in_class = $class;
     }
 

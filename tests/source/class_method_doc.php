@@ -24,8 +24,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_description($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_description($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -44,8 +43,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_since($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_since($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -62,8 +60,7 @@ class Various_Method_Docs_Class
      *
      * @return WP_Error
      */
-    public function public_method_missing_param($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_param($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -82,8 +79,7 @@ class Various_Method_Docs_Class
      * @param string $message Error message
      * @param mixed $data Optional. Error data.
      */
-    public function public_method_missing_return($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_return($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -102,8 +98,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_access($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_access($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -122,8 +117,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_see($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_see($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -142,8 +136,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_link($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_link($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -162,8 +155,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    public function public_method_missing_global($code = '', $message = '', $data = '')
-    {
+    public function public_method_missing_global($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -179,8 +171,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_description($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_description($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -199,8 +190,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_since($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_since($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -217,8 +207,7 @@ class Various_Method_Docs_Class
      *
      * @return WP_Error
      */
-    protected function protected_method_missing_param($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_param($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -237,8 +226,7 @@ class Various_Method_Docs_Class
      * @param string $message Error message
      * @param mixed $data Optional. Error data.
      */
-    protected function protected_method_missing_return($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_return($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -257,8 +245,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_access($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_access($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -277,8 +264,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_see($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_see($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -297,8 +283,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_link($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_link($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -317,8 +302,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    protected function protected_method_missing_global($code = '', $message = '', $data = '')
-    {
+    protected function protected_method_missing_global($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -334,8 +318,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_description($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_description($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -354,8 +337,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_since($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_since($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -372,8 +354,7 @@ class Various_Method_Docs_Class
      *
      * @return WP_Error
      */
-    private function private_method_missing_param($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_param($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -392,8 +373,7 @@ class Various_Method_Docs_Class
      * @param string $message Error message
      * @param mixed $data Optional. Error data.
      */
-    private function private_method_missing_return($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_return($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -412,8 +392,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_access($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_access($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -432,8 +411,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_see($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_see($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -452,8 +430,7 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_link($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_link($code = '', $message = '', $data = '') {
     }
 
     /**
@@ -472,7 +449,6 @@ class Various_Method_Docs_Class
      * @param mixed $data Optional. Error data.
      * @return WP_Error
      */
-    private function private_method_missing_global($code = '', $message = '', $data = '')
-    {
+    private function private_method_missing_global($code = '', $message = '', $data = '') {
     }
 }

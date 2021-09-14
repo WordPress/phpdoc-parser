@@ -12,6 +12,7 @@
  * @param mixed $old_value The old option value.
  * @param mixed $value The new option value.
  */
+
 do_action('good_doc_static_action', $option, $old_value, $value);
 
 /**

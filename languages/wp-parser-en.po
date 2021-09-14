@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: AVC WP Parser %%VERSION%%\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
-"POT-Creation-Date: 2021-09-06T11:47:24+09:00\n"
+"POT-Creation-Date: 2021-09-14T16:32:24+09:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,527 +42,505 @@ msgstr ""
 msgid "https://github.com/aivec/phpdoc-parser/graphs/contributors"
 msgstr "https://github.com/aivec/phpdoc-parser/graphs/contributors"
 
-#: lib/class-importer.php:292
-msgid "Functions Reference"
-msgstr "Functions Reference"
-
-#: lib/class-importer.php:296
-msgid "Hooks Reference"
-msgstr "Hooks Reference"
-
-#: lib/class-plugin.php:135 lib/class-plugin.php:137 lib/class-plugin.php:139
-#: lib/class-plugin.php:149 src/api-functions.php:22
-msgid "Functions"
-msgstr "Functions"
-
-#: lib/class-plugin.php:138
-#, fuzzy
-msgid "Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:140
-#, fuzzy
-msgid "New Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:141 lib/class-plugin.php:173 lib/class-plugin.php:205
-#: lib/class-plugin.php:237 lib/class-plugin.php:272
-msgid "Add New"
-msgstr ""
-
-#: lib/class-plugin.php:142
-#, fuzzy
-msgid "Add New Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:143
-#, fuzzy
-msgid "Edit Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:144
-#, fuzzy
-msgid "View Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:145
-#, fuzzy
-msgid "Search Functions"
-msgstr "Functions"
-
-#: lib/class-plugin.php:146
-#, fuzzy
-msgid "No Functions found"
-msgstr "Functions"
-
-#: lib/class-plugin.php:147
-msgid "No Functions found in trash"
-msgstr ""
-
-#: lib/class-plugin.php:148
-#, fuzzy
-msgid "Parent Function"
-msgstr "Functions"
-
-#: lib/class-plugin.php:167 lib/class-plugin.php:169 lib/class-plugin.php:171
-#: lib/class-plugin.php:181 src/api-functions.php:24
-msgid "Methods"
-msgstr "Methods"
-
-#: lib/class-plugin.php:170
-#, fuzzy
-msgid "Method"
-msgstr "Methods"
-
-#: lib/class-plugin.php:172
-#, fuzzy
-msgid "New Method"
-msgstr "Methods"
-
-#: lib/class-plugin.php:174
-msgid "Add New Method"
-msgstr ""
-
-#: lib/class-plugin.php:175
-#, fuzzy
-msgid "Edit Method"
-msgstr "Methods"
-
-#: lib/class-plugin.php:176
-#, fuzzy
-msgid "View Method"
-msgstr "Methods"
-
-#: lib/class-plugin.php:177
-#, fuzzy
-msgid "Search Methods"
-msgstr "Methods"
-
-#: lib/class-plugin.php:178
-#, fuzzy
-msgid "No Methods found"
-msgstr "Methods"
-
-#: lib/class-plugin.php:179
-msgid "No Methods found in trash"
-msgstr ""
-
-#: lib/class-plugin.php:180
-#, fuzzy
-msgid "Parent Method"
-msgstr "Methods"
-
-#: lib/class-plugin.php:199 lib/class-plugin.php:201 lib/class-plugin.php:203
-#: lib/class-plugin.php:213 src/api-functions.php:21
+#: src/api-functions.php:21 src/Registrations.php:190 src/Registrations.php:192
+#: src/Registrations.php:194 src/Registrations.php:204
 msgid "Classes"
 msgstr "Classes"
 
-#: lib/class-plugin.php:202
-#, fuzzy
-msgid "Class"
-msgstr "Classes"
+#: src/api-functions.php:22 src/Registrations.php:130 src/Registrations.php:132
+#: src/Registrations.php:134 src/Registrations.php:144
+msgid "Functions"
+msgstr "Functions"
 
-#: lib/class-plugin.php:204
-#, fuzzy
-msgid "New Class"
-msgstr "Classes"
-
-#: lib/class-plugin.php:206
-msgid "Add New Class"
-msgstr ""
-
-#: lib/class-plugin.php:207
-msgid "Edit Class"
-msgstr ""
-
-#: lib/class-plugin.php:208
-msgid "View Class"
-msgstr ""
-
-#: lib/class-plugin.php:209
-#, fuzzy
-msgid "Search Classes"
-msgstr "Classes"
-
-#: lib/class-plugin.php:210
-#, fuzzy
-msgid "No Classes found"
-msgstr "Classes"
-
-#: lib/class-plugin.php:211
-msgid "No Classes found in trash"
-msgstr ""
-
-#: lib/class-plugin.php:212
-msgid "Parent Class"
-msgstr ""
-
-#: lib/class-plugin.php:231 lib/class-plugin.php:233 lib/class-plugin.php:235
-#: lib/class-plugin.php:245 src/api-functions.php:23
+#: src/api-functions.php:23 src/Registrations.php:220 src/Registrations.php:222
+#: src/Registrations.php:224 src/Registrations.php:234
 msgid "Hooks"
 msgstr "Hooks"
 
-#: lib/class-plugin.php:234
-#, fuzzy
-msgid "Hook"
-msgstr "Hooks"
+#: src/api-functions.php:24 src/Registrations.php:160 src/Registrations.php:162
+#: src/Registrations.php:164 src/Registrations.php:174
+msgid "Methods"
+msgstr "Methods"
 
-#: lib/class-plugin.php:236
-#, fuzzy
-msgid "New Hook"
-msgstr "Hooks"
-
-#: lib/class-plugin.php:238
-msgid "Add New Hook"
+#: src/Explanations/Explanations.php:93 src/Explanations/Explanations.php:95
+msgid "Explanations"
 msgstr ""
 
-#: lib/class-plugin.php:239
-msgid "Edit Hook"
+#: src/Explanations/Explanations.php:94 src/Explanations/Explanations.php:232
+msgid "Explanation"
 msgstr ""
 
-#: lib/class-plugin.php:240
-msgid "View Hook"
+#: src/Explanations/Explanations.php:96 src/Explanations/Explanations.php:413
+#: src/Explanations/Explanations.php:414 src/Explanations/Explanations.php:442
+#: src/Explanations/Explanations.php:524
+msgid "Edit Explanation"
 msgstr ""
 
-#: lib/class-plugin.php:241
-msgid "Search Hooks"
+#: src/Explanations/Explanations.php:97
+msgid "View Explanation"
 msgstr ""
 
-#: lib/class-plugin.php:242
-msgid "No Hooks found"
+#: src/Explanations/Explanations.php:98
+msgid "Search Explanations"
 msgstr ""
 
-#: lib/class-plugin.php:243
-msgid "No Hooks found in trash"
+#: src/Explanations/Explanations.php:99
+msgid "No Explanations found"
 msgstr ""
 
-#: lib/class-plugin.php:244
-msgid "Parent Hook"
+#: src/Explanations/Explanations.php:100
+msgid "No Explanations found in trash"
 msgstr ""
 
-#: lib/class-plugin.php:266 lib/class-plugin.php:268 lib/class-plugin.php:270
-#: lib/class-plugin.php:279
-msgid "Reference Landing Pages"
+#. translators: Number of pending explanation posts
+#: src/Explanations/Explanations.php:191
+msgid "Explanations %s"
 msgstr ""
 
-#: lib/class-plugin.php:269
-msgid "Reference Landing Page"
+#: src/Explanations/Explanations.php:238
+msgid "Status:"
 msgstr ""
 
-#: lib/class-plugin.php:271
-msgid "New Reference Landing Page"
+#: src/Explanations/Explanations.php:249
+msgid "Last Modified:"
 msgstr ""
 
-#: lib/class-plugin.php:273
-msgid "Add New Reference Landing Page"
+#: src/Explanations/Explanations.php:278
+msgid "Associated with: "
 msgstr ""
 
-#: lib/class-plugin.php:274
-msgid "Edit Reference Landing Page"
+#: src/Explanations/Explanations.php:330
+msgid "Explanation Editor"
 msgstr ""
 
-#: lib/class-plugin.php:275
-msgid "View Reference Landing Page"
+#: src/Explanations/Explanations.php:421 src/Explanations/Explanations.php:454
+msgid "Add Explanation"
 msgstr ""
 
-#: lib/class-plugin.php:276
-msgid "Search Reference Landing Pages"
+#: src/Explanations/Explanations.php:446
+msgid "Unpublish"
 msgstr ""
 
-#: lib/class-plugin.php:277
-msgid "No Pages found"
+#: src/Explanations/Explanations.php:451 src/Explanations/Explanations.php:484
+msgid "None"
 msgstr ""
 
-#: lib/class-plugin.php:278
-msgid "No Pages found in trash"
+#: src/Explanations/Explanations.php:474 src/Explanations/Explanations.php:526
+msgid "Draft"
 msgstr ""
 
-#: lib/class-plugin.php:328 lib/class-plugin.php:330 lib/class-plugin.php:344
-msgid "Files"
+#: src/Explanations/Explanations.php:477 src/Explanations/Explanations.php:527
+msgid "Pending Review"
 msgstr ""
 
-#: lib/class-plugin.php:331
-msgctxt "taxonomy general name"
-msgid "File"
+#: src/Explanations/Explanations.php:480 src/Explanations/Explanations.php:528
+msgid "Published"
 msgstr ""
 
-#: lib/class-plugin.php:332
-msgid "Search Files"
+#: src/Explanations/Explanations.php:546
+msgid "Explanation already exists."
 msgstr ""
 
-#: lib/class-plugin.php:334
-msgid "All Files"
+#: src/Explanations/Explanations.php:565
+msgid "Explanation could not be created."
 msgstr ""
 
-#: lib/class-plugin.php:335
-msgid "Parent File"
+#: src/Explanations/Explanations.php:591
+msgid "Explanation could not be un-published."
 msgstr ""
 
-#: lib/class-plugin.php:336
-msgid "Parent File:"
+#: src/Explanations/Explanations.php:614
+msgid "Has explanation?"
 msgstr ""
 
-#: lib/class-plugin.php:337
-msgid "Edit File"
+#: src/Explanations/Explanations.php:615
+msgid "Explanation?"
 msgstr ""
 
-#: lib/class-plugin.php:338
-msgid "Update File"
+#: src/Explanations/Explanations.php:638
+msgid "Post has an explanation."
 msgstr ""
 
-#: lib/class-plugin.php:339 lib/class-plugin.php:340
-msgid "New File"
-msgstr ""
+#: src/Importer/Importer.php:307
+msgid "Functions Reference"
+msgstr "Functions Reference"
 
-#: lib/class-plugin.php:341
-msgid "Files separated by comma"
-msgstr ""
+#: src/Importer/Importer.php:311
+msgid "Hooks Reference"
+msgstr "Hooks Reference"
 
-#: lib/class-plugin.php:342
-msgid "Add or remove Files"
-msgstr ""
-
-#: lib/class-plugin.php:343
-msgid "Choose from the most used Files"
-msgstr ""
-
-#: lib/class-plugin.php:388
-msgid "@since"
-msgstr ""
-
-#: lib/class-plugin.php:408
-msgid "Namespaces"
-msgstr "Namespaces"
-
-#: lib/class-plugin.php:424
-msgid "Source Type"
-msgstr ""
-
-#: lib/class-plugin.php:441 lib/class-plugin.php:531
-msgid "Plugin"
-msgstr "Plugin"
-
-#: lib/class-plugin.php:449 lib/class-plugin.php:535
-msgid "Theme"
-msgstr "Theme"
-
-#: lib/class-plugin.php:457 lib/class-plugin.php:539
-msgid "Composer Package"
-msgstr "Composer Package"
-
-#: lib/class-plugin.php:470
-msgid "Role"
-msgstr ""
-
-#: lib/class-plugin.php:485
-msgid "Display"
-msgstr "Display"
-
-#: lib/class-plugin.php:486
-msgid "Condition"
-msgstr "Condition"
-
-#: lib/class-plugin.php:487
-msgid "Utility"
-msgstr "Utility"
-
-#: lib/class-plugin.php:488
-msgid "Setter"
-msgstr "Setter"
-
-#: lib/class-plugin.php:489
-msgid "Getter"
-msgstr "Getter"
-
-#: lib/class-plugin.php:677
-msgctxt "separator"
-msgid " or "
-msgstr ""
-
-#: lib/class-relationships.php:90 lib/class-relationships.php:150
+#: src/Importer/Relationships.php:97 src/Importer/Relationships.php:157
 #, fuzzy
 msgid "Uses Functions"
 msgstr "Functions"
 
-#: lib/class-relationships.php:91 lib/class-relationships.php:110
-#: lib/class-relationships.php:129
+#: src/Importer/Relationships.php:98 src/Importer/Relationships.php:117
+#: src/Importer/Relationships.php:136
 #, fuzzy
 msgid "Used by Functions"
 msgstr "Functions"
 
-#: lib/class-relationships.php:109 lib/class-relationships.php:170
+#: src/Importer/Relationships.php:116 src/Importer/Relationships.php:177
 #, fuzzy
 msgid "Uses Methods"
 msgstr "Methods"
 
-#: lib/class-relationships.php:128 lib/class-relationships.php:190
+#: src/Importer/Relationships.php:135 src/Importer/Relationships.php:197
 #, fuzzy
 msgid "Uses Hooks"
 msgstr "Hooks"
 
-#: lib/class-relationships.php:151 lib/class-relationships.php:171
-#: lib/class-relationships.php:189
+#: src/Importer/Relationships.php:158 src/Importer/Relationships.php:178
+#: src/Importer/Relationships.php:196
 #, fuzzy
 msgid "Used by Methods"
 msgstr "Methods"
 
-#: src/Admin.php:112
-msgid "Reset votes (%d)"
-msgstr ""
-
-#: src/Explanations.php:91 src/Explanations.php:93
-msgid "Explanations"
-msgstr ""
-
-#: src/Explanations.php:92 src/Explanations.php:231
-msgid "Explanation"
-msgstr ""
-
-#: src/Explanations.php:94 src/Explanations.php:418 src/Explanations.php:419
-#: src/Explanations.php:448 src/Explanations.php:528
-msgid "Edit Explanation"
-msgstr ""
-
-#: src/Explanations.php:95
-msgid "View Explanation"
-msgstr ""
-
-#: src/Explanations.php:96
-msgid "Search Explanations"
-msgstr ""
-
-#: src/Explanations.php:97
-msgid "No Explanations found"
-msgstr ""
-
-#: src/Explanations.php:98
-msgid "No Explanations found in trash"
-msgstr ""
-
-#: src/Explanations.php:189
-msgid "Explanations %s"
-msgstr ""
-
-#: src/Explanations.php:237
-msgid "Status:"
-msgstr ""
-
-#: src/Explanations.php:248
-msgid "Last Modified:"
-msgstr ""
-
-#: src/Explanations.php:278
-msgid "Associated with: "
-msgstr ""
-
-#: src/Explanations.php:331
-msgid "Explanation Editor"
-msgstr ""
-
-#: src/Explanations.php:426 src/Explanations.php:460
-msgid "Add Explanation"
-msgstr ""
-
-#: src/Explanations.php:452
-msgid "Unpublish"
-msgstr ""
-
-#: src/Explanations.php:457 src/Explanations.php:492
-msgid "None"
-msgstr ""
-
-#: src/Explanations.php:482 src/Explanations.php:530
-msgid "Draft"
-msgstr ""
-
-#: src/Explanations.php:485 src/Explanations.php:531
-msgid "Pending Review"
-msgstr ""
-
-#: src/Explanations.php:488 src/Explanations.php:532
-msgid "Published"
-msgstr ""
-
-#: src/Explanations.php:550
-msgid "Explanation already exists."
-msgstr ""
-
-#: src/Explanations.php:569
-msgid "Explanation could not be created."
-msgstr ""
-
-#: src/Explanations.php:595
-msgid "Explanation could not be un-published."
-msgstr ""
-
-#: src/Explanations.php:620
-msgid "Has explanation?"
-msgstr ""
-
-#: src/Explanations.php:621
-msgid "Explanation?"
-msgstr ""
-
-#: src/Explanations.php:645
-msgid "Post has an explanation."
-msgstr ""
-
-#: src/ParsedContent.php:68
+#: src/ParsedContent.php:83
 msgid "Parsed Content"
 msgstr ""
 
-#: src/ParsedContent.php:89
-msgid "Core Trac"
-msgstr ""
-
-#: src/ParsedContent.php:90
-msgid "A valid, open ticket from %s is required to edit parsed content."
-msgstr ""
-
-#: src/ParsedContent.php:98
+#: src/ParsedContent.php:112
 msgid "Parsed Summary:"
 msgstr ""
 
-#: src/ParsedContent.php:107
+#: src/ParsedContent.php:121 src/ParsedContent.php:148
+msgid "Translated Summary:"
+msgstr ""
+
+#: src/ParsedContent.php:139
 msgid "Parsed Description:"
 msgstr ""
 
-#: src/ParsedContent.php:127
-msgid "Trac Ticket Number:"
+#: src/ParsedContent.php:166
+msgid "Tags (args, return)"
 msgstr ""
 
-#: src/ParsedContent.php:132
-msgid "Attach a Core Trac ticket"
+#. translators: the type
+#: src/ParsedContent.php:178 src/ParsedContent.php:224
+msgid "(%s)"
 msgstr ""
 
-#: src/ParsedContent.php:133
-msgid "Attach Ticket"
+#. translators: the arg name
+#: src/ParsedContent.php:198
+msgid "%s (Translated)"
 msgstr ""
 
-#: src/ParsedContent.php:135
-msgid "Detach the Trac ticket"
+#: src/ParsedContent.php:221
+msgid "Parsed Return:"
 msgstr ""
 
-#: src/ParsedContent.php:136
-msgid "Detach Ticket"
+#: src/ParsedContent.php:237
+msgid "Translated Return:"
 msgstr ""
 
-#: src/ParsedContent.php:183
-msgid "Searching ..."
+#: src/Registrations.php:133
+#, fuzzy
+msgid "Function"
+msgstr "Functions"
+
+#: src/Registrations.php:135
+#, fuzzy
+msgid "New Function"
+msgstr "Functions"
+
+#: src/Registrations.php:136 src/Registrations.php:166
+#: src/Registrations.php:196 src/Registrations.php:226
+#: src/Registrations.php:259
+msgid "Add New"
 msgstr ""
 
-#: src/ParsedContent.php:184
-msgid "Invalid ticket number, please try again."
+#: src/Registrations.php:137
+#, fuzzy
+msgid "Add New Function"
+msgstr "Functions"
+
+#: src/Registrations.php:138
+#, fuzzy
+msgid "Edit Function"
+msgstr "Functions"
+
+#: src/Registrations.php:139
+#, fuzzy
+msgid "View Function"
+msgstr "Functions"
+
+#: src/Registrations.php:140
+#, fuzzy
+msgid "Search Functions"
+msgstr "Functions"
+
+#: src/Registrations.php:141
+#, fuzzy
+msgid "No Functions found"
+msgstr "Functions"
+
+#: src/Registrations.php:142
+msgid "No Functions found in trash"
 msgstr ""
 
-#: src/ParsedContent.php:238
-msgid "Invalid ticket number."
+#: src/Registrations.php:143
+#, fuzzy
+msgid "Parent Function"
+msgstr "Functions"
+
+#: src/Registrations.php:163
+#, fuzzy
+msgid "Method"
+msgstr "Methods"
+
+#: src/Registrations.php:165
+#, fuzzy
+msgid "New Method"
+msgstr "Methods"
+
+#: src/Registrations.php:167
+msgid "Add New Method"
 msgstr ""
 
-#: src/ParsedContent.php:263
-msgid "Ticket detached."
+#: src/Registrations.php:168
+#, fuzzy
+msgid "Edit Method"
+msgstr "Methods"
+
+#: src/Registrations.php:169
+#, fuzzy
+msgid "View Method"
+msgstr "Methods"
+
+#: src/Registrations.php:170
+#, fuzzy
+msgid "Search Methods"
+msgstr "Methods"
+
+#: src/Registrations.php:171
+#, fuzzy
+msgid "No Methods found"
+msgstr "Methods"
+
+#: src/Registrations.php:172
+msgid "No Methods found in trash"
 msgstr ""
 
-#: src/ParsedContent.php:269
-msgid "Ticket still attached."
+#: src/Registrations.php:173
+#, fuzzy
+msgid "Parent Method"
+msgstr "Methods"
+
+#: src/Registrations.php:193
+#, fuzzy
+msgid "Class"
+msgstr "Classes"
+
+#: src/Registrations.php:195
+#, fuzzy
+msgid "New Class"
+msgstr "Classes"
+
+#: src/Registrations.php:197
+msgid "Add New Class"
+msgstr ""
+
+#: src/Registrations.php:198
+msgid "Edit Class"
+msgstr ""
+
+#: src/Registrations.php:199
+msgid "View Class"
+msgstr ""
+
+#: src/Registrations.php:200
+#, fuzzy
+msgid "Search Classes"
+msgstr "Classes"
+
+#: src/Registrations.php:201
+#, fuzzy
+msgid "No Classes found"
+msgstr "Classes"
+
+#: src/Registrations.php:202
+msgid "No Classes found in trash"
+msgstr ""
+
+#: src/Registrations.php:203
+msgid "Parent Class"
+msgstr ""
+
+#: src/Registrations.php:223
+#, fuzzy
+msgid "Hook"
+msgstr "Hooks"
+
+#: src/Registrations.php:225
+#, fuzzy
+msgid "New Hook"
+msgstr "Hooks"
+
+#: src/Registrations.php:227
+msgid "Add New Hook"
+msgstr ""
+
+#: src/Registrations.php:228
+msgid "Edit Hook"
+msgstr ""
+
+#: src/Registrations.php:229
+msgid "View Hook"
+msgstr ""
+
+#: src/Registrations.php:230
+msgid "Search Hooks"
+msgstr ""
+
+#: src/Registrations.php:231
+msgid "No Hooks found"
+msgstr ""
+
+#: src/Registrations.php:232
+msgid "No Hooks found in trash"
+msgstr ""
+
+#: src/Registrations.php:233
+msgid "Parent Hook"
+msgstr ""
+
+#: src/Registrations.php:253 src/Registrations.php:255
+#: src/Registrations.php:257 src/Registrations.php:266
+msgid "Reference Landing Pages"
+msgstr ""
+
+#: src/Registrations.php:256
+msgid "Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:258
+msgid "New Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:260
+msgid "Add New Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:261
+msgid "Edit Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:262
+msgid "View Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:263
+msgid "Search Reference Landing Pages"
+msgstr ""
+
+#: src/Registrations.php:264
+msgid "No Pages found"
+msgstr ""
+
+#: src/Registrations.php:265
+msgid "No Pages found in trash"
+msgstr ""
+
+#: src/Registrations.php:301 src/Registrations.php:303
+#: src/Registrations.php:317
+msgid "Files"
+msgstr ""
+
+#: src/Registrations.php:304
+msgctxt "taxonomy general name"
+msgid "File"
+msgstr ""
+
+#: src/Registrations.php:305
+msgid "Search Files"
+msgstr ""
+
+#: src/Registrations.php:307
+msgid "All Files"
+msgstr ""
+
+#: src/Registrations.php:308
+msgid "Parent File"
+msgstr ""
+
+#: src/Registrations.php:309
+msgid "Parent File:"
+msgstr ""
+
+#: src/Registrations.php:310
+msgid "Edit File"
+msgstr ""
+
+#: src/Registrations.php:311
+msgid "Update File"
+msgstr ""
+
+#: src/Registrations.php:312 src/Registrations.php:313
+msgid "New File"
+msgstr ""
+
+#: src/Registrations.php:314
+msgid "Files separated by comma"
+msgstr ""
+
+#: src/Registrations.php:315
+msgid "Add or remove Files"
+msgstr ""
+
+#: src/Registrations.php:316
+msgid "Choose from the most used Files"
+msgstr ""
+
+#: src/Registrations.php:357
+msgid "@since"
+msgstr ""
+
+#: src/Registrations.php:375
+msgid "Namespaces"
+msgstr "Namespaces"
+
+#: src/Registrations.php:389
+msgid "Source Type"
+msgstr ""
+
+#: src/Registrations.php:405 src/Registrations.php:500
+msgid "Plugin"
+msgstr "Plugin"
+
+#: src/Registrations.php:413 src/Registrations.php:504
+msgid "Theme"
+msgstr "Theme"
+
+#: src/Registrations.php:421 src/Registrations.php:508
+msgid "Composer Package"
+msgstr "Composer Package"
+
+#: src/Registrations.php:433
+msgid "Role"
+msgstr ""
+
+#: src/Registrations.php:447
+msgid "Display"
+msgstr "Display"
+
+#: src/Registrations.php:448
+msgid "Condition"
+msgstr "Condition"
+
+#: src/Registrations.php:449
+msgid "Utility"
+msgstr "Utility"
+
+#: src/Registrations.php:450
+msgid "Setter"
+msgstr "Setter"
+
+#: src/Registrations.php:451
+msgid "Getter"
+msgstr "Getter"
+
+#: src/Registrations.php:657
+msgctxt "separator"
+msgid " or "
 msgstr ""

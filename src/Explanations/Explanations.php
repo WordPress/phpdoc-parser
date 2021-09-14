@@ -186,7 +186,8 @@ class Explanations
             foreach ($menu as $i => $item) {
                 if ($menu_slug == $item[2]) {
                     // Modify it to include the pending count.
-                    $menu[$i][0] = sprintf( // phpcs:ignore
+                    $menu[$i][0] = sprintf( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+                        // translators: Number of pending explanation posts
                         __('Explanations %s', 'wp-parser'),
                         "<span class='update-plugins count-{$count}'><span class='plugin-count'>" . number_format_i18n($count) . '</span></span>'
                     );

@@ -31,7 +31,8 @@
     "psr/log": "~1.0"
   },
   "require-dev": {
-    "wp-cli/i18n-command": "^2.2"
+    "wp-cli/i18n-command": "^2.2",
+    "aivec/phpcs-wp": "^2.0"
   },
   "autoload": {
     "files": [
@@ -43,6 +44,8 @@
     }
   },
   "scripts": {
+    "lint": "phpcs -ps --standard=AivecWP-5 --ignore=*/tests/* .",
+    "lint:fix": "phpcbf -ps --standard=AivecWP-5 --ignore=*/tests/* .",
     "i18n:create-pot": "./vendor/bin/wp i18n make-pot . languages/messages.pot",
     "i18n:update-pos": "@composer i18n:create-pot && find ./languages -name \"*.po\" | xargs -I % msgmerge -o % % languages/messages.pot",
     "i18n:make-mo": "./vendor/bin/wp i18n make-mo languages"

@@ -344,7 +344,7 @@ class Importer implements LoggerAwareInterface
             return 'wp-includes/version.php' === $f['path'];
         });
         if ($ver_file) {
-            $this->version = $this->import_version(reset($ver_file));
+            $this->version = $this->importVersion(reset($ver_file));
         }
 
         $root = '';
@@ -352,7 +352,7 @@ class Importer implements LoggerAwareInterface
             $this->logger->info(sprintf('Processing file %1$s of %2$s "%3$s".', number_format_i18n($file_number), number_format_i18n($num_of_files), $file['path']));
             $file_number++;
 
-            $this->import_file($file, $skip_sleep, $import_ignored_functions);
+            $this->importFile($file, $skip_sleep, $import_ignored_functions);
 
             if (empty($root) && (isset($file['root']) && $file['root'])) {
                 $root = $file['root'];
@@ -426,7 +426,7 @@ class Importer implements LoggerAwareInterface
      * @param array      $args
      * @return array|mixed|\WP_Error
      */
-    protected function insert_term($term, $taxonomy, $args = []) {
+    protected function insertTerm($term, $taxonomy, $args = []) {
         $parent = isset($args['parent']) ? $args['parent'] : 0;
 
         if (isset($this->inserted_terms[$taxonomy][$term . $parent])) {
@@ -450,8 +450,9 @@ class Importer implements LoggerAwareInterface
      * @param array $file
      * @param bool  $skip_sleep     Optional; defaults to false. If true, the sleep() calls are skipped.
      * @param bool  $import_ignored Optional; defaults to false. If true, functions and classes marked `@ignore` will be imported.
+     * @return void
      */
-    public function import_file(array $file, $skip_sleep = false, $import_ignored = false) {
+    public function importFile(array $file, $skip_sleep = false, $import_ignored = false) {
         /*
          * Filter whether to proceed with importing a prospective file.
          *
@@ -468,7 +469,7 @@ class Importer implements LoggerAwareInterface
         // Maybe add this file to the file taxonomy
         $slug = sanitize_title(str_replace('/', '_', $file['path']));
 
-        $term = $this->insert_term($file['path'], $this->taxonomy_file, ['slug' => $slug]);
+        $term = $this->insertTerm($file['path'], $this->taxonomy_file, ['slug' => $slug]);
 
         if (is_wp_error($term)) {
             $this->errors[] = sprintf('Problem creating file tax item "%1$s" for %2$s: %3$s', $slug, $file['path'], $term->get_error_message());
@@ -504,7 +505,7 @@ class Importer implements LoggerAwareInterface
         $count = 0;
 
         foreach ($file['functions'] as $function) {
-            $this->import_function($function, 0, $import_ignored);
+            $this->importFunction($function, 0, $import_ignored);
             $count++;
 
             if (!$skip_sleep && 0 == $count % 10) { // TODO figure our why are we still doing this
@@ -513,7 +514,7 @@ class Importer implements LoggerAwareInterface
         }
 
         foreach ($file['classes'] as $class) {
-            $this->import_class($class, $import_ignored);
+            $this->importClass($class, $import_ignored);
             $count++;
 
             if (!$skip_sleep && 0 == $count % 10) {
@@ -522,7 +523,7 @@ class Importer implements LoggerAwareInterface
         }
 
         foreach ($file['hooks'] as $hook) {
-            $this->import_hook($hook, 0, $import_ignored);
+            $this->importHook($hook, 0, $import_ignored);
             $count++;
 
             if (!$skip_sleep && 0 == $count % 10) {
@@ -537,14 +538,13 @@ class Importer implements LoggerAwareInterface
      * @param array $data           Function.
      * @param int   $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
      * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
-     *
-     * @return bool|int Post ID of this function, false if any failure.
+     * @return void
      */
-    public function import_function(array $data, $parent_post_id = 0, $import_ignored = false) {
-        $function_id = $this->import_item($data, $parent_post_id, $import_ignored);
+    public function importFunction(array $data, $parent_post_id = 0, $import_ignored = false) {
+        $function_id = $this->importItem($data, $parent_post_id, $import_ignored);
 
         foreach ($data['hooks'] as $hook) {
-            $this->import_hook($hook, $function_id, $import_ignored);
+            $this->importHook($hook, $function_id, $import_ignored);
         }
     }
 
@@ -556,7 +556,7 @@ class Importer implements LoggerAwareInterface
      * @param bool  $import_ignored Optional; defaults to false. If true, hooks marked `@ignore` will be imported.
      * @return bool|int Post ID of this hook, false if any failure.
      */
-    public function import_hook(array $data, $parent_post_id = 0, $import_ignored = false) {
+    public function importHook(array $data, $parent_post_id = 0, $import_ignored = false) {
         /*
          * Filter whether to skip parsing duplicate hooks.
          *
@@ -583,7 +583,7 @@ class Importer implements LoggerAwareInterface
             }
         }
 
-        $hook_id = $this->import_item($data, $parent_post_id, $import_ignored, ['post_type' => $this->post_type_hook]);
+        $hook_id = $this->importItem($data, $parent_post_id, $import_ignored, ['post_type' => $this->post_type_hook]);
 
         if (!$hook_id) {
             return false;
@@ -601,9 +601,9 @@ class Importer implements LoggerAwareInterface
      * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
      * @return bool|int Post ID of this function, false if any failure.
      */
-    protected function import_class(array $data, $import_ignored = false) {
+    protected function importClass(array $data, $import_ignored = false) {
         // Insert this class
-        $class_id = $this->import_item($data, 0, $import_ignored, ['post_type' => $this->post_type_class]);
+        $class_id = $this->importItem($data, 0, $import_ignored, ['post_type' => $this->post_type_class]);
 
         if (!$class_id) {
             return false;
@@ -634,7 +634,7 @@ class Importer implements LoggerAwareInterface
         foreach ($data['methods'] as $method) {
             // Namespace method names with the class name
             $method['name'] = $data['name'] . '::' . $method['name'];
-            $this->import_method($method, $class_id, $import_ignored);
+            $this->importMethod($method, $class_id, $import_ignored);
         }
 
         return $class_id;
@@ -650,9 +650,9 @@ class Importer implements LoggerAwareInterface
      *                              marked `@ignore` will be imported.
      * @return bool|int Post ID of this function, false if any failure.
      */
-    protected function import_method(array $data, $parent_post_id = 0, $import_ignored = false) {
+    protected function importMethod(array $data, $parent_post_id = 0, $import_ignored = false) {
         // Insert this method.
-        $method_id = $this->import_item($data, $parent_post_id, $import_ignored, ['post_type' => $this->post_type_method]);
+        $method_id = $this->importItem($data, $parent_post_id, $import_ignored, ['post_type' => $this->post_type_method]);
 
         if (!$method_id) {
             return false;
@@ -667,7 +667,7 @@ class Importer implements LoggerAwareInterface
         // Now add the hooks.
         if (!empty($data['hooks'])) {
             foreach ($data['hooks'] as $hook) {
-                $this->import_hook($hook, $method_id, $import_ignored);
+                $this->importHook($hook, $method_id, $import_ignored);
             }
         }
 
@@ -680,7 +680,7 @@ class Importer implements LoggerAwareInterface
      * @param array $data Data
      * @return string|false WordPress version number, or false if not known.
      */
-    protected function import_version($data) {
+    protected function importVersion($data) {
         $version_path = $data['root'] . '/' . $data['path'];
 
         if (!is_readable($version_path)) {
@@ -702,16 +702,15 @@ class Importer implements LoggerAwareInterface
      * Create a post for an item (a class or a function).
      *
      * Anything that needs to be dealt identically for functions or methods should go in this function.
-     * Anything more specific should go in either import_function() or import_class() as appropriate.
+     * Anything more specific should go in either importFunction() or importClass() as appropriate.
      *
      * @param array $data           Data.
      * @param int   $parent_post_id Optional; post ID of the parent (class or function) this item belongs to. Defaults to zero (no parent).
      * @param bool  $import_ignored Optional; defaults to false. If true, functions or classes marked `@ignore` will be imported.
      * @param array $arg_overrides  Optional; array of parameters that override the defaults passed to wp_update_post().
-     *
      * @return bool|int Post ID of this item, false if any failure.
      */
-    public function import_item(array $data, $parent_post_id = 0, $import_ignored = false, array $arg_overrides = []) {
+    public function importItem(array $data, $parent_post_id = 0, $import_ignored = false, array $arg_overrides = []) {
         /*
          * @var \wpdb $wpdb
          */
@@ -840,7 +839,7 @@ class Importer implements LoggerAwareInterface
         }
 
         $namespaces = (!empty($data['namespace'])) ? explode('\\', $data['namespace']) : [];
-        $this->_set_namespaces($post_id, $namespaces);
+        $this->setNamespaces($post_id, $namespaces);
 
         // Assign `wp-parser-source-type` term
         wp_set_object_terms(
@@ -855,7 +854,7 @@ class Importer implements LoggerAwareInterface
             // Loop through all @since versions.
             foreach ($since_versions as $since_version) {
                 if (!empty($since_version['content'])) {
-                    $since_term = $this->insert_term($since_version['content'], $this->taxonomy_since_version);
+                    $since_term = $this->insertTerm($since_version['content'], $this->taxonomy_since_version);
 
                     // Assign the tax item to the post
                     if (!is_wp_error($since_term)) {
@@ -904,7 +903,7 @@ class Importer implements LoggerAwareInterface
             }
 
             // If the package doesn't already exist in the taxonomy, add it
-            $package_term = $this->insert_term($pack_value, $this->taxonomy_package, $package_term_args);
+            $package_term = $this->insertTerm($pack_value, $this->taxonomy_package, $package_term_args);
             $package_term_ids[] = (int)$package_term['term_id'];
 
             if ('main' === $pack_name && false === $main_package_id && !is_wp_error($package_term)) {
@@ -1013,12 +1012,13 @@ class Importer implements LoggerAwareInterface
      *
      * @param int   $post_id    The ID of the post item being processed.
      * @param array $namespaces An array of namespaces strings
+     * @return void
      */
-    protected function _set_namespaces($post_id, $namespaces) {
+    protected function setNamespaces($post_id, $namespaces) {
         $ns_term = false;
         $ns_terms = [];
         foreach ($namespaces as $namespace) {
-            $ns_term = $this->insert_term(
+            $ns_term = $this->insertTerm(
                 $namespace,
                 $this->taxonomy_namespace,
                 [

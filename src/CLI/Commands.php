@@ -7,6 +7,9 @@ use Aivec\Plugins\DocParser\Importer\Parser;
 use WP_CLI;
 use WP_CLI_Command;
 
+// phpcs:disable PSR1.Methods.CamelCapsMethodName.NotCamelCaps
+// phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
+
 /**
  * Converts PHPDoc markup into a template ready for import to a WordPress blog.
  */

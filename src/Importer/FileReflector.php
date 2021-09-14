@@ -62,6 +62,7 @@ class FileReflector extends BaseFileReflector
      * so they can be assigned to the hooks to which they may belong.
      *
      * @param \PHPParser_Node $node
+     * @return void
      */
     public function enterNode(\PHPParser_Node $node) {
         parent::enterNode($node);
@@ -161,7 +162,7 @@ class FileReflector extends BaseFileReflector
                                     /*
                                      * @var MethodCallReflector $method_call
                                      */
-                                    $method_call->set_class($class);
+                                    $method_call->setClass($class);
                                 }
                             }
 

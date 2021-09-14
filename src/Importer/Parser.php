@@ -254,8 +254,9 @@ class Parser
     }
 
     /**
-     * @param BaseReflector|ReflectionAbstract $element
+     * Exports doc block
      *
+     * @param BaseReflector|ReflectionAbstract $element
      * @return array
      */
     public static function exportDocblock($element) {
@@ -312,8 +313,9 @@ class Parser
     }
 
     /**
-     * @param HookReflector[] $hooks
+     * Exports hooks
      *
+     * @param HookReflector[] $hooks
      * @return array
      */
     public static function exportHooks(array $hooks) {
@@ -334,8 +336,9 @@ class Parser
     }
 
     /**
-     * @param ArgumentReflector[] $arguments
+     * Exports arguments
      *
+     * @param ArgumentReflector[] $arguments
      * @return array
      */
     public static function exportArguments(array $arguments) {
@@ -353,8 +356,9 @@ class Parser
     }
 
     /**
-     * @param PropertyReflector[] $properties
+     * Exports properties
      *
+     * @param PropertyReflector[] $properties
      * @return array
      */
     public static function exportProperties(array $properties) {
@@ -377,8 +381,9 @@ class Parser
     }
 
     /**
-     * @param MethodReflector[] $methods
+     * Exports methods
      *
+     * @param MethodReflector[] $methods
      * @return array
      */
     public static function exportMethods(array $methods) {
