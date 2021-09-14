@@ -34,12 +34,7 @@
     "wp-cli/i18n-command": "^2.2"
   },
   "autoload": {
-    "classmap": [
-      "lib"
-    ],
     "files": [
-      "lib/runner.php",
-      "lib/template.php",
       "src/api-functions.php",
       "src/template-functions.php"
     ],

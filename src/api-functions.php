@@ -7,7 +7,7 @@
  * @return string
  */
 function avcpdp_get_source_type_taxonomy_slug() {
-    return WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG;
+    return Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG;
 }
 
 /**
@@ -53,7 +53,7 @@ function avcpdp_is_parsed_post_type($post_type = null) {
 function avcpdp_is_reference_landing_page_post_type($post_id = null) {
     $post_type = get_post_type($post_id);
 
-    return $post_type === WP_Parser\Plugin::CODE_REFERENCE_POST_TYPE;
+    return $post_type === Aivec\Plugins\DocParser\Registrations::CODE_REFERENCE_POST_TYPE;
 }
 
 /**
@@ -109,7 +109,7 @@ function avcpdp_get_reference_archive_source_type_terms() {
         // only get source type terms from `wp-parser-*` post types
         return [];
     }
-    $stype = get_query_var(\WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    $stype = get_query_var(\Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
     if (empty($stype)) {
         // source type not queried for, cannot determine URL
         return [];
@@ -144,7 +144,7 @@ function avcpdp_get_reference_archive_base_url() {
         // only show filter by category section for `wp-parser-*` post types
         return '';
     }
-    $stype = get_query_var(\WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    $stype = get_query_var(\Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
     if (empty($stype)) {
         // source type not queried for, cannot determine URL
         return '';
@@ -157,7 +157,7 @@ function avcpdp_get_reference_archive_base_url() {
 
     $type = $stypepieces[0];
     $name = $stypepieces[1];
-    $parsertype = \WP_Parser\Plugin::WP_PARSER_PT_MAP[$ptype]['urlpiece'];
+    $parsertype = \Aivec\Plugins\DocParser\Registrations::WP_PARSER_PT_MAP[$ptype]['urlpiece'];
     $baseurl = home_url("/reference/{$type}/{$name}/{$parsertype}");
 
     return $baseurl;
@@ -252,10 +252,10 @@ function avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms
         'order' => 'ASC',
         'orderby' => 'parent',
         'post_status' => ['publish', 'private'],
-        'post_type' => WP_Parser\Plugin::CODE_REFERENCE_POST_TYPE,
+        'post_type' => Aivec\Plugins\DocParser\Registrations::CODE_REFERENCE_POST_TYPE,
         'tax_query' => [
             [
-                'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
                 'field' => 'term_id',
                 'terms' => $stterms['type']->term_id,
                 'include_children' => false,
@@ -270,10 +270,10 @@ function avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms
         $sourcelanding = get_posts([
             'post_parent' => $stypelanding[0]->ID,
             'post_status' => 'publish',
-            'post_type' => WP_Parser\Plugin::CODE_REFERENCE_POST_TYPE,
+            'post_type' => Aivec\Plugins\DocParser\Registrations::CODE_REFERENCE_POST_TYPE,
             'tax_query' => [
                 [
-                    'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
                     'field' => 'term_id',
                     'terms' => $stterms['name']->term_id,
                     'include_children' => false,
@@ -304,7 +304,7 @@ function avcpdp_get_post_source_type_terms($post_id = null) {
         return null;
     }
 
-    $terms = wp_get_post_terms($post_id, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    $terms = wp_get_post_terms($post_id, Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
     if (empty($terms)) {
         return null;
     }
@@ -341,7 +341,7 @@ function avcpdp_source_type_terms_are_valid_for_post($post_id = null) {
         return false;
     }
 
-    $terms = wp_get_post_terms($post_id, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    $terms = wp_get_post_terms($post_id, Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
 
     return avcpdp_source_type_terms_are_valid($terms);
 }
@@ -356,7 +356,7 @@ function avcpdp_source_type_terms_are_valid_for_post($post_id = null) {
 function avcpdp_get_source_type_terms_from_slug_pair($termslugs) {
     $terms = [];
     foreach ($termslugs as $termslug) {
-        $term = get_term_by('slug', $termslug, WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+        $term = get_term_by('slug', $termslug, Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
         if (empty($term)) {
             return false;
         }
@@ -436,7 +436,7 @@ function avcpdp_source_type_terms_are_valid($terms) {
  * @return WP_Term|false
  */
 function avcpdp_get_source_type_plugin_term() {
-    return get_term_by('slug', 'plugin', WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG);
+    return get_term_by('slug', 'plugin', Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
 }
 
 /**
@@ -453,7 +453,7 @@ function avcpdp_get_source_type_plugin_terms() {
 
     $pterms = get_terms([
         'parent' => $term->term_id,
-        'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+        'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
     ]);
     if (empty($pterms) || $pterms instanceof WP_Error) {
         return [];
@@ -479,13 +479,13 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
         'tax_query' => [
             'relation' => 'AND',
             [
-                'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
                 'field' => 'slug',
                 'terms' => $role,
                 'include_children' => true,
             ],
             [
-                'taxonomy' => WP_Parser\Plugin::SOURCE_TYPE_TAX_SLUG,
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
                 'field' => 'slug',
                 'terms' => [$stterms['type']->slug, $stterms['name']->slug],
                 'include_children' => false,
@@ -507,7 +507,7 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
  */
 function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
     $terms = get_terms([
-        'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
+        'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
         'hide_empty' => $hide_empty,
         'fields' => $fields,
     ]);
@@ -532,7 +532,7 @@ function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
         'posts_per_page' => $posts_per_page,
         'tax_query' => [
             [
-                'taxonomy' => WP_Parser\Plugin::ROLE_TAX_SLUG,
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
                 'field' => 'slug',
                 'terms' => avcpdp_get_role_terms('slugs'),
             ],
@@ -577,7 +577,7 @@ function avcpdp_get_reference_post_roles($post_id = null) {
         return [];
     }
 
-    $terms = wp_get_post_terms($post_id, WP_Parser\Plugin::ROLE_TAX_SLUG);
+    $terms = wp_get_post_terms($post_id, Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG);
     if ($terms instanceof WP_Error) {
         return [];
     }
@@ -593,7 +593,7 @@ function avcpdp_get_reference_post_roles($post_id = null) {
  * @return WP_Term|false
  */
 function avcpdp_get_role_term_by_slug($slug) {
-    return get_term_by('slug', $slug, WP_Parser\Plugin::ROLE_TAX_SLUG);
+    return get_term_by('slug', $slug, Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG);
 }
 
 /**

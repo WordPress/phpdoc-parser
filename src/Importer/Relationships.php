@@ -1,6 +1,6 @@
 <?php
 
-namespace WP_Parser;
+namespace Aivec\Plugins\DocParser\Importer;
 
 use WP_CLI;
 
@@ -10,18 +10,23 @@ use WP_CLI;
 class Relationships
 {
     /**
-     * @var array Post types we're setting relationships between
+     * Post types we're setting relationships between
+     *
+     * @var array
      */
     public $post_types;
 
     /**
-     * @var array Map of post slugs to post ids.
+     * Map of post slugs to post ids.
+     *
+     * @var array
      */
     public $slugs_to_ids = [];
 
     /**
      * Map of how post IDs relate to one another.
      *
+     * phpcs:ignore
      * array(
      *   $from_type => array(
      *     $from_id => array(
@@ -39,7 +44,7 @@ class Relationships
     /**
      * Adds the actions.
      */
-    public function __construct() {
+    public function init() {
         add_action('plugins_loaded', [$this, 'require_posts_to_posts']);
         add_action('wp_loaded', [$this, 'register_post_relationships']);
 
@@ -50,6 +55,8 @@ class Relationships
 
     /**
      * Load the posts2posts from the composer package if it is not loaded already.
+     *
+     * @return void
      */
     public function require_posts_to_posts() {
         // Initializes the database tables
@@ -475,7 +482,7 @@ class Relationships
      * namespace `\Foo\Bar\` by just calling `Bar\baz()`. PHP will first look
      * for `\Foo\Bar\baz()` and if it can't find it fall back to `\Bar\baz()`.
      *
-     * @see    WP_Parser\Importer::import_item()
+     * @see    Importer::import_item()
      * @param  string $name      The name of the item a slug is needed for.
      * @param  string $namespace The namespace the item is in when for context.
      * @return array             An array of slugs, starting with the context of the

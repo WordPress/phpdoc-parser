@@ -1,7 +1,8 @@
 <?php
 
-namespace WP_Parser;
+namespace Aivec\Plugins\DocParser\Importer;
 
+use Aivec\Plugins\DocParser\Registrations;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
@@ -13,9 +14,6 @@ class Importer implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    /**
-     *
-     */
     const PROPERTY_MAP = [
         'post_type_class' => 'wp-parser-class',
         'post_type_method' => 'wp-parser-method',
@@ -25,7 +23,7 @@ class Importer implements LoggerAwareInterface
         'taxonomy_namespace' => 'wp-parser-namespace',
         'taxonomy_package' => 'wp-parser-package',
         'taxonomy_since_version' => 'wp-parser-since',
-        'taxonomy_source_type' => Plugin::SOURCE_TYPE_TAX_SLUG,
+        'taxonomy_source_type' => Registrations::SOURCE_TYPE_TAX_SLUG,
     ];
 
     /**
@@ -43,14 +41,14 @@ class Importer implements LoggerAwareInterface
     public $taxonomy_namespace;
 
     /**
-     * Taxonomy name for an item's @since tag
+     * Taxonomy name for an item's `@since` tag
      *
      * @var string
      */
     public $taxonomy_since_version;
 
     /**
-     * Taxonomy name for an item's @package/@subpackage tags
+     * Taxonomy name for an item's `@package/@subpackage` tags
      *
      * @var string
      */
@@ -108,7 +106,9 @@ class Importer implements LoggerAwareInterface
     public $file_meta = [];
 
     /**
-     * @var array Human-readable errors
+     * Human-readable errors
+     *
+     * @var array
      */
     public $errors = [];
 
@@ -120,7 +120,9 @@ class Importer implements LoggerAwareInterface
     public $version;
 
     /**
-     * @var array Cached items of inserted terms
+     * Cached items of inserted terms
+     *
+     * @var array
      */
     protected $inserted_terms = [];
 
@@ -150,6 +152,7 @@ class Importer implements LoggerAwareInterface
      * @param array $data
      * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
      * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
+     * @return void
      */
     public function import(array $data, $skip_sleep = false, $import_ignored_functions = false) {
         global $wpdb;
@@ -255,13 +258,13 @@ class Importer implements LoggerAwareInterface
 
         // Create code-reference child page for the current plugin/theme/composer-package
         $pageslug = $this->source_type_meta['type'];
-        $parentpostmap = Plugin::getCodeReferenceSourceTypePostMap();
+        $parentpostmap = Registrations::getCodeReferenceSourceTypePostMap();
         if (empty($parentpostmap[$pageslug]['post_id'])) {
             $toprefpid = wp_insert_post([
                 'post_name' => $pageslug,
                 'post_title' => $parentpostmap[$pageslug]['title'],
                 'post_content' => '',
-                'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                'post_type' => Registrations::CODE_REFERENCE_POST_TYPE,
             ]);
             if (!($toprefpid instanceof \WP_Error)) {
                 $parentpostmap[$pageslug]['post_id'] = $toprefpid;
@@ -272,7 +275,7 @@ class Importer implements LoggerAwareInterface
                 'name' => $this->source_type_meta['name'],
                 'post_status' => 'any',
                 'post_parent' => $parentpostmap[$pageslug]['post_id'],
-                'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                'post_type' => Registrations::CODE_REFERENCE_POST_TYPE,
             ]);
             if (empty($refpage)) {
                 $post_id = wp_insert_post([
@@ -281,7 +284,7 @@ class Importer implements LoggerAwareInterface
                     'post_title' => $this->source_type_meta['name'],
                     'post_content' => '',
                     'post_status' => 'publish',
-                    'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                    'post_type' => Registrations::CODE_REFERENCE_POST_TYPE,
                 ]);
 
                 if (!empty($post_id) && !($post_id instanceof \WP_Error)) {
@@ -312,7 +315,7 @@ class Importer implements LoggerAwareInterface
                     $childrefpage = get_posts([
                         'name' => $childpage['slug'],
                         'post_parent' => $post_id,
-                        'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                        'post_type' => Registrations::CODE_REFERENCE_POST_TYPE,
                     ]);
                     if (empty($childrefpage)) {
                         $childlandingpageid = wp_insert_post([
@@ -321,7 +324,7 @@ class Importer implements LoggerAwareInterface
                             'post_title' => $childpage['title'],
                             'post_content' => '',
                             'post_status' => 'publish',
-                            'post_type' => Plugin::CODE_REFERENCE_POST_TYPE,
+                            'post_type' => Registrations::CODE_REFERENCE_POST_TYPE,
                         ]);
                     }
                     if (!empty($childlandingpageid) && !($childlandingpageid instanceof \WP_Error)) {
@@ -416,10 +419,11 @@ class Importer implements LoggerAwareInterface
     }
 
     /**
+     * Inserts a term
+     *
      * @param int|string $term
      * @param string     $taxonomy
      * @param array      $args
-     *
      * @return array|mixed|\WP_Error
      */
     protected function insert_term($term, $taxonomy, $args = []) {

@@ -1,14 +1,12 @@
 <?php
 
-namespace Aivec\Plugins\DocParser;
+namespace Aivec\Plugins\DocParser\Explanations;
+
+use Aivec\Plugins\DocParser\Admin;
 
 /**
  * Explanations functionality
  *
- * @package wporg-developer
- */
-
-/**
  * Class to handle creating, editing, managing, and retrieving explanations
  * for various Code Reference post types.
  */
@@ -39,53 +37,57 @@ class Explanations
     public $screen_ids = [];
 
     /**
-     * Constructor.
-     *
-     * @access public
+     * Sets member vars
      */
     public function __construct() {
         $this->post_types = avcpdp_get_parsed_post_types();
         $this->screen_ids = [$this->exp_post_type, "edit-{$this->exp_post_type}"];
     }
 
+    /**
+     * Registers hooks
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @return void
+     */
     public function init() {
         // Setup.
-        add_action('init', [$this, 'register_post_type'], 0);
-        add_action('init', [$this, 'remove_editor_support'], 100);
+        add_action('init', [$this, 'registerPostType'], 0);
+        add_action('init', [$this, 'removeEditorSupport'], 100);
 
         // Admin.
-        add_action('edit_form_after_title', [$this, 'post_to_expl_controls']);
-        add_action('edit_form_top', [$this, 'expl_to_post_controls']);
-        add_action('admin_bar_menu', [$this, 'toolbar_edit_link'], 100);
-        add_action('admin_menu', [$this, 'admin_menu']);
-        add_action('load-post-new.php', [$this, 'prevent_direct_creation']);
+        add_action('edit_form_after_title', [$this, 'postToExplControls']);
+        add_action('edit_form_top', [$this, 'explToPostControls']);
+        add_action('admin_bar_menu', [$this, 'toolbarEditLink'], 100);
+        add_action('admin_menu', [$this, 'adminMenu']);
+        add_action('load-post-new.php', [$this, 'preventDirectCreation']);
         // Add admin post listing column for explanations indicator.
-        add_filter('manage_posts_columns', [$this, 'add_post_column']);
+        add_filter('manage_posts_columns', [$this, 'addPostColumn']);
         // Output checkmark in explanations column if post has an explanation.
-        add_action('manage_posts_custom_column', [$this, 'handle_column_data'], 10, 2);
+        add_action('manage_posts_custom_column', [$this, 'handleColumnData'], 10, 2);
 
-        add_filter('preview_post_link', [$this, 'preview_post_link'], 10, 2);
+        add_filter('preview_post_link', [$this, 'previewPostLink'], 10, 2);
 
         // Permissions.
-        add_action('after_switch_theme', [$this, 'add_roles']);
-        add_filter('user_has_cap', [$this, 'grant_caps']);
-        add_filter('post_row_actions', [$this, 'expl_row_action'], 10, 2);
+        add_action('after_switch_theme', [$this, 'addRoles']);
+        add_filter('user_has_cap', [$this, 'grantCaps']);
+        add_filter('post_row_actions', [$this, 'explRowAction'], 10, 2);
 
         // Script and styles.
-        add_filter('devhub-admin_enqueue_scripts', [$this, 'admin_enqueue_base_scripts']);
-        add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
+        add_filter('devhub-admin_enqueue_scripts', [$this, 'adminEnqueueBaseScripts']);
+        add_action('admin_enqueue_scripts', [$this, 'adminEnqueueScripts']);
 
         // AJAX.
-        add_action('wp_ajax_new_explanation', [$this, 'new_explanation']);
-        add_action('wp_ajax_un_publish', [$this, 'un_publish_explanation']);
+        add_action('wp_ajax_new_explanation', [$this, 'newExplanation']);
+        add_action('wp_ajax_un_publish', [$this, 'unPublishExplanation']);
     }
 
     /**
      * Register the Explanations post type.
      *
-     * @access public
+     * @return void
      */
-    public function register_post_type() {
+    public function registerPostType() {
         register_post_type($this->exp_post_type, [
             'labels' => [
                 'name' => __('Explanations', 'wp-parser'),
@@ -116,9 +118,9 @@ class Explanations
     /**
      * Remove 'editor' support for the function, hook, class, and method post types.
      *
-     * @access public
+     * @return void
      */
-    public function remove_editor_support() {
+    public function removeEditorSupport() {
         foreach ($this->post_types as $type) {
             remove_post_type_support($type, 'editor');
         }
@@ -132,14 +134,13 @@ class Explanations
      * by `get_explanation_content()` to use the explanation being previewed
      * instead of the published explanation currently associated with the post.
      *
-     * @access public
      * @see 'preview_post_link' filter
      *
-     * @param string  $preview_link URL used for the post preview.
-     * @param WP_Post $post         Post object.
+     * @param string   $preview_link URL used for the post preview.
+     * @param \WP_Post $post         Post object.
      * @return string
      **/
-    public function preview_post_link($preview_link, $post) {
+    public function previewPostLink($preview_link, $post) {
         if ($this->exp_post_type !== $post->post_type) {
             return $preview_link;
         }
@@ -167,9 +168,9 @@ class Explanations
      * - Removes "Add new".
      * - Adds count of pending explanations.
      *
-     * @access public
+     * @return void
      */
-    public function admin_menu() {
+    public function adminMenu() {
         global $menu;
 
         $menu_slug = 'edit.php?post_type=' . $this->exp_post_type;
@@ -185,7 +186,7 @@ class Explanations
             foreach ($menu as $i => $item) {
                 if ($menu_slug == $item[2]) {
                     // Modify it to include the pending count.
-                    $menu[$i][0] = sprintf(
+                    $menu[$i][0] = sprintf( // phpcs:ignore
                         __('Explanations %s', 'wp-parser'),
                         "<span class='update-plugins count-{$count}'><span class='plugin-count'>" . number_format_i18n($count) . '</span></span>'
                     );
@@ -201,9 +202,9 @@ class Explanations
      * Only prevents admin UI access to directly create a new explanation. It does
      * not attempt to prevent direct programmatic creation of a new explanation.
      *
-     * @access public
+     * @return void
      */
-    public function prevent_direct_creation() {
+    public function preventDirectCreation() {
         if (isset($_GET['post_type']) && $this->exp_post_type == $_GET['post_type']) {
             wp_safe_redirect(admin_url());
             exit;
@@ -214,11 +215,10 @@ class Explanations
      * Output the Post-to-Explanation controls in the post editor for functions,
      * hooks, classes, and methods.
      *
-     * @access public
-     *
-     * @param WP_Post $post Current post object.
+     * @param \WP_Post $post Current post object.
+     * @return void
      */
-    public function post_to_expl_controls($post) {
+    public function postToExplControls($post) {
         if (!in_array($post->post_type, $this->post_types)) {
             return;
         }
@@ -238,7 +238,7 @@ class Explanations
                             </th>
                             <td class="explanation-status" name="explanation-status">
                                 <div class="status-links">
-                                    <?php $this->status_controls($post); ?>
+                                    <?php $this->statusControls($post); ?>
                                 </div><!-- .status-links -->
                             </td><!-- .explanation-status -->
                         </tr>
@@ -263,11 +263,10 @@ class Explanations
     /**
      * Output the Explanation-to-Post controls in the Explanation post editor.
      *
-     * @access public
-     *
-     * @param WP_Post $post Current post object.
+     * @param \WP_Post $post Current post object.
+     * @return void
      */
-    public function expl_to_post_controls($post) {
+    public function explToPostControls($post) {
         if ($this->exp_post_type !== $post->post_type) {
             return;
         }
@@ -292,11 +291,10 @@ class Explanations
     /**
      * Adds an 'Edit Explanation' link to the Toolbar on parsed post type single pages.
      *
-     * @access public
-     *
-     * @param WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance.
+     * @param \WP_Admin_Bar $wp_admin_bar WP_Admin_Bar instance.
+     * @return void
      */
-    public function toolbar_edit_link($wp_admin_bar) {
+    public function toolbarEditLink($wp_admin_bar) {
         global $wp_the_query;
 
         $screen = $wp_the_query->get_queried_object();
@@ -323,9 +321,9 @@ class Explanations
     /**
      * Adds the 'Explanation Editor' role.
      *
-     * @access public
+     * @return void
      */
-    public function add_roles() {
+    public function addRoles() {
         add_role(
             'expl_editor',
             __('Explanation Editor', 'wp-parser'),
@@ -344,12 +342,10 @@ class Explanations
     /**
      * Grants explanation capabilities to users.
      *
-     * @access public
-     *
      * @param array $caps Capabilities.
      * @return array Modified capabilities array.
      */
-    public function grant_caps($caps) {
+    public function grantCaps($caps) {
         if (!is_user_member_of_blog()) {
             return $caps;
         }
@@ -392,13 +388,11 @@ class Explanations
     /**
      * Adds the 'Add/Edit Explanation' row actions to the parsed post type list tables.
      *
-     * @access public
-     *
      * @param array    $actions Row actions.
      * @param \WP_Post $post    Parsed post object.
      * @return array (Maybe) filtered row actions.
      */
-    public function expl_row_action($actions, $post) {
+    public function explRowAction($actions, $post) {
         if (!in_array($post->post_type, avcpdp_get_parsed_post_types())) {
             return $actions;
         }
@@ -433,15 +427,14 @@ class Explanations
     /**
      * Output the Explanation status controls.
      *
-     * @access public
-     *
-     * @param int|WP_Post Post ID or WP_Post object.
+     * @param int|\WP_Post $post Post ID or WP_Post object.
+     * @return void
      */
-    public function status_controls($post) {
+    public function statusControls($post) {
         $explanation = avcpdp_get_explanation($post);
 
         if ($explanation) :
-            echo $this->get_status_label($explanation->ID);
+            echo $this->getStatusLabel($explanation->ID);
             ?>
             <span id="expl-row-actions" class="expl-row-actions">
                 <a id="edit-expl" href="<?php echo get_edit_post_link($explanation->ID); ?>">
@@ -467,12 +460,10 @@ class Explanations
     /**
      * Retrieve status label for the given post.
      *
-     * @access public
-     *
-     * @param int|WP_Post $post Post ID or WP_Post object.
+     * @param int|\WP_Post $post Post ID or \WP_Post object.
      * @return string
      */
-    public function get_status_label($post) {
+    public function getStatusLabel($post) {
         if (!$post = get_post($post)) {
             return '';
         }
@@ -499,22 +490,20 @@ class Explanations
     /**
      * Enables enqueuing of admin.css for explanation pages.
      *
-     * @access public
-     *
      * @param bool $do_enqueue Should admin.css be enqueued?
      * @return bool True if admin.css should be enqueued, false otherwise.
      */
-    public function admin_enqueue_base_scripts($do_enqueue) {
+    public function adminEnqueueBaseScripts($do_enqueue) {
         return $do_enqueue || in_array(get_current_screen()->id, $this->screen_ids);
     }
 
     /**
      * Enqueue JS and CSS for all parsed post types and explanation pages.
      *
-     * @access public
+     * @return void
      */
-    public function admin_enqueue_scripts() {
-        $parsed_post_types_screen_ids = Admin::get_parsed_post_types_screen_ids();
+    public function adminEnqueueScripts() {
+        $parsed_post_types_screen_ids = Admin::getParsedPostTypesScreenIds();
 
         if (
             in_array(get_current_screen()->id, array_merge(
@@ -522,7 +511,13 @@ class Explanations
                 $this->screen_ids
             ))
         ) {
-            wp_enqueue_script('wporg-explanations', AVCPDP_PLUGIN_URL . '/src/js/explanations.js', ['jquery', 'wp-util'], '20160630', true);
+            wp_enqueue_script(
+                'wporg-explanations',
+                AVCPDP_PLUGIN_URL . '/src/Explanations/explanations.js',
+                ['jquery', 'wp-util'],
+                AVCPDP_VERSION,
+                true
+            );
 
             wp_localize_script('wporg-explanations', 'wporg', [
                 'editContentLabel' => __('Edit Explanation', 'wp-parser'),
@@ -538,16 +533,16 @@ class Explanations
     /**
      * AJAX handler for creating and associating a new explanation.
      *
-     * @access public
+     * @return void
      */
-    public function new_explanation() {
+    public function newExplanation() {
         check_ajax_referer('create-expl', 'nonce');
 
         $post_id = empty($_REQUEST['post_id']) ? 0 : absint($_REQUEST['post_id']);
         $context = empty($_REQUEST['context']) ? '' : sanitize_text_field($_REQUEST['context']);
 
         if (avcpdp_get_explanation($post_id)) {
-            wp_send_json_error(new WP_Error('post_exists', __('Explanation already exists.', 'wp-parser')));
+            wp_send_json_error(new \WP_Error('post_exists', __('Explanation already exists.', 'wp-parser')));
         } else {
             $title = get_post_field('post_title', $post_id);
 
@@ -566,7 +561,7 @@ class Explanations
                 ]);
             } else {
                 wp_send_json_error(
-                    new WP_Error('post_error', __('Explanation could not be created.', 'wp-parser'))
+                    new \WP_Error('post_error', __('Explanation could not be created.', 'wp-parser'))
                 );
             }
         }
@@ -575,9 +570,9 @@ class Explanations
     /**
      * AJAX handler for un-publishing an explanation.
      *
-     * @access public
+     * @return void
      */
-    public function un_publish_explanation() {
+    public function unPublishExplanation() {
         check_ajax_referer('unpublish-expl', 'nonce');
 
         $post_id = empty($_REQUEST['post_id']) ? 0 : absint($_REQUEST['post_id']);
@@ -592,7 +587,7 @@ class Explanations
                 wp_send_json_success(['post_id' => $update]);
             } else {
                 wp_send_json_error(
-                    new WP_Error('unpublish_error', __('Explanation could not be un-published.', 'wp-parser'))
+                    new \WP_Error('unpublish_error', __('Explanation could not be un-published.', 'wp-parser'))
                 );
             }
         }
@@ -604,12 +599,10 @@ class Explanations
      *
      * Inserted as first column after title column.
      *
-     * @access public
-     *
      * @param array $columns Associative array of post column ids and labels.
      * @return array
      */
-    public function add_post_column($columns) {
+    public function addPostColumn($columns) {
         if (!empty($_GET['post_type']) && avcpdp_is_parsed_post_type($_GET['post_type'])) {
             $index = array_search('title', array_keys($columns));
             $pos = false === $index ? count($columns) : $index + 1;
@@ -630,12 +623,11 @@ class Explanations
     /**
      * Outputs an indicator for the explanations column if post has an explanation.
      *
-     * @access public
-     *
      * @param string $column_name The name of the column.
      * @param int    $post_id     The ID of the post.
+     * @return void
      */
-    public function handle_column_data($column_name, $post_id) {
+    public function handleColumnData($column_name, $post_id) {
         if ('has_explanation' === $column_name) {
             if ($explanation = avcpdp_get_explanation($post_id)) {
                 printf(

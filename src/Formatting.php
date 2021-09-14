@@ -9,7 +9,9 @@ namespace Aivec\Plugins\DocParser;
 class Formatting
 {
     /**
-     * Initializer
+     * Initializes class
+     *
+     * @return void
      */
     public static function init() {
         add_action('init', [get_class(), 'doInit']);
@@ -17,6 +19,8 @@ class Formatting
 
     /**
      * Handles adding/removing hooks to perform formatting as needed.
+     *
+     * @return void
      */
     public static function doInit() {
         // NOTE: This filtering is temporarily disabled and then restored in
@@ -59,8 +63,8 @@ class Formatting
     /**
      * Prevents display of the inline use of {@internal}} as it is not meant to be shown.
      *
-     * @param  string      $content   The post content.
-     * @param  null|string $post_type Optional. The post type. Default null.
+     * @param string      $content   The post content.
+     * @param null|string $post_type Optional. The post type. Default null.
      * @return string
      */
     public static function removeInlineInternal($content, $post_type = null) {
@@ -87,7 +91,7 @@ class Formatting
      * Note: Though @see and @link are semantically different in meaning, that isn't always
      * the case with use so this function handles them identically.
      *
-     * @param  string $content The content.
+     * @param string $content The content.
      * @return string
      */
     public static function makeDoclinkClickable($content) {
@@ -124,20 +128,16 @@ class Formatting
                     // Link without linked text: {@link https://en.wikipedia.org/wiki/ISO_8601}
                     if (1 === count($parts)) {
                         $url = $text = $link;
-                    }
-
-                    // Link with linked text: {@link https://codex.wordpress.org/The_Loop Use new WordPress Loop}
-                    else {
+                    } else {
+                        // Link with linked text: {@link https://codex.wordpress.org/The_Loop Use new WordPress Loop}
                         $url = $parts[0];
                         $text = $parts[1];
                     }
 
-                    $link = self::generate_link($url, $text);
-                }
-
-                // Link to an internal resource.
-                else {
-                    $link = self::link_internal_element($link);
+                    $link = self::generateLink($url, $text);
+                } else {
+                    // Link to an internal resource.
+                    $link = self::linkInternalElement($link);
                 }
 
                 return $link;
@@ -149,13 +149,10 @@ class Formatting
     /**
      * Parses and links an internal element if a valid element is found.
      *
-     * @static
-     * @access public
-     *
      * @param string $link Element string.
      * @return string HTML link markup if a valid element was found.
      */
-    public static function link_internal_element($link) {
+    public static function linkInternalElement($link) {
         $url = '';
 
         // Exceptions for externally-linked elements.
@@ -166,29 +163,20 @@ class Formatting
         // Link exceptions that should actually point to external resources.
         if (!empty($exceptions[$link])) {
             $url = $exceptions[$link];
-        }
-
         // Link to class variable: {@see WP_Rewrite::$index}
-        elseif (false !== strpos($link, '::$')) {
+        } elseif (false !== strpos($link, '::$')) {
             // Nothing to link to currently.
-        }
-
-        // Link to class method: {@see WP_Query::query()}
-        elseif (false !== strpos($link, '::')) {
+        } elseif (false !== strpos($link, '::')) {
+            // Link to class method: {@see WP_Query::query()}
             $url = get_post_type_archive_link('wp-parser-class') .
                     str_replace(['::', '()'], ['/', ''], $link);
-        }
-
-        // Link to hook: {@see 'pre_get_search_form'}
-        elseif (1 === preg_match('/^(?:\'|(?:&#8216;))([\$\w\-&;]+)(?:\'|(?:&#8217;))$/', $link, $hook)) {
+        } elseif (1 === preg_match('/^(?:\'|(?:&#8216;))([\$\w\-&;]+)(?:\'|(?:&#8217;))$/', $link, $hook)) {
+            // Link to hook: {@see 'pre_get_search_form'}
             if (!empty($hook[1])) {
                 $url = get_post_type_archive_link('wp-parser-hook') .
                         sanitize_title_with_dashes(html_entity_decode($hook[1])) . '/';
             }
-        }
-
-        // Link to class: {@see WP_Query}
-        elseif (
+        } elseif (
             (in_array($link, [
                 'wpdb',
                 'wp_atom_server',
@@ -205,17 +193,16 @@ class Formatting
             ||
             (1 === preg_match('/^_?[A-Z][a-zA-Z]+_\w+/', $link)) // Otherwise, class names start with (optional underscore, then) uppercase and have underscore
         ) {
+            // Link to class: {@see WP_Query}
             $url = get_post_type_archive_link('wp-parser-class') . sanitize_key($link);
-        }
-
-        // Link to function: {@see esc_attr()}
-        else {
+        } else {
+            // Link to function: {@see esc_attr()}
             $url = get_post_type_archive_link('wp-parser-function') .
                     sanitize_title_with_dashes(html_entity_decode($link));
         }
 
         if ($url) {
-            $link = self::generate_link($url, $link);
+            $link = self::generateLink($url, $link);
         }
         return $link;
     }
@@ -227,7 +214,7 @@ class Formatting
      * @param string $text The text content of the link.
      * @return string The HTML for the link.
      */
-    public static function generate_link($url, $text) {
+    public static function generateLink($url, $text) {
         /*
          * Filters the HTML attributes applied to a link's anchor element.
          *
@@ -256,8 +243,8 @@ class Formatting
      * The parser interprets underscores surrounding text as Markdown indicating
      * italics. That is never the intention, so undo it.
      *
-     * @param  string      $content   The post content.
-     * @param  null|string $post_type Optional. The post type. Default null.
+     * @param string      $content   The post content.
+     * @param null|string $post_type Optional. The post type. Default null.
      * @return string
      */
     public static function fixUnintendedMarkdown($content, $post_type = null) {
@@ -278,7 +265,7 @@ class Formatting
     /**
      * Handles formatting of the parameter description.
      *
-     * @param  string $text The parameter description.
+     * @param string $text The parameter description.
      * @return string
      */
     public static function formatParamDescription($text) {
@@ -651,6 +638,8 @@ class Formatting
      *
      * @see https://meta.trac.wordpress.org/ticket/2900
      * @see https://github.com/erusev/parsedown/pull/515
+     * @param string $text
+     * @return string
      */
     public static function fixParamDescriptionParsedownBug($text) {
         $fixes = [
@@ -681,9 +670,7 @@ class Formatting
      * which case it would have been parsed properly, but committers aren't
      * always sticklers for documentation formatting.
      *
-     * @access public
-     *
-     * @param string $text Text.
+     * @param string $text
      * @return string
      */
     public static function fixParamDescriptionHtmlAsCode($text) {

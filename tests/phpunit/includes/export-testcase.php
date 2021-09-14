@@ -6,6 +6,8 @@
 
 namespace WP_Parser\Tests;
 
+use Aivec\Plugins\DocParser\Importer\Parser;
+
 /**
  * Parent test case for data export tests.
  */
@@ -28,7 +30,7 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 		$file = rtrim( $file, 'php' ) . 'inc';
 		$path = dirname( $file );
 
-		$export_data = \WP_Parser\parse_files( array( $file ), $path );
+		$export_data = Parser::parseFiles( array( $file ), $path );
 
 		$this->export_data = $export_data[0];
 	}

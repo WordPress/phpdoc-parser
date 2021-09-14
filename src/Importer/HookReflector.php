@@ -1,6 +1,6 @@
 <?php
 
-namespace WP_Parser;
+namespace Aivec\Plugins\DocParser\Importer;
 
 use phpDocumentor\Reflection\BaseReflector;
 use PHPParser_PrettyPrinter_Default;
@@ -8,9 +8,11 @@ use PHPParser_PrettyPrinter_Default;
 /**
  * Custom reflector for WordPress hooks.
  */
-class Hook_Reflector extends BaseReflector
+class HookReflector extends BaseReflector
 {
     /**
+     * Returns name
+     *
      * @return string
      */
     public function getName() {
@@ -19,8 +21,9 @@ class Hook_Reflector extends BaseReflector
     }
 
     /**
-     * @param string $name
+     * Cleans up name
      *
+     * @param string $name
      * @return string
      */
     private function cleanupName($name) {
@@ -52,6 +55,8 @@ class Hook_Reflector extends BaseReflector
     }
 
     /**
+     * Returns short name
+     *
      * @return string
      */
     public function getShortName() {
@@ -59,6 +64,8 @@ class Hook_Reflector extends BaseReflector
     }
 
     /**
+     * Returns type
+     *
      * @return string
      */
     public function getType() {
@@ -85,10 +92,12 @@ class Hook_Reflector extends BaseReflector
     }
 
     /**
+     * Returns arguments
+     *
      * @return array
      */
     public function getArgs() {
-        $printer = new Pretty_Printer();
+        $printer = new PrettyPrinter();
         $args = [];
         foreach ($this->node->args as $arg) {
             $args[] = $printer->prettyPrintArg($arg);

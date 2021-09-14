@@ -1,14 +1,16 @@
 <?php
 
-namespace WP_Parser;
+namespace Aivec\Plugins\DocParser\CLI;
 
+use Aivec\Plugins\DocParser\Importer\Importer;
+use Aivec\Plugins\DocParser\Importer\Parser;
 use WP_CLI;
 use WP_CLI_Command;
 
 /**
  * Converts PHPDoc markup into a template ready for import to a WordPress blog.
  */
-class Command extends WP_CLI_Command
+class Commands extends WP_CLI_Command
 {
     /**
      * Generate a JSON file containing the PHPDoc markup, and save to filesystem.
@@ -16,6 +18,7 @@ class Command extends WP_CLI_Command
      * @synopsis <directory> [<output_file>]
      *
      * @param array $args
+     * @return void
      */
     public function export($args) {
         $directory = realpath($args[0]);
@@ -40,6 +43,7 @@ class Command extends WP_CLI_Command
      *
      * @param array $args
      * @param array $assoc_args
+     * @return void
      */
     public function import($args, $assoc_args) {
         list( $file ) = $args;
@@ -75,6 +79,7 @@ class Command extends WP_CLI_Command
      *
      * @param array $args
      * @param array $assoc_args
+     * @return void
      */
     public function create($args, $assoc_args) {
         list( $directory ) = $args;
@@ -155,13 +160,12 @@ class Command extends WP_CLI_Command
      *
      * @param string $path   Directory or file to scan for PHPDoc
      * @param string $format What format the data is returned in: [json|array].
-     *
      * @return string|array
      */
     protected function _get_phpdoc_data($path, $format = 'json') {
         WP_CLI::line(sprintf('Extracting PHPDoc from %1$s. This may take a few minutes...', $path));
         $is_file = is_file($path);
-        $files = $is_file ? [$path] : get_wp_files($path);
+        $files = $is_file ? [$path] : Parser::getWpFiles($path);
         $path = $is_file ? dirname($path) : $path;
 
         if ($files instanceof \WP_Error) {
@@ -169,7 +173,7 @@ class Command extends WP_CLI_Command
             exit;
         }
 
-        $output = parse_files($files, $path);
+        $output = Parser::parseFiles($files, $path);
 
         if ('json' == $format) {
             return json_encode($output, JSON_PRETTY_PRINT);
@@ -184,6 +188,7 @@ class Command extends WP_CLI_Command
      * @param array $data
      * @param bool  $skip_sleep     If true, the sleep() calls are skipped.
      * @param bool  $import_ignored If true, functions marked `@ignore` will be imported.
+     * @return void
      */
     protected function _do_import(array $data, $skip_sleep = false, $import_ignored = false) {
         if (!wp_get_current_user()->exists()) {
@@ -193,7 +198,7 @@ class Command extends WP_CLI_Command
 
         // Run the importer
         $importer = new Importer($data['meta']);
-        $importer->setLogger(new WP_CLI_Logger());
+        $importer->setLogger(new Logger());
         $importer->import($data['files'], $skip_sleep, $import_ignored);
 
         WP_CLI::line();
