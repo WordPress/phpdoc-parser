@@ -24,6 +24,7 @@ class Master
         (new ParsedContent())->init();
         Queries::init();
         Formatting::init();
+        SourceTypeTerm::init();
         if (is_admin()) {
             Admin::init();
         }
