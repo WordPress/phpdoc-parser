@@ -4,6 +4,7 @@ namespace Aivec\Plugins\DocParser\CLI;
 
 use Aivec\Plugins\DocParser\Importer\Importer;
 use Aivec\Plugins\DocParser\Importer\Parser;
+use Aivec\Plugins\DocParser\Models\ImportConfig;
 use WP_CLI;
 use WP_CLI_Command;
 
@@ -78,7 +79,7 @@ class Commands extends WP_CLI_Command
      * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
      *
      * @subcommand create
-     * @synopsis   <directory> [--quick] [--import-internal] [--user]
+     * @synopsis   <directory> [--quick] [--import-internal] [--user] [--trash-old-refs]
      *
      * @param array $args
      * @param array $assoc_args
@@ -148,9 +149,24 @@ class Commands extends WP_CLI_Command
             exit;
         }
 
+        if (isset($parser_meta['exclude'])) {
+            if (!is_array($parser_meta['exclude'])) {
+                WP_CLI::error('"exclude" must be an array of strings.');
+                exit;
+            }
+
+            foreach ($parser_meta['exclude'] as $target) {
+                if (!is_string($target)) {
+                    WP_CLI::error('"exclude" must be an array of strings.');
+                    exit;
+                }
+            }
+        }
+
         $data = $this->_get_phpdoc_data($directory, 'array');
         $data = [
-            'meta' => $parser_meta,
+            'config' => new ImportConfig($parser_meta['type'], $parser_meta['name'], $parser_meta['exclude']),
+            'trash_old_refs' => isset($assoc_args['trash-old-refs']) && $assoc_args['trash-old-refs'] === true,
             'files' => $data,
         ];
 
@@ -200,7 +216,7 @@ class Commands extends WP_CLI_Command
         }
 
         // Run the importer
-        $importer = new Importer($data['meta']);
+        $importer = new Importer($data['config'], $data['trash_old_refs']);
         $importer->setLogger(new Logger());
         $importer->import($data['files'], $skip_sleep, $import_ignored);
 

@@ -44,19 +44,6 @@ function avcpdp_is_parsed_post_type($post_type = null) {
 }
 
 /**
- * Checks if given post type is the code reference landing page post type.
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int|null $post_id Optional. The post ID.
- * @return bool True if post has a parsed post type
- */
-function avcpdp_is_reference_landing_page_post_type($post_id = null) {
-    $post_type = get_post_type($post_id);
-
-    return $post_type === Aivec\Plugins\DocParser\Registrations::CODE_REFERENCE_POST_TYPE;
-}
-
-/**
  * Get the specific type of hook.
  *
  * @param int|WP_Post|null $post Optional. Post ID or post object. Default is global $post.
@@ -975,4 +962,32 @@ function avcpdp_get_param_translated_content($post_id, $key) {
     $translated_key_val = (string)get_post_meta($post_id, $translated_key, true);
 
     return $translated_key_val;
+}
+
+/**
+ * Returns all wp-parser-* posts associated with a given source type and name pair
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $source_type
+ * @param string $source_name
+ * @return WP_Query
+ */
+function avcpdp_get_all_parser_posts_for_source($source_type, $source_name) {
+    $q = new WP_Query([
+        'fields' => 'ids',
+        'post_status' => ['any'],
+        'post_type' => avcpdp_get_parsed_post_types(),
+        'posts_per_page' => -1,
+        'tax_query' => [
+            [
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => [$source_type, $source_name],
+                'include_children' => false,
+                'operator' => 'AND',
+            ],
+        ],
+    ]);
+
+    return $q;
 }

@@ -2,6 +2,7 @@
 
 namespace Aivec\Plugins\DocParser\Importer;
 
+use Aivec\Plugins\DocParser\Models\ImportConfig;
 use Aivec\Plugins\DocParser\Registrations;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -25,6 +26,13 @@ class Importer implements LoggerAwareInterface
         'taxonomy_since_version' => 'wp-parser-since',
         'taxonomy_source_type' => Registrations::SOURCE_TYPE_TAX_SLUG,
     ];
+
+    /**
+     * Whether to send old references to the trash or not
+     *
+     * @var bool
+     */
+    public $trash_old_refs;
 
     /**
      * Taxonomy name for files
@@ -127,13 +135,29 @@ class Importer implements LoggerAwareInterface
     protected $inserted_terms = [];
 
     /**
+     * List of all inserted/updated post IDs
+     *
+     * @var array
+     */
+    protected $inserted_posts = [];
+
+    /**
+     * List of all posts IDs associated with the given source **before** import
+     *
+     * @var array
+     */
+    protected $previous_posts = [];
+
+    /**
      * Constructor. Sets up post type/taxonomy names.
      *
-     * @param array $source_type_meta
-     * @param array $args Optional. Associative array; class property => value.
+     * @param ImportConfig $source_type_meta
+     * @param bool         $trash_old_refs
+     * @param array        $args Optional. Associative array; class property => value.
      */
-    public function __construct(array $source_type_meta, array $args = []) {
-        $this->source_type_meta = $source_type_meta;
+    public function __construct(ImportConfig $source_type_meta, $trash_old_refs = false, array $args = []) {
+        $this->source_type_meta = $source_type_meta->jsonSerialize();
+        $this->trash_old_refs = $trash_old_refs;
         $properties = wp_parse_args(
             $args,
             self::PROPERTY_MAP
@@ -347,6 +371,15 @@ class Importer implements LoggerAwareInterface
             $this->version = $this->importVersion(reset($ver_file));
         }
 
+        if ($this->trash_old_refs === true) {
+            $previous_posts_q = avcpdp_get_all_parser_posts_for_source(
+                $this->source_type_meta['type'],
+                $this->source_type_meta['name']
+            );
+            $this->previous_posts = $previous_posts_q->get_posts();
+        }
+
+        // loop through files and start importing
         $root = '';
         foreach ($data as $file) {
             $this->logger->info(sprintf('Processing file %1$s of %2$s "%3$s".', number_format_i18n($file_number), number_format_i18n($num_of_files), $file['path']));
@@ -378,6 +411,16 @@ class Importer implements LoggerAwareInterface
         $wp_version = get_option('wp_parser_imported_wp_version');
         if ($wp_version) {
             $this->logger->info('Updated option wp_parser_imported_wp_version: ' . $wp_version);
+        }
+
+        if ($this->trash_old_refs === true) {
+            $this->logger->info('Trashing old references...');
+
+            foreach ($this->previous_posts as $ppost_id) {
+                if (!in_array($ppost_id, $this->inserted_posts, true)) {
+                    wp_trash_post($ppost_id);
+                }
+            }
         }
 
         /*
@@ -599,7 +642,7 @@ class Importer implements LoggerAwareInterface
      *
      * @param array $data           Class.
      * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
-     * @return bool|int Post ID of this function, false if any failure.
+     * @return bool|int Post ID of this class, false if any failure.
      */
     protected function importClass(array $data, $import_ignored = false) {
         // Insert this class
@@ -648,7 +691,7 @@ class Importer implements LoggerAwareInterface
      *                              method belongs to. Defaults to zero (no parent).
      * @param bool  $import_ignored Optional; defaults to false. If true, functions
      *                              marked `@ignore` will be imported.
-     * @return bool|int Post ID of this function, false if any failure.
+     * @return bool|int Post ID of this method, false if any failure.
      */
     protected function importMethod(array $data, $parent_post_id = 0, $import_ignored = false) {
         // Insert this method.
@@ -1000,6 +1043,8 @@ class Importer implements LoggerAwareInterface
          * @param array $post_data WordPress data of the post we just inserted or updated
          */
         do_action('wp_parser_import_item', $post_id, $data, $post_data);
+
+        $this->inserted_posts[] = $post_id;
 
         return $post_id;
     }
