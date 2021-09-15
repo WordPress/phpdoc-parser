@@ -24,6 +24,7 @@ class Importer implements LoggerAwareInterface
         'taxonomy_namespace' => 'wp-parser-namespace',
         'taxonomy_package' => 'wp-parser-package',
         'taxonomy_since_version' => 'wp-parser-since',
+        'taxonomy_version' => 'wp-parser-version',
         'taxonomy_source_type' => Registrations::SOURCE_TYPE_TAX_SLUG,
     ];
 
@@ -54,6 +55,13 @@ class Importer implements LoggerAwareInterface
      * @var string
      */
     public $taxonomy_since_version;
+
+    /**
+     * Taxonomy name for a sources version
+     *
+     * @var string
+     */
+    public $taxonomy_version;
 
     /**
      * Taxonomy name for an item's `@package/@subpackage` tags

@@ -163,9 +163,27 @@ class Commands extends WP_CLI_Command
             }
         }
 
+        if (isset($parser_meta['excludeStrict'])) {
+            if (!is_bool($parser_meta['excludeStrict'])) {
+                WP_CLI::error('"excludeStrict" must be a boolean.');
+                exit;
+            }
+        }
+
+        // handle file/folder exclusions
+        $exclude = !empty($parser_meta['exclude']) ? $parser_meta['exclude'] : [];
+        add_filter('wp_parser_exclude_directories', function () use ($exclude) {
+            return $exclude;
+        });
+
+        $exclude_strict = isset($parser_meta['excludeStrict']) ? (bool)$parser_meta['excludeStrict'] : false;
+        add_filter('wp_parser_exclude_directories_strict', function () use ($exclude_strict) {
+            return $exclude_strict;
+        });
+
         $data = $this->_get_phpdoc_data($directory, 'array');
         $data = [
-            'config' => new ImportConfig($parser_meta['type'], $parser_meta['name'], $parser_meta['exclude']),
+            'config' => new ImportConfig($parser_meta['type'], $parser_meta['name'], $exclude),
             'trash_old_refs' => isset($assoc_args['trash-old-refs']) && $assoc_args['trash-old-refs'] === true,
             'files' => $data,
         ];

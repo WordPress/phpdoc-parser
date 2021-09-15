@@ -31,18 +31,27 @@ class ImportConfig implements JsonSerializable
     private $exclude;
 
     /**
+     * Whether to exclude a file/folder in subdirectories as well
+     *
+     * @var bool
+     */
+    private $exclude_strict;
+
+    /**
      * Initializes an import config
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param string $source_type
      * @param string $name
      * @param array  $exclude
+     * @param bool   $exclude_strict
      * @return void
      */
-    public function __construct($source_type, $name, $exclude = []) {
+    public function __construct($source_type, $name, $exclude = [], $exclude_strict = false) {
         $this->source_type = $source_type;
         $this->name = $name;
         $this->exclude = $exclude;
+        $this->exclude_strict = $exclude_strict;
     }
 
     /**
@@ -56,6 +65,7 @@ class ImportConfig implements JsonSerializable
             'type' => $this->source_type,
             'name' => $this->name,
             'exclude' => $this->exclude,
+            'excludeStrict' => $this->exclude_strict,
         ];
     }
 
@@ -87,5 +97,15 @@ class ImportConfig implements JsonSerializable
      */
     public function getExclude() {
         return $this->exclude;
+    }
+
+    /**
+     * Getter for `$this->exclude_strict`
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @return array
+     */
+    public function getExcludeStrict() {
+        return $this->exclude_strict;
     }
 }
