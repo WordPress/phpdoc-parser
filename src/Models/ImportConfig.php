@@ -24,6 +24,13 @@ class ImportConfig implements JsonSerializable
     private $name;
 
     /**
+     * The plugin/theme/composer-package version
+     *
+     * @var null|string
+     */
+    private $version;
+
+    /**
      * Array of files/folders to exclude from import
      *
      * @var array
@@ -41,15 +48,17 @@ class ImportConfig implements JsonSerializable
      * Initializes an import config
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
-     * @param string $source_type
-     * @param string $name
-     * @param array  $exclude
-     * @param bool   $exclude_strict
+     * @param string      $source_type
+     * @param string      $name
+     * @param null|string $version
+     * @param array       $exclude
+     * @param bool        $exclude_strict
      * @return void
      */
-    public function __construct($source_type, $name, $exclude = [], $exclude_strict = false) {
+    public function __construct($source_type, $name, $version = null, $exclude = [], $exclude_strict = false) {
         $this->source_type = $source_type;
         $this->name = $name;
+        $this->version = $version;
         $this->exclude = $exclude;
         $this->exclude_strict = $exclude_strict;
     }
@@ -64,6 +73,7 @@ class ImportConfig implements JsonSerializable
         return [
             'type' => $this->source_type,
             'name' => $this->name,
+            'version' => $this->version,
             'exclude' => $this->exclude,
             'excludeStrict' => $this->exclude_strict,
         ];
@@ -90,6 +100,16 @@ class ImportConfig implements JsonSerializable
     }
 
     /**
+     * Getter for `$this->version`
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @return null|string
+     */
+    public function getVersion() {
+        return $this->version;
+    }
+
+    /**
      * Getter for `$this->exclude`
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
@@ -103,7 +123,7 @@ class ImportConfig implements JsonSerializable
      * Getter for `$this->exclude_strict`
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
-     * @return array
+     * @return bool
      */
     public function getExcludeStrict() {
         return $this->exclude_strict;

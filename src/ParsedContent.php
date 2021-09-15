@@ -83,7 +83,8 @@ class ParsedContent
                 __('Parsed Content', 'wp-parser'),
                 [$this, 'addParsedMetaBox'],
                 $screen,
-                'normal'
+                'normal',
+                'high'
             );
         }
     }
@@ -145,7 +146,7 @@ class ParsedContent
             <?php if (current_user_can('manage_options')) : ?>
                 <tr valign="top">
                     <th scope="row">
-                        <label for="translated_description"><?php _e('Translated Summary:', 'wp-parser'); ?></label>
+                        <label for="translated_description"><?php _e('Translated Description:', 'wp-parser'); ?></label>
                     </th>
                     <td>
                         <div class="translated_description">

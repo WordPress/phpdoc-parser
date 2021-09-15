@@ -170,6 +170,13 @@ class Commands extends WP_CLI_Command
             }
         }
 
+        if (isset($parser_meta['version'])) {
+            if (!is_string($parser_meta['version'])) {
+                WP_CLI::error('"version" must be a string.');
+                exit;
+            }
+        }
+
         // handle file/folder exclusions
         $exclude = !empty($parser_meta['exclude']) ? $parser_meta['exclude'] : [];
         add_filter('wp_parser_exclude_directories', function () use ($exclude) {
@@ -181,9 +188,17 @@ class Commands extends WP_CLI_Command
             return $exclude_strict;
         });
 
+        $version = isset($parser_meta['version']) ? $parser_meta['version'] : null;
+
         $data = $this->_get_phpdoc_data($directory, 'array');
         $data = [
-            'config' => new ImportConfig($parser_meta['type'], $parser_meta['name'], $exclude),
+            'config' => new ImportConfig(
+                $parser_meta['type'],
+                $parser_meta['name'],
+                $version,
+                $exclude,
+                $exclude_strict
+            ),
             'trash_old_refs' => isset($assoc_args['trash-old-refs']) && $assoc_args['trash-old-refs'] === true,
             'files' => $data,
         ];

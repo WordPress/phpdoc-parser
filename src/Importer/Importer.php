@@ -24,7 +24,6 @@ class Importer implements LoggerAwareInterface
         'taxonomy_namespace' => 'wp-parser-namespace',
         'taxonomy_package' => 'wp-parser-package',
         'taxonomy_since_version' => 'wp-parser-since',
-        'taxonomy_version' => 'wp-parser-version',
         'taxonomy_source_type' => Registrations::SOURCE_TYPE_TAX_SLUG,
     ];
 
@@ -55,13 +54,6 @@ class Importer implements LoggerAwareInterface
      * @var string
      */
     public $taxonomy_since_version;
-
-    /**
-     * Taxonomy name for a sources version
-     *
-     * @var string
-     */
-    public $taxonomy_version;
 
     /**
      * Taxonomy name for an item's `@package/@subpackage` tags
@@ -207,9 +199,6 @@ class Importer implements LoggerAwareInterface
         // Remove actions for performance
         remove_action('transition_post_status', '_update_blog_date_on_post_publish', 10);
         remove_action('transition_post_status', '__clear_multi_author_cache', 10);
-
-        delete_option('wp_parser_imported_wp_version');
-        delete_option('wp_parser_root_import_dir');
 
         // Sanity check -- do the required post types exist?
         if (!post_type_exists($this->post_type_class) || !post_type_exists($this->post_type_function) || !post_type_exists($this->post_type_hook)) {
@@ -371,20 +360,16 @@ class Importer implements LoggerAwareInterface
             }
         }
 
-        // Specifically import WP version file first to get version number.
-        $ver_file = array_filter($data, function ($f) {
-            return 'wp-includes/version.php' === $f['path'];
-        });
-        if ($ver_file) {
-            $this->version = $this->importVersion(reset($ver_file));
-        }
-
         if ($this->trash_old_refs === true) {
             $previous_posts_q = avcpdp_get_all_parser_posts_for_source(
                 $this->source_type_meta['type'],
                 $this->source_type_meta['name']
             );
             $this->previous_posts = $previous_posts_q->get_posts();
+        }
+
+        if (!empty($this->source_type_meta['version'])) {
+            $this->version = $this->source_type_meta['version'];
         }
 
         // loop through files and start importing
@@ -401,13 +386,12 @@ class Importer implements LoggerAwareInterface
         }
 
         if (!empty($root)) {
-            update_option('wp_parser_root_import_dir', $root);
             update_term_meta(
                 $this->source_type_meta['type_term_id'],
                 'wp_parser_root_import_dir',
                 $root
             );
-            $this->logger->info('Updated option wp_parser_root_import_dir: ' . $root);
+            $this->logger->info("Updated 'wp_parser_root_import_dir' term meta for {$this->source_type_meta['name']}: {$root}");
         }
 
         $last_import = time();
@@ -416,9 +400,9 @@ class Importer implements LoggerAwareInterface
         update_option('wp_parser_last_import', $last_import);
         $this->logger->info(sprintf('Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time));
 
-        $wp_version = get_option('wp_parser_imported_wp_version');
-        if ($wp_version) {
-            $this->logger->info('Updated option wp_parser_imported_wp_version: ' . $wp_version);
+        // Import source version if specified
+        if (!empty($this->source_type_meta['version'])) {
+            $this->importVersion($this->source_type_meta['version']);
         }
 
         if ($this->trash_old_refs === true) {
@@ -726,27 +710,16 @@ class Importer implements LoggerAwareInterface
     }
 
     /**
-     * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
+     * Updates the `wp_parser_imported_version` source type term meta with the version
+     * from the parsed source
      *
-     * @param array $data Data
-     * @return string|false WordPress version number, or false if not known.
+     * @param string $version
+     * @return void
      */
-    protected function importVersion($data) {
-        $version_path = $data['root'] . '/' . $data['path'];
-
-        if (!is_readable($version_path)) {
-            return false;
-        }
-
-        include $version_path;
-
-        if (isset($wp_version) && $wp_version) {
-            update_option('wp_parser_imported_wp_version', $wp_version);
-            $this->logger->info("\t" . sprintf('Updated option wp_parser_imported_wp_version to "%1$s"', $wp_version));
-            return $wp_version;
-        }
-
-        return false;
+    protected function importVersion($version) {
+        $sname = $this->source_type_meta['name'];
+        update_term_meta($this->source_type_meta['type_term_id'], 'wp_parser_imported_version', $version);
+        $this->logger->info("Updated 'wp_parser_imported_version' term meta for {$sname} to: {$version}");
     }
 
     /**
@@ -1016,7 +989,7 @@ class Importer implements LoggerAwareInterface
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_line_num', (string)$data['line']);
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_end_line_num', (string)$data['end_line']);
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_tags', $data['doc']['tags']);
-        $anything_updated[] = update_post_meta($post_id, '_wp-parser_last_parsed_wp_version', $this->version);
+        $anything_updated[] = update_post_meta($post_id, '_wp-parser_last_parsed_version', $this->version);
 
         // If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
         if (!$is_new_post && !$post_needed_update && array_filter($anything_updated)) {

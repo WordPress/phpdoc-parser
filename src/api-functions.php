@@ -584,30 +584,61 @@ function avcpdp_get_role_term_by_slug($slug) {
 }
 
 /**
- * Retrieve the root directory of the parsed WP code.
+ * Returns version number of the imported source.
  *
- * If the option 'wp_parser_root_import_dir' (as set by the parser) is not
+ * The the post ID must have a source type term associated with it for this
+ * function to return a value other than `null`
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param null|int $post_id
+ * @return null|string
+ */
+function avcpdp_get_source_imported_version($post_id = null) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+
+    if (empty($post_id)) {
+        return null;
+    }
+
+    $stterms = avcpdp_get_post_source_type_terms($post_id);
+    if (empty($stterms)) {
+        return null;
+    }
+
+    return (string)get_term_meta($stterms['name']->term_id, 'wp_parser_imported_version', true);
+}
+
+/**
+ * Retrieve the root directory of the parsed source code.
+ *
+ * If the source type term meta 'wp_parser_root_import_dir' (as set by the parser) is not
  * set, then assume ABSPATH.
  *
  * @param int|null $post_id
  * @return string
  */
 function avcpdp_get_source_code_root_dir($post_id = null) {
-    $root_dir = get_option('wp_parser_root_import_dir');
+    $root_dir = ABSPATH;
     if (empty($post_id)) {
         $post_id = get_the_ID();
-        if (!empty($post_id)) {
-            $sourceterms = avcpdp_get_post_source_type_terms($post_id);
-            if (!empty($sourceterms['name'])) {
-                $dir = get_term_meta(
-                    $sourceterms['name']->term_id,
-                    'wp_parser_root_import_dir',
-                    true
-                );
-                $root_dir = !empty($dir) ? $dir : $root_dir;
-            }
-        }
     }
+
+    if (empty($post_id)) {
+        return $root_dir;
+    }
+
+    $sourceterms = avcpdp_get_post_source_type_terms($post_id);
+    if (!empty($sourceterms['name'])) {
+        $dir = get_term_meta(
+            $sourceterms['name']->term_id,
+            'wp_parser_root_import_dir',
+            true
+        );
+        $root_dir = !empty($dir) ? $dir : $root_dir;
+    }
+
     if (isset($_ENV['AVC_NODE_ENV']) && $_ENV['AVC_NODE_ENV'] === 'development') {
         $root_dir = str_replace('/app/', '/var/www/html/', $root_dir);
     }
