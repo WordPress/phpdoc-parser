@@ -333,9 +333,9 @@ class Formatting
      * Automatically detects inline references to parsed resources and links to them.
      *
      * Examples:
-     * - Functions: get_the_ID()
-     * - Classes:   My\PSR\Four\Class
-     * - Methods:   My\PSR\Four\Class::isSingle()
+     * - Functions: get_item()
+     * - Classes:   My\PSR\Four\Class, \TopLevelClass
+     * - Methods:   My\PSR\Four\Class::isSingle(), \My\PSR\Four\Class::isSingle()
      *
      * Note: currently there is not a reliable way to infer references to hooks. Recommend
      * using the {@}see 'hook_name'} notation as used in the inline docs.
@@ -385,14 +385,12 @@ class Formatting
 
                 // Only if the text contains something that might be a function.
                 if (false !== strpos($content, '()')) {
-                    // Detect references to class methods, e.g. WP_Query::query()
-                    // or functions, e.g. register_post_type().
+                    // Detect references to class methods, e.g. MyNamespace\MyClass::query()
+                    // or functions, e.g. get_item().
                     $content = preg_replace_callback(
                         '~
 							(?!<.*?)       # Non-capturing check to ensure not matching what looks like the inside of an HTML tag.
 							(              # 1: The full method or function name.
-								           # ((\w+)::)? 2: The class prefix, if a method reference. (WordPress core regex)
-                                           # (\w+)      3: The method or function name. (WordPress core regex)
                                 (([a-zA-Z0-9_\\\]+)::)? # 2: The PSR-4 class prefix, if a method reference.
                                 ([a-zA-Z0-9_\\\]+)      # 3: The method or function name.
 							)
@@ -433,29 +431,23 @@ class Formatting
 
                 // Detect references to classes, e.g. WP_Query
                 $content = preg_replace_callback(
-                    // Most class names start with an uppercase letter and have an underscore.
-                    // The exceptions are explicitly listed since future classes likely won't violate previous statement.
-                    // Requests and Translations, due to their higher likelihood of use as a word and not as an inline class
-                    // reference, should be explicitly referenced, e.g. `{@see Requests}`.
+                    // Resolves PSR-4 class names
+                    // If referencing a top level class (ie: MyClass), the class name MUST be prefixed with
+                    // a backslash (ie: \MyClass).
+                    // For all other non top level classes (ie: \MyNamespace\MyClass), the leading backslash
+                    // is optional (ie: MyNamespace\MyClass).
+                    //
+                    // Note that WordPress style class names, such as WP_Post, are not resolved. Class names
+                    // MUST be PSR-4 compliant.
                     '~'
                         . '(?<!/)'
-                        . '\b'                // Word boundary
                         . '('                 // Primary match grouping
-                            // . 'wpdb|wp_atom_server|wp_xmlrpc_server' // Exceptions that start with lowercase letter
-                            // . '|AtomFeed|AtomEntry|AtomParser|MagpieRSS|RSSCache|Walker' // Exceptions that lack an underscore
-                            // . '|_?[A-Z][a-zA-Z]+_\w+'                        // Most start with (optional underscore, then) uppercase, has underscore
-                            . '\\\?(?:[A-Z]+[A-Za-z]*)+(?:\\\{1}[A-Z]+[A-Za-z]*)*'  // PSR-4 namespaces do not contain underscores and may contain backslashes
+                            . '\\\?(?:[A-Z]+[A-Za-z]*)+(?:\\\{1}[A-Z]+[A-Za-z]*)+'  // Resolves PSR-4 namespaces.
                         . ')'                 // End primary match grouping
                         . '\b'                // Word boundary
                         . '(?!([<:]|"|\'>))'  // Does not appear within a tag
                     . '~',
                     function ($matches) use ($strip_namespaces) {
-                        // If match is all caps, it's not a possible class name.
-                        // We'll chalk the sole exception, WP, as merely being an abbreviation (the regex won't match it anyhow).
-                        if (strtoupper($matches[0]) === $matches[0]) {
-                            return $matches[0];
-                        }
-
                         // Only link actually parsed classes.
                         $post = self::getPostFromReference($matches[0], 'wp-parser-class');
                         if ($post !== null) {
@@ -610,7 +602,7 @@ class Formatting
                 if ($name) {
                     $new_text .= "<b>'{$name}'</b><br />";
                 }
-                $new_text .= "<i><span class='type'>({$type})</span></i> {$description}";
+                $new_text .= "<i><span class='type'>({$type})</span></i><span class='description'>{$description}</span>";
                 if (!$skip_closing_li) {
                     $new_text .= '</li>';
                 }

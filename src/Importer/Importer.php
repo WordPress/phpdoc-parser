@@ -976,19 +976,21 @@ class Importer implements LoggerAwareInterface
 
         // Add extra namespace slashes to types so that wp_unslash in update_post_meta doesnt remove them.
         // Without the slashes it's impossible to create the reference page link
-        if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
+        /* if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
             foreach ($data['doc']['tags'] as &$tag) {
                 if (!empty($tag['types'])) {
                     foreach ($tag['types'] as &$type) {
-                        $type = addslashes($type);
+                        $type = wp_slash($type);
                     }
                 }
             }
-        }
+        } */
 
+        // We have to add slashes so that namespace slashes aren't stripped by update_post_meta
+        // Without the slashes it's impossible to create reference links for class/method references with PSR-4 namespaces
+        $anything_updated[] = update_post_meta($post_id, '_wp-parser_tags', wp_slash($data['doc']['tags']));
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_line_num', (string)$data['line']);
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_end_line_num', (string)$data['end_line']);
-        $anything_updated[] = update_post_meta($post_id, '_wp-parser_tags', $data['doc']['tags']);
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_last_parsed_version', $this->version);
 
         // If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
