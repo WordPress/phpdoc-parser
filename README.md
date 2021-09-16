@@ -31,3 +31,6 @@ Activate the plugin first:
 In your site's directory:
 
     wp parser create /path/to/source/code --user=<id|login>
+
+## Known Parser Issues
+- The parser will crash if it encounters an invokation of an anonymous function returned by a call to a method/function all on the same line. (ie: $this->getAndExecuteFunc()())

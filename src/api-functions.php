@@ -531,15 +531,26 @@ function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
  * Returns list of hook reference post IDs
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param string $hook_type
- * @param int    $posts_per_page
+ * @param WP_Term[] $stterms
+ * @param string    $hook_type
+ * @param int       $posts_per_page
  * @return WP_Query
  */
-function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 20) {
+function avcpdp_get_hook_reference_posts($stterms, $hook_type = 'all', $posts_per_page = 20) {
     $params = [
         'fields' => 'ids',
         'post_type' => 'wp-parser-hook',
         'posts_per_page' => $posts_per_page,
+        'tax_query' => [
+            'relation' => 'AND',
+            [
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                'include_children' => false,
+                'operator' => 'AND',
+            ],
+        ],
     ];
     if ($hook_type === 'filter' || $hook_type === 'action') {
         $params['meta_key'] = '_wp-parser_hook_type';

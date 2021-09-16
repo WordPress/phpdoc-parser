@@ -520,7 +520,7 @@ msgstr "データセット"
 
 #: src/Registrations.php:466
 msgid "Getter"
-msgstr "デート取得"
+msgstr "データ取得"
 
 #: src/Registrations.php:672
 msgctxt "separator"

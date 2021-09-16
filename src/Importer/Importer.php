@@ -652,18 +652,7 @@ class Importer implements LoggerAwareInterface
 
         // Add slashes to types so that wp_unslash in update_post_meta doesnt remove them.
         // Without the slashes it's impossible to create the reference page link
-        foreach ($data['properties'] as &$prop) {
-            if (!empty($prop['doc']) && !empty($prop['doc']['tags'])) {
-                foreach ($prop['doc']['tags'] as &$tag) {
-                    if (!empty($tag['types'])) {
-                        foreach ($tag['types'] as &$type) {
-                            $type = addslashes($type);
-                        }
-                    }
-                }
-            }
-        }
-        update_post_meta($class_id, '_wp-parser_properties', $data['properties']);
+        update_post_meta($class_id, '_wp-parser_properties', wp_slash($data['properties']));
 
         // Now add the methods
         foreach ($data['methods'] as $method) {
@@ -973,18 +962,6 @@ class Importer implements LoggerAwareInterface
         if (!empty($data['namespace'])) {
             $anything_updated[] = update_post_meta($post_id, '_wp_parser_namespace', (string)addslashes($data['namespace']));
         }
-
-        // Add extra namespace slashes to types so that wp_unslash in update_post_meta doesnt remove them.
-        // Without the slashes it's impossible to create the reference page link
-        /* if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
-            foreach ($data['doc']['tags'] as &$tag) {
-                if (!empty($tag['types'])) {
-                    foreach ($tag['types'] as &$type) {
-                        $type = wp_slash($type);
-                    }
-                }
-            }
-        } */
 
         // We have to add slashes so that namespace slashes aren't stripped by update_post_meta
         // Without the slashes it's impossible to create reference links for class/method references with PSR-4 namespaces
