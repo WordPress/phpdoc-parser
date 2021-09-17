@@ -458,7 +458,7 @@ function avcpdp_get_source_type_plugin_terms() {
  * @param int       $posts_per_page
  * @return WP_Query
  */
-function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 10) {
+function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 5) {
     $q = new WP_Query([
         'fields' => 'ids',
         'post_type' => avcpdp_get_parsed_post_types(),
@@ -485,14 +485,15 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
 }
 
 /**
- * Returns list of role terms
+ * Returns list of role terms for a source
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array  $stterms Source type terms
  * @param string $fields
  * @param bool   $hide_empty
  * @return WP_Term[]
  */
-function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
+function avcpdp_get_role_terms($stterms, $fields = 'all', $hide_empty = true) {
     $terms = get_terms([
         'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
         'hide_empty' => $hide_empty,
@@ -502,29 +503,34 @@ function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
         return [];
     }
 
-    return $terms;
-}
-
-/**
- * Returns list of reference post type posts that have at least one role assigned to them
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int $posts_per_page
- * @return int[]
- */
-function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
-    return get_posts([
-        'fields' => 'ids',
-        'post_type' => avcpdp_get_parsed_post_types(),
-        'posts_per_page' => $posts_per_page,
-        'tax_query' => [
-            [
-                'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
-                'field' => 'slug',
-                'terms' => avcpdp_get_role_terms('slugs'),
+    $roleswithposts = [];
+    foreach ($terms as $role) {
+        $q = new WP_Query([
+            'fields' => 'ids',
+            'post_type' => avcpdp_get_parsed_post_types(),
+            'tax_query' => [
+                'relation' => 'AND',
+                [
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
+                    'field' => 'slug',
+                    'terms' => $role->slug,
+                    'include_children' => true,
+                ],
+                [
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                    'field' => 'slug',
+                    'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                    'include_children' => false,
+                    'operator' => 'AND',
+                ],
             ],
-        ],
-    ]);
+        ]);
+        if ($q->post_count > 0) {
+            $roleswithposts[] = $role;
+        }
+    }
+
+    return $roleswithposts;
 }
 
 /**

@@ -429,7 +429,7 @@ class Formatting
                     );
                 }
 
-                // Detect references to classes, e.g. WP_Query
+                // Detect references to classes
                 $content = preg_replace_callback(
                     // Resolves PSR-4 class names
                     // If referencing a top level class (ie: MyClass), the class name MUST be prefixed with
