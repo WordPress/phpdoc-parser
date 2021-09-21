@@ -45,22 +45,14 @@ class SourceTypeTerm
      */
     public static function addFieldsItemImage($term) {
         $max_upload_size = wp_max_upload_size() ?: 0;
-
-        // wp_nonce_field('item_image', 'item_image_file_nonce');
-        // $id = get_the_ID();
-        // $post_meta = get_post_meta($id, 'item_image', true);
-        // if ($post_meta) {
-        // echo '<p><a href="' . $post_meta['url'] . '" target="_blank">' . $post_meta['url'] . '</a></p>';
-        // }
-        $welitempid = (int)get_term_meta($term->term_id, 'item_image', true);
-        $test = get_term_meta($term->term_id, 'item_image', true);
+        $term_meta = get_term_meta($term->term_id, 'item_image', true);
 
         ?>
         <tr class="form-field term-image-wrap">
-            <th scope="row"><label for="parent"><?php _e('Item Image', 'aivec_apps'); ?></label></th>
+            <th scope="row"><label for="parent"><?php _e('Item Image', 'wp-parser'); ?></label></th>
             <td>
-                <input type="file" name="item_image" id="item_image" multiple="false" accept="image/svg+xml" />
-                <p><?php _e('Pick a Welcart item image to make an association.(svg Only)', 'aivec_apps'); ?></p>
+                <input type="file" name="item_image" id="item_image" multiple="false" accept="image/svg+xml"/>
+                <p><?php _e('Pick a item image to make an association.(svg Only)', 'wp-parser'); ?></p>
                 <p class="max-upload-size">
                     <?php printf(
                         __('Maximum upload file size: %s.'),
@@ -68,6 +60,11 @@ class SourceTypeTerm
                     );
                     ?>
                 </p>
+                <?php
+                if ($term_meta) {
+                    echo '<p><a href="' . $term_meta['url'] . '" target="_blank">' . $term_meta['url'] . '</a></p>';
+                }
+                ?>
             </td>
         </tr>
         <?php
@@ -81,12 +78,13 @@ class SourceTypeTerm
      * @return void
      */
     public static function updateItemImageTermMeta($term_id) {
+        if (empty($_FILES['item_image']['name'])) {
+            return;
+        }
+
         $term_meta = get_term_meta($term_id, 'item_image', true);
         if ($term_meta) {
             @unlink($term_meta['file']);
-        }
-        if (empty($_FILES['item_image'])) {
-            return;
         }
 
         $file = $_FILES['item_image'];
