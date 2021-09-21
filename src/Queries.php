@@ -18,6 +18,45 @@ class Queries
         add_filter('query_vars', [get_class(), 'addHookTypeQueryVar'], 10, 1);
         add_action('parse_tax_query', [get_class(), 'taxQueryNoChildren'], 10, 1);
         add_filter('pre_handle_404', [get_class(), 'force404onWrongSourceType'], 10, 2);
+        add_filter('posts_results', [get_class(), 'orderByNotDeprecated'], 10, 1);
+    }
+
+    /**
+     * Uses PHP to put deprecated wp-parser-* posts at the end of the list for
+     * archive pages
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param \WP_Posts[] $posts
+     * @return \WP_Posts[]
+     */
+    public static function orderByNotDeprecated($posts) {
+        global $wp_query;
+
+        if (!$wp_query->is_main_query() || !$wp_query->is_post_type_archive()) {
+            return $posts;
+        }
+
+        $ptype = !empty($wp_query->query['post_type']) ? $wp_query->query['post_type'] : '';
+        if (!avcpdp_is_parsed_post_type($ptype)) {
+            return $posts;
+        }
+
+        $isdeprecated = [];
+        $notdeprecated = [];
+        foreach ($posts as $post) {
+            $tags = get_post_meta($post->ID, '_wp-parser_tags', true);
+            $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
+            $deprecated = array_shift($deprecated);
+            if ($deprecated) {
+                $isdeprecated[] = $post;
+            } else {
+                $notdeprecated[] = $post;
+            }
+        }
+
+        $posts = array_merge($notdeprecated, $isdeprecated);
+
+        return $posts;
     }
 
     /**
@@ -30,7 +69,6 @@ class Queries
         if ($query->is_main_query() && $query->is_post_type_archive()) {
             $query->set('orderby', 'title');
             $query->set('order', 'ASC');
-            // $query->set('posts_per_page', 20);
             $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
             $hook_type = !empty($query->query['hook_type']) ? $query->query['hook_type'] : '';
             if ($ptype === 'wp-parser-hook' && ($hook_type === 'filter' || $hook_type === 'action')) {

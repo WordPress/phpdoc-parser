@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2021-09-14T16:32:24+09:00\n"
+"POT-Creation-Date: 2021-09-15T10:16:52+09:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.5.0\n"
 "X-Domain: wp-parser\n"
@@ -35,34 +35,34 @@ msgid "https://github.com/aivec/phpdoc-parser/graphs/contributors"
 msgstr ""
 
 #: src/api-functions.php:21
-#: src/Registrations.php:190
-#: src/Registrations.php:192
-#: src/Registrations.php:194
-#: src/Registrations.php:204
+#: src/Registrations.php:191
+#: src/Registrations.php:193
+#: src/Registrations.php:195
+#: src/Registrations.php:205
 msgid "Classes"
 msgstr ""
 
 #: src/api-functions.php:22
-#: src/Registrations.php:130
-#: src/Registrations.php:132
-#: src/Registrations.php:134
-#: src/Registrations.php:144
+#: src/Registrations.php:131
+#: src/Registrations.php:133
+#: src/Registrations.php:135
+#: src/Registrations.php:145
 msgid "Functions"
 msgstr ""
 
 #: src/api-functions.php:23
-#: src/Registrations.php:220
-#: src/Registrations.php:222
-#: src/Registrations.php:224
-#: src/Registrations.php:234
+#: src/Registrations.php:221
+#: src/Registrations.php:223
+#: src/Registrations.php:225
+#: src/Registrations.php:235
 msgid "Hooks"
 msgstr ""
 
 #: src/api-functions.php:24
-#: src/Registrations.php:160
-#: src/Registrations.php:162
-#: src/Registrations.php:164
-#: src/Registrations.php:174
+#: src/Registrations.php:161
+#: src/Registrations.php:163
+#: src/Registrations.php:165
+#: src/Registrations.php:175
 msgid "Methods"
 msgstr ""
 
@@ -174,38 +174,38 @@ msgstr ""
 msgid "Post has an explanation."
 msgstr ""
 
-#: src/Importer/Importer.php:307
+#: src/Importer/Importer.php:339
 msgid "Functions Reference"
 msgstr ""
 
-#: src/Importer/Importer.php:311
+#: src/Importer/Importer.php:343
 msgid "Hooks Reference"
 msgstr ""
 
-#: src/Importer/Relationships.php:97
-#: src/Importer/Relationships.php:157
+#: src/Importer/Relationships.php:100
+#: src/Importer/Relationships.php:160
 msgid "Uses Functions"
 msgstr ""
 
-#: src/Importer/Relationships.php:98
-#: src/Importer/Relationships.php:117
-#: src/Importer/Relationships.php:136
+#: src/Importer/Relationships.php:101
+#: src/Importer/Relationships.php:120
+#: src/Importer/Relationships.php:139
 msgid "Used by Functions"
 msgstr ""
 
-#: src/Importer/Relationships.php:116
-#: src/Importer/Relationships.php:177
+#: src/Importer/Relationships.php:119
+#: src/Importer/Relationships.php:180
 msgid "Uses Methods"
 msgstr ""
 
-#: src/Importer/Relationships.php:135
-#: src/Importer/Relationships.php:197
+#: src/Importer/Relationships.php:138
+#: src/Importer/Relationships.php:200
 msgid "Uses Hooks"
 msgstr ""
 
-#: src/Importer/Relationships.php:158
-#: src/Importer/Relationships.php:178
-#: src/Importer/Relationships.php:196
+#: src/Importer/Relationships.php:161
+#: src/Importer/Relationships.php:181
+#: src/Importer/Relationships.php:199
 msgid "Used by Methods"
 msgstr ""
 
@@ -218,12 +218,15 @@ msgid "Parsed Summary:"
 msgstr ""
 
 #: src/ParsedContent.php:121
-#: src/ParsedContent.php:148
 msgid "Translated Summary:"
 msgstr ""
 
 #: src/ParsedContent.php:139
 msgid "Parsed Description:"
+msgstr ""
+
+#: src/ParsedContent.php:148
+msgid "Translated Description:"
 msgstr ""
 
 #: src/ParsedContent.php:166
@@ -249,301 +252,305 @@ msgstr ""
 msgid "Translated Return:"
 msgstr ""
 
-#: src/Registrations.php:133
+#: src/Registrations.php:134
 msgid "Function"
 msgstr ""
 
-#: src/Registrations.php:135
+#: src/Registrations.php:136
 msgid "New Function"
 msgstr ""
 
-#: src/Registrations.php:136
-#: src/Registrations.php:166
-#: src/Registrations.php:196
-#: src/Registrations.php:226
-#: src/Registrations.php:259
+#: src/Registrations.php:137
+#: src/Registrations.php:167
+#: src/Registrations.php:197
+#: src/Registrations.php:227
+#: src/Registrations.php:260
 msgid "Add New"
 msgstr ""
 
-#: src/Registrations.php:137
+#: src/Registrations.php:138
 msgid "Add New Function"
 msgstr ""
 
-#: src/Registrations.php:138
+#: src/Registrations.php:139
 msgid "Edit Function"
 msgstr ""
 
-#: src/Registrations.php:139
+#: src/Registrations.php:140
 msgid "View Function"
 msgstr ""
 
-#: src/Registrations.php:140
+#: src/Registrations.php:141
 msgid "Search Functions"
 msgstr ""
 
-#: src/Registrations.php:141
+#: src/Registrations.php:142
 msgid "No Functions found"
 msgstr ""
 
-#: src/Registrations.php:142
+#: src/Registrations.php:143
 msgid "No Functions found in trash"
 msgstr ""
 
-#: src/Registrations.php:143
+#: src/Registrations.php:144
 msgid "Parent Function"
 msgstr ""
 
-#: src/Registrations.php:163
+#: src/Registrations.php:164
 msgid "Method"
 msgstr ""
 
-#: src/Registrations.php:165
+#: src/Registrations.php:166
 msgid "New Method"
 msgstr ""
 
-#: src/Registrations.php:167
+#: src/Registrations.php:168
 msgid "Add New Method"
 msgstr ""
 
-#: src/Registrations.php:168
+#: src/Registrations.php:169
 msgid "Edit Method"
 msgstr ""
 
-#: src/Registrations.php:169
+#: src/Registrations.php:170
 msgid "View Method"
 msgstr ""
 
-#: src/Registrations.php:170
+#: src/Registrations.php:171
 msgid "Search Methods"
 msgstr ""
 
-#: src/Registrations.php:171
+#: src/Registrations.php:172
 msgid "No Methods found"
 msgstr ""
 
-#: src/Registrations.php:172
+#: src/Registrations.php:173
 msgid "No Methods found in trash"
 msgstr ""
 
-#: src/Registrations.php:173
+#: src/Registrations.php:174
 msgid "Parent Method"
 msgstr ""
 
-#: src/Registrations.php:193
+#: src/Registrations.php:194
 msgid "Class"
 msgstr ""
 
-#: src/Registrations.php:195
+#: src/Registrations.php:196
 msgid "New Class"
 msgstr ""
 
-#: src/Registrations.php:197
+#: src/Registrations.php:198
 msgid "Add New Class"
 msgstr ""
 
-#: src/Registrations.php:198
+#: src/Registrations.php:199
 msgid "Edit Class"
 msgstr ""
 
-#: src/Registrations.php:199
+#: src/Registrations.php:200
 msgid "View Class"
 msgstr ""
 
-#: src/Registrations.php:200
+#: src/Registrations.php:201
 msgid "Search Classes"
 msgstr ""
 
-#: src/Registrations.php:201
+#: src/Registrations.php:202
 msgid "No Classes found"
 msgstr ""
 
-#: src/Registrations.php:202
+#: src/Registrations.php:203
 msgid "No Classes found in trash"
 msgstr ""
 
-#: src/Registrations.php:203
+#: src/Registrations.php:204
 msgid "Parent Class"
 msgstr ""
 
-#: src/Registrations.php:223
+#: src/Registrations.php:224
 msgid "Hook"
 msgstr ""
 
-#: src/Registrations.php:225
+#: src/Registrations.php:226
 msgid "New Hook"
 msgstr ""
 
-#: src/Registrations.php:227
+#: src/Registrations.php:228
 msgid "Add New Hook"
 msgstr ""
 
-#: src/Registrations.php:228
+#: src/Registrations.php:229
 msgid "Edit Hook"
 msgstr ""
 
-#: src/Registrations.php:229
+#: src/Registrations.php:230
 msgid "View Hook"
 msgstr ""
 
-#: src/Registrations.php:230
+#: src/Registrations.php:231
 msgid "Search Hooks"
 msgstr ""
 
-#: src/Registrations.php:231
+#: src/Registrations.php:232
 msgid "No Hooks found"
 msgstr ""
 
-#: src/Registrations.php:232
+#: src/Registrations.php:233
 msgid "No Hooks found in trash"
 msgstr ""
 
-#: src/Registrations.php:233
+#: src/Registrations.php:234
 msgid "Parent Hook"
 msgstr ""
 
-#: src/Registrations.php:253
-#: src/Registrations.php:255
-#: src/Registrations.php:257
-#: src/Registrations.php:266
+#: src/Registrations.php:254
+#: src/Registrations.php:256
+#: src/Registrations.php:258
+#: src/Registrations.php:267
 msgid "Reference Landing Pages"
 msgstr ""
 
-#: src/Registrations.php:256
+#: src/Registrations.php:257
 msgid "Reference Landing Page"
 msgstr ""
 
-#: src/Registrations.php:258
+#: src/Registrations.php:259
 msgid "New Reference Landing Page"
 msgstr ""
 
-#: src/Registrations.php:260
+#: src/Registrations.php:261
 msgid "Add New Reference Landing Page"
 msgstr ""
 
-#: src/Registrations.php:261
+#: src/Registrations.php:262
 msgid "Edit Reference Landing Page"
 msgstr ""
 
-#: src/Registrations.php:262
+#: src/Registrations.php:263
 msgid "View Reference Landing Page"
 msgstr ""
 
-#: src/Registrations.php:263
+#: src/Registrations.php:264
 msgid "Search Reference Landing Pages"
 msgstr ""
 
-#: src/Registrations.php:264
+#: src/Registrations.php:265
 msgid "No Pages found"
 msgstr ""
 
-#: src/Registrations.php:265
+#: src/Registrations.php:266
 msgid "No Pages found in trash"
 msgstr ""
 
-#: src/Registrations.php:301
-#: src/Registrations.php:303
-#: src/Registrations.php:317
+#: src/Registrations.php:302
+#: src/Registrations.php:304
+#: src/Registrations.php:318
 msgid "Files"
 msgstr ""
 
-#: src/Registrations.php:304
+#: src/Registrations.php:305
 msgctxt "taxonomy general name"
 msgid "File"
 msgstr ""
 
-#: src/Registrations.php:305
+#: src/Registrations.php:306
 msgid "Search Files"
 msgstr ""
 
-#: src/Registrations.php:307
+#: src/Registrations.php:308
 msgid "All Files"
 msgstr ""
 
-#: src/Registrations.php:308
+#: src/Registrations.php:309
 msgid "Parent File"
 msgstr ""
 
-#: src/Registrations.php:309
+#: src/Registrations.php:310
 msgid "Parent File:"
 msgstr ""
 
-#: src/Registrations.php:310
+#: src/Registrations.php:311
 msgid "Edit File"
 msgstr ""
 
-#: src/Registrations.php:311
+#: src/Registrations.php:312
 msgid "Update File"
 msgstr ""
 
-#: src/Registrations.php:312
 #: src/Registrations.php:313
+#: src/Registrations.php:314
 msgid "New File"
 msgstr ""
 
-#: src/Registrations.php:314
+#: src/Registrations.php:315
 msgid "Files separated by comma"
 msgstr ""
 
-#: src/Registrations.php:315
+#: src/Registrations.php:316
 msgid "Add or remove Files"
 msgstr ""
 
-#: src/Registrations.php:316
+#: src/Registrations.php:317
 msgid "Choose from the most used Files"
 msgstr ""
 
-#: src/Registrations.php:357
+#: src/Registrations.php:358
 msgid "@since"
 msgstr ""
 
-#: src/Registrations.php:375
+#: src/Registrations.php:376
 msgid "Namespaces"
 msgstr ""
 
-#: src/Registrations.php:389
+#: src/Registrations.php:390
+msgid "Source Version"
+msgstr ""
+
+#: src/Registrations.php:404
 msgid "Source Type"
 msgstr ""
 
-#: src/Registrations.php:405
-#: src/Registrations.php:500
+#: src/Registrations.php:420
+#: src/Registrations.php:515
 msgid "Plugin"
 msgstr ""
 
-#: src/Registrations.php:413
-#: src/Registrations.php:504
+#: src/Registrations.php:428
+#: src/Registrations.php:519
 msgid "Theme"
 msgstr ""
 
-#: src/Registrations.php:421
-#: src/Registrations.php:508
+#: src/Registrations.php:436
+#: src/Registrations.php:523
 msgid "Composer Package"
 msgstr ""
 
-#: src/Registrations.php:433
+#: src/Registrations.php:448
 msgid "Role"
 msgstr ""
 
-#: src/Registrations.php:447
+#: src/Registrations.php:462
 msgid "Display"
 msgstr ""
 
-#: src/Registrations.php:448
+#: src/Registrations.php:463
 msgid "Condition"
 msgstr ""
 
-#: src/Registrations.php:449
+#: src/Registrations.php:464
 msgid "Utility"
 msgstr ""
 
-#: src/Registrations.php:450
+#: src/Registrations.php:465
 msgid "Setter"
 msgstr ""
 
-#: src/Registrations.php:451
+#: src/Registrations.php:466
 msgid "Getter"
 msgstr ""
 
-#: src/Registrations.php:657
+#: src/Registrations.php:672
 msgctxt "separator"
 msgid " or "
 msgstr ""

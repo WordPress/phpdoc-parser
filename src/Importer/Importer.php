@@ -2,6 +2,7 @@
 
 namespace Aivec\Plugins\DocParser\Importer;
 
+use Aivec\Plugins\DocParser\Models\ImportConfig;
 use Aivec\Plugins\DocParser\Registrations;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -25,6 +26,13 @@ class Importer implements LoggerAwareInterface
         'taxonomy_since_version' => 'wp-parser-since',
         'taxonomy_source_type' => Registrations::SOURCE_TYPE_TAX_SLUG,
     ];
+
+    /**
+     * Whether to send old references to the trash or not
+     *
+     * @var bool
+     */
+    public $trash_old_refs;
 
     /**
      * Taxonomy name for files
@@ -127,13 +135,29 @@ class Importer implements LoggerAwareInterface
     protected $inserted_terms = [];
 
     /**
+     * List of all inserted/updated post IDs
+     *
+     * @var array
+     */
+    protected $inserted_posts = [];
+
+    /**
+     * List of all posts IDs associated with the given source **before** import
+     *
+     * @var array
+     */
+    protected $previous_posts = [];
+
+    /**
      * Constructor. Sets up post type/taxonomy names.
      *
-     * @param array $source_type_meta
-     * @param array $args Optional. Associative array; class property => value.
+     * @param ImportConfig $source_type_meta
+     * @param bool         $trash_old_refs
+     * @param array        $args Optional. Associative array; class property => value.
      */
-    public function __construct(array $source_type_meta, array $args = []) {
-        $this->source_type_meta = $source_type_meta;
+    public function __construct(ImportConfig $source_type_meta, $trash_old_refs = false, array $args = []) {
+        $this->source_type_meta = $source_type_meta->jsonSerialize();
+        $this->trash_old_refs = $trash_old_refs;
         $properties = wp_parse_args(
             $args,
             self::PROPERTY_MAP
@@ -175,9 +199,6 @@ class Importer implements LoggerAwareInterface
         // Remove actions for performance
         remove_action('transition_post_status', '_update_blog_date_on_post_publish', 10);
         remove_action('transition_post_status', '__clear_multi_author_cache', 10);
-
-        delete_option('wp_parser_imported_wp_version');
-        delete_option('wp_parser_root_import_dir');
 
         // Sanity check -- do the required post types exist?
         if (!post_type_exists($this->post_type_class) || !post_type_exists($this->post_type_function) || !post_type_exists($this->post_type_hook)) {
@@ -339,14 +360,19 @@ class Importer implements LoggerAwareInterface
             }
         }
 
-        // Specifically import WP version file first to get version number.
-        $ver_file = array_filter($data, function ($f) {
-            return 'wp-includes/version.php' === $f['path'];
-        });
-        if ($ver_file) {
-            $this->version = $this->importVersion(reset($ver_file));
+        if ($this->trash_old_refs === true) {
+            $previous_posts_q = avcpdp_get_all_parser_posts_for_source(
+                $this->source_type_meta['type'],
+                $this->source_type_meta['name']
+            );
+            $this->previous_posts = $previous_posts_q->get_posts();
         }
 
+        if (!empty($this->source_type_meta['version'])) {
+            $this->version = $this->source_type_meta['version'];
+        }
+
+        // loop through files and start importing
         $root = '';
         foreach ($data as $file) {
             $this->logger->info(sprintf('Processing file %1$s of %2$s "%3$s".', number_format_i18n($file_number), number_format_i18n($num_of_files), $file['path']));
@@ -360,13 +386,12 @@ class Importer implements LoggerAwareInterface
         }
 
         if (!empty($root)) {
-            update_option('wp_parser_root_import_dir', $root);
             update_term_meta(
                 $this->source_type_meta['type_term_id'],
                 'wp_parser_root_import_dir',
                 $root
             );
-            $this->logger->info('Updated option wp_parser_root_import_dir: ' . $root);
+            $this->logger->info("Updated 'wp_parser_root_import_dir' term meta for {$this->source_type_meta['name']}: {$root}");
         }
 
         $last_import = time();
@@ -375,9 +400,19 @@ class Importer implements LoggerAwareInterface
         update_option('wp_parser_last_import', $last_import);
         $this->logger->info(sprintf('Updated option wp_parser_last_import: %1$s at %2$s.', $import_date, $import_time));
 
-        $wp_version = get_option('wp_parser_imported_wp_version');
-        if ($wp_version) {
-            $this->logger->info('Updated option wp_parser_imported_wp_version: ' . $wp_version);
+        // Import source version if specified
+        if (!empty($this->source_type_meta['version'])) {
+            $this->importVersion($this->source_type_meta['version']);
+        }
+
+        if ($this->trash_old_refs === true) {
+            $this->logger->info('Trashing old references...');
+
+            foreach ($this->previous_posts as $ppost_id) {
+                if (!in_array($ppost_id, $this->inserted_posts, true)) {
+                    wp_trash_post($ppost_id);
+                }
+            }
         }
 
         /*
@@ -599,7 +634,7 @@ class Importer implements LoggerAwareInterface
      *
      * @param array $data           Class.
      * @param bool  $import_ignored Optional; defaults to false. If true, functions marked `@ignore` will be imported.
-     * @return bool|int Post ID of this function, false if any failure.
+     * @return bool|int Post ID of this class, false if any failure.
      */
     protected function importClass(array $data, $import_ignored = false) {
         // Insert this class
@@ -617,18 +652,7 @@ class Importer implements LoggerAwareInterface
 
         // Add slashes to types so that wp_unslash in update_post_meta doesnt remove them.
         // Without the slashes it's impossible to create the reference page link
-        foreach ($data['properties'] as &$prop) {
-            if (!empty($prop['doc']) && !empty($prop['doc']['tags'])) {
-                foreach ($prop['doc']['tags'] as &$tag) {
-                    if (!empty($tag['types'])) {
-                        foreach ($tag['types'] as &$type) {
-                            $type = addslashes($type);
-                        }
-                    }
-                }
-            }
-        }
-        update_post_meta($class_id, '_wp-parser_properties', $data['properties']);
+        update_post_meta($class_id, '_wp-parser_properties', wp_slash($data['properties']));
 
         // Now add the methods
         foreach ($data['methods'] as $method) {
@@ -648,7 +672,7 @@ class Importer implements LoggerAwareInterface
      *                              method belongs to. Defaults to zero (no parent).
      * @param bool  $import_ignored Optional; defaults to false. If true, functions
      *                              marked `@ignore` will be imported.
-     * @return bool|int Post ID of this function, false if any failure.
+     * @return bool|int Post ID of this method, false if any failure.
      */
     protected function importMethod(array $data, $parent_post_id = 0, $import_ignored = false) {
         // Insert this method.
@@ -675,27 +699,16 @@ class Importer implements LoggerAwareInterface
     }
 
     /**
-     * Updates the 'wp_parser_imported_wp_version' option with the version from wp-includes/version.php.
+     * Updates the `wp_parser_imported_version` source type term meta with the version
+     * from the parsed source
      *
-     * @param array $data Data
-     * @return string|false WordPress version number, or false if not known.
+     * @param string $version
+     * @return void
      */
-    protected function importVersion($data) {
-        $version_path = $data['root'] . '/' . $data['path'];
-
-        if (!is_readable($version_path)) {
-            return false;
-        }
-
-        include $version_path;
-
-        if (isset($wp_version) && $wp_version) {
-            update_option('wp_parser_imported_wp_version', $wp_version);
-            $this->logger->info("\t" . sprintf('Updated option wp_parser_imported_wp_version to "%1$s"', $wp_version));
-            return $wp_version;
-        }
-
-        return false;
+    protected function importVersion($version) {
+        $sname = $this->source_type_meta['name'];
+        update_term_meta($this->source_type_meta['type_term_id'], 'wp_parser_imported_version', $version);
+        $this->logger->info("Updated 'wp_parser_imported_version' term meta for {$sname} to: {$version}");
     }
 
     /**
@@ -950,22 +963,12 @@ class Importer implements LoggerAwareInterface
             $anything_updated[] = update_post_meta($post_id, '_wp_parser_namespace', (string)addslashes($data['namespace']));
         }
 
-        // Add extra namespace slashes to types so that wp_unslash in update_post_meta doesnt remove them.
-        // Without the slashes it's impossible to create the reference page link
-        if (!empty($data['doc']) && !empty($data['doc']['tags'])) {
-            foreach ($data['doc']['tags'] as &$tag) {
-                if (!empty($tag['types'])) {
-                    foreach ($tag['types'] as &$type) {
-                        $type = addslashes($type);
-                    }
-                }
-            }
-        }
-
+        // We have to add slashes so that namespace slashes aren't stripped by update_post_meta
+        // Without the slashes it's impossible to create reference links for class/method references with PSR-4 namespaces
+        $anything_updated[] = update_post_meta($post_id, '_wp-parser_tags', wp_slash($data['doc']['tags']));
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_line_num', (string)$data['line']);
         $anything_updated[] = update_post_meta($post_id, '_wp-parser_end_line_num', (string)$data['end_line']);
-        $anything_updated[] = update_post_meta($post_id, '_wp-parser_tags', $data['doc']['tags']);
-        $anything_updated[] = update_post_meta($post_id, '_wp-parser_last_parsed_wp_version', $this->version);
+        $anything_updated[] = update_post_meta($post_id, '_wp-parser_last_parsed_version', $this->version);
 
         // If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.
         if (!$is_new_post && !$post_needed_update && array_filter($anything_updated)) {
@@ -1000,6 +1003,8 @@ class Importer implements LoggerAwareInterface
          * @param array $post_data WordPress data of the post we just inserted or updated
          */
         do_action('wp_parser_import_item', $post_id, $data, $post_data);
+
+        $this->inserted_posts[] = $post_id;
 
         return $post_id;
     }

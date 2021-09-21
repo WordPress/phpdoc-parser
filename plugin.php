@@ -24,14 +24,6 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 Aivec\Plugins\DocParser\Master::init();
 
-add_filter('wp_parser_exclude_directories', function () {
-    return ['vendor', 'dist', 'tests', 'semantic', 'node_modules'];
-});
-
-add_filter('wp_parser_exclude_directories_strict', function () {
-    return true;
-});
-
 register_activation_hook(__FILE__, ['P2P_Storage', 'init']);
 register_activation_hook(__FILE__, ['P2P_Storage', 'install']);
 register_activation_hook(__FILE__, function () {

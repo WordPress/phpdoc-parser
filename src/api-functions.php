@@ -44,19 +44,6 @@ function avcpdp_is_parsed_post_type($post_type = null) {
 }
 
 /**
- * Checks if given post type is the code reference landing page post type.
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int|null $post_id Optional. The post ID.
- * @return bool True if post has a parsed post type
- */
-function avcpdp_is_reference_landing_page_post_type($post_id = null) {
-    $post_type = get_post_type($post_id);
-
-    return $post_type === Aivec\Plugins\DocParser\Registrations::CODE_REFERENCE_POST_TYPE;
-}
-
-/**
  * Get the specific type of hook.
  *
  * @param int|WP_Post|null $post Optional. Post ID or post object. Default is global $post.
@@ -471,7 +458,7 @@ function avcpdp_get_source_type_plugin_terms() {
  * @param int       $posts_per_page
  * @return WP_Query
  */
-function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 10) {
+function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 5) {
     $q = new WP_Query([
         'fields' => 'ids',
         'post_type' => avcpdp_get_parsed_post_types(),
@@ -498,14 +485,15 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
 }
 
 /**
- * Returns list of role terms
+ * Returns list of role terms for a source
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array  $stterms Source type terms
  * @param string $fields
  * @param bool   $hide_empty
  * @return WP_Term[]
  */
-function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
+function avcpdp_get_role_terms($stterms, $fields = 'all', $hide_empty = true) {
     $terms = get_terms([
         'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
         'hide_empty' => $hide_empty,
@@ -515,44 +503,60 @@ function avcpdp_get_role_terms($fields = 'all', $hide_empty = true) {
         return [];
     }
 
-    return $terms;
-}
-
-/**
- * Returns list of reference post type posts that have at least one role assigned to them
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int $posts_per_page
- * @return int[]
- */
-function avcpdp_get_reference_post_list_having_roles($posts_per_page = 50) {
-    return get_posts([
-        'fields' => 'ids',
-        'post_type' => avcpdp_get_parsed_post_types(),
-        'posts_per_page' => $posts_per_page,
-        'tax_query' => [
-            [
-                'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
-                'field' => 'slug',
-                'terms' => avcpdp_get_role_terms('slugs'),
+    $roleswithposts = [];
+    foreach ($terms as $role) {
+        $q = new WP_Query([
+            'fields' => 'ids',
+            'post_type' => avcpdp_get_parsed_post_types(),
+            'tax_query' => [
+                'relation' => 'AND',
+                [
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
+                    'field' => 'slug',
+                    'terms' => $role->slug,
+                    'include_children' => true,
+                ],
+                [
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                    'field' => 'slug',
+                    'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                    'include_children' => false,
+                    'operator' => 'AND',
+                ],
             ],
-        ],
-    ]);
+        ]);
+        if ($q->post_count > 0) {
+            $roleswithposts[] = $role;
+        }
+    }
+
+    return $roleswithposts;
 }
 
 /**
  * Returns list of hook reference post IDs
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param string $hook_type
- * @param int    $posts_per_page
+ * @param WP_Term[] $stterms
+ * @param string    $hook_type
+ * @param int       $posts_per_page
  * @return WP_Query
  */
-function avcpdp_get_hook_reference_posts($hook_type = 'all', $posts_per_page = 20) {
+function avcpdp_get_hook_reference_posts($stterms, $hook_type = 'all', $posts_per_page = 20) {
     $params = [
         'fields' => 'ids',
         'post_type' => 'wp-parser-hook',
         'posts_per_page' => $posts_per_page,
+        'tax_query' => [
+            'relation' => 'AND',
+            [
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                'include_children' => false,
+                'operator' => 'AND',
+            ],
+        ],
     ];
     if ($hook_type === 'filter' || $hook_type === 'action') {
         $params['meta_key'] = '_wp-parser_hook_type';
@@ -597,30 +601,61 @@ function avcpdp_get_role_term_by_slug($slug) {
 }
 
 /**
- * Retrieve the root directory of the parsed WP code.
+ * Returns version number of the imported source.
  *
- * If the option 'wp_parser_root_import_dir' (as set by the parser) is not
+ * The the post ID must have a source type term associated with it for this
+ * function to return a value other than `null`
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param null|int $post_id
+ * @return null|string
+ */
+function avcpdp_get_source_imported_version($post_id = null) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+
+    if (empty($post_id)) {
+        return null;
+    }
+
+    $stterms = avcpdp_get_post_source_type_terms($post_id);
+    if (empty($stterms)) {
+        return null;
+    }
+
+    return (string)get_term_meta($stterms['name']->term_id, 'wp_parser_imported_version', true);
+}
+
+/**
+ * Retrieve the root directory of the parsed source code.
+ *
+ * If the source type term meta 'wp_parser_root_import_dir' (as set by the parser) is not
  * set, then assume ABSPATH.
  *
  * @param int|null $post_id
  * @return string
  */
 function avcpdp_get_source_code_root_dir($post_id = null) {
-    $root_dir = get_option('wp_parser_root_import_dir');
+    $root_dir = ABSPATH;
     if (empty($post_id)) {
         $post_id = get_the_ID();
-        if (!empty($post_id)) {
-            $sourceterms = avcpdp_get_post_source_type_terms($post_id);
-            if (!empty($sourceterms['name'])) {
-                $dir = get_term_meta(
-                    $sourceterms['name']->term_id,
-                    'wp_parser_root_import_dir',
-                    true
-                );
-                $root_dir = !empty($dir) ? $dir : $root_dir;
-            }
-        }
     }
+
+    if (empty($post_id)) {
+        return $root_dir;
+    }
+
+    $sourceterms = avcpdp_get_post_source_type_terms($post_id);
+    if (!empty($sourceterms['name'])) {
+        $dir = get_term_meta(
+            $sourceterms['name']->term_id,
+            'wp_parser_root_import_dir',
+            true
+        );
+        $root_dir = !empty($dir) ? $dir : $root_dir;
+    }
+
     if (isset($_ENV['AVC_NODE_ENV']) && $_ENV['AVC_NODE_ENV'] === 'development') {
         $root_dir = str_replace('/app/', '/var/www/html/', $root_dir);
     }
@@ -975,4 +1010,32 @@ function avcpdp_get_param_translated_content($post_id, $key) {
     $translated_key_val = (string)get_post_meta($post_id, $translated_key, true);
 
     return $translated_key_val;
+}
+
+/**
+ * Returns all wp-parser-* posts associated with a given source type and name pair
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $source_type
+ * @param string $source_name
+ * @return WP_Query
+ */
+function avcpdp_get_all_parser_posts_for_source($source_type, $source_name) {
+    $q = new WP_Query([
+        'fields' => 'ids',
+        'post_status' => ['any'],
+        'post_type' => avcpdp_get_parsed_post_types(),
+        'posts_per_page' => -1,
+        'tax_query' => [
+            [
+                'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                'field' => 'slug',
+                'terms' => [$source_type, $source_name],
+                'include_children' => false,
+                'operator' => 'AND',
+            ],
+        ],
+    ]);
+
+    return $q;
 }
