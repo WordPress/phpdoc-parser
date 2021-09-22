@@ -41,6 +41,7 @@ class SourceTypeTerm
      * Adds item image pick field to term edit page
      *
      * @author Seiyu Inoue <s.inoue@aivec.co.jp>
+     * @param \WP_Term $term
      * @return void
      */
     public static function addFieldsItemImage($term) {
@@ -175,7 +176,7 @@ class SourceTypeTerm
         // get the path relative to /uploads/ - found no better way:
         $relative_path = str_replace($upload_dir['basedir'], '', $svg_path);
         $filename = basename($svg_path);
-        $dimensions = $this->getSvgDimensions($svg_path);
+        $dimensions = self::getSvgDimensions($svg_path);
         $metadata = [
             'width' => intval($dimensions->width),
             'height' => intval($dimensions->height),
@@ -218,7 +219,7 @@ class SourceTypeTerm
         $svg_path = get_attached_file($attachment->ID);
         // If SVG is external, use the URL instead of the path
         $svg_path = file_exists($svg_path) ?: $response['url'];
-        $dimensions = $this->getSvgDimensions($svg_path);
+        $dimensions = self::getSvgDimensions($svg_path);
         $response['sizes'] = [
             'full' => [
                 'url' => $response['url'],

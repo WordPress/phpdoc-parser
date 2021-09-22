@@ -2,6 +2,7 @@
 
 namespace Aivec\Plugins\DocParser\Importer;
 
+use Aivec\Plugins\DocParser\CLI\CliErrorException;
 use Aivec\Plugins\DocParser\Models\ImportConfig;
 use Aivec\Plugins\DocParser\Registrations;
 use Psr\Log\LoggerAwareInterface;
@@ -202,26 +203,29 @@ class Importer implements LoggerAwareInterface
 
         // Sanity check -- do the required post types exist?
         if (!post_type_exists($this->post_type_class) || !post_type_exists($this->post_type_function) || !post_type_exists($this->post_type_hook)) {
-            $this->logger->error(sprintf('Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook));
-            exit;
+            $error = sprintf('Missing post type; check that "%1$s", "%2$s", and "%3$s" are registered.', $this->post_type_class, $this->post_type_function, $this->post_type_hook);
+            $this->logger->error($error);
+            throw new CliErrorException($error, 1);
         }
 
         // Sanity check -- do the required taxonomies exist?
         foreach (['taxonomy_file', 'taxonomy_since_version', 'taxonomy_package', 'taxonomy_source_type'] as $taxonomy_name) {
             if (!taxonomy_exists($this->{$taxonomy_name})) {
-                $this->logger->error(sprintf('Missing taxonomy; check that "%1$s" is registered.', $this->{$taxonomy_name}));
-                exit;
+                $error = sprintf('Missing taxonomy; check that "%1$s" is registered.', $this->{$taxonomy_name});
+                $this->logger->error($error);
+                throw new CliErrorException($error, 1);
             }
         }
 
         // Sanity check -- make sure `wp-parser-source-type` default terms exist
         foreach (['plugin', 'theme', 'composer-package'] as $term_slug) {
             if (!term_exists($term_slug, $this->taxonomy_source_type)) {
-                $this->logger->error(sprintf(
+                $error = sprintf(
                     "Missing term for {$this->taxonomy_source_type}; check that '%1\$s' is registered.",
                     $term_slug
-                ));
-                exit;
+                );
+                $this->logger->error($error);
+                throw new CliErrorException($error, 1);
             }
         }
 
@@ -233,11 +237,12 @@ class Importer implements LoggerAwareInterface
             'taxonomy' => $this->taxonomy_source_type,
         ]);
         if (empty($parent_term) || ($parent_term instanceof \WP_Error)) {
-            $this->logger->error(sprintf(
+            $error = sprintf(
                 "Missing term for {$this->taxonomy_source_type}; check that '%1\$s' is registered.",
                 $this->source_type_meta['type']
-            ));
-            exit;
+            );
+            $this->logger->error($error);
+            throw new CliErrorException($error, 1);
         }
         $parent_term_id = $parent_term[0];
 
@@ -251,8 +256,9 @@ class Importer implements LoggerAwareInterface
             'taxonomy' => $this->taxonomy_source_type,
         ]);
         if ($source_type_term instanceof \WP_Error) {
-            $this->logger->error("An error occured getting the {$this->source_type_meta['name']} term.");
-            exit;
+            $error = "An error occured getting the {$this->source_type_meta['name']} term.";
+            $this->logger->error($error);
+            throw new CliErrorException($error, 1);
         }
         if (empty($source_type_term)) {
             $source_type_term = wp_insert_term(
@@ -262,17 +268,19 @@ class Importer implements LoggerAwareInterface
             );
 
             if ($source_type_term instanceof \WP_Error) {
-                $this->logger->error(sprintf(
+                $error = sprintf(
                     "Failed creating child term {$this->source_type_meta['name']}; check that the parent term '%1\$s' is registered.",
                     $this->source_type_meta['type']
-                ));
-                exit;
+                );
+                $this->logger->error($error);
+                throw new CliErrorException($error, 1);
             }
             $source_term_id = $source_type_term['term_id'];
         } else {
             $source_term_id = $source_type_term[0];
         }
 
+        return;
         // Set term data so we can create relationships later
         $this->source_type_meta['type_term_id'] = $source_term_id;
         $this->source_type_meta['type_parent_term_id'] = $parent_term_id;
