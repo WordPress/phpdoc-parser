@@ -43,6 +43,7 @@ const Import = ({
     } catch (error) {
       const message = String(createErrorMessage(avcpdp as InjectedSettings, error));
       setSnackbar({ open: true, type: 'error', message });
+    } finally {
       setLoading(false);
     }
   };

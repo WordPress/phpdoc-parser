@@ -4,20 +4,18 @@ namespace Aivec\Plugins\DocParser\REST;
 
 use Aivec\Plugins\DocParser\API\Commands as API;
 use Aivec\Plugins\DocParser\ErrorStore;
+use Aivec\Plugins\DocParser\Importer\Relationships;
 use Aivec\Plugins\DocParser\Master;
 use Aivec\Plugins\DocParser\Views\ImporterPage\ImporterPage;
 use AVCPDP\Aivec\ResponseHandler\GenericError;
-use Exception;
 use WP_CLI\Loggers\Execution;
-use WP_CLI\Loggers\Regular;
+use Exception;
 
 /**
  * REST handler for importing source code
  */
 class Import
 {
-    const STATUS_TRACKER = 'avcpdp_importer_status';
-
     /**
      * Master object
      *
@@ -58,10 +56,13 @@ class Import
             );
         }
 
-        $trashOldRefs = isset($assoc_args['trashOldRefs']) && $assoc_args['trashOldRefs'] === true;
+        $trashOldRefs = isset($payload['trashOldRefs']) && $payload['trashOldRefs'] === true;
 
-        $settings = ImporterPage::getSettings();
+        $res = '';
         try {
+            $relationships = new Relationships();
+            $relationships->requirePostsToPosts();
+            $relationships->registerPostRelationships();
             $execution_logger = new Execution(true);
             $execution_logger->ob_start();
             \WP_CLI::set_logger($execution_logger);
@@ -69,9 +70,9 @@ class Import
             $execution_logger->ob_end();
             $stdout = $execution_logger->stdout;
             $stderr = $execution_logger->stderr;
-            $settings['importOutput'] = $stdout;
+            $res = $stdout . $stderr;
         } catch (Exception $e) {
-            ob_clean();
+            ob_end_flush();
             return $this->master->estore->getErrorResponse(
                 ErrorStore::IMPORT_ERROR,
                 [$e->getMessage()],
@@ -79,15 +80,6 @@ class Import
             );
         }
 
-        return 'success';
-    }
-
-    public function status(array $args) {
-        $status = get_option(self::STATUS_TRACKER, [
-            'status' => '',
-            'fulloutput' => '',
-        ]);
-
-        return $status;
+        return $res;
     }
 }

@@ -280,7 +280,6 @@ class Importer implements LoggerAwareInterface
             $source_term_id = $source_type_term[0];
         }
 
-        return;
         // Set term data so we can create relationships later
         $this->source_type_meta['type_term_id'] = $source_term_id;
         $this->source_type_meta['type_parent_term_id'] = $parent_term_id;
