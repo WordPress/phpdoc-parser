@@ -21,6 +21,19 @@
   "support": {
     "issues": "https://github.com/WordPress/phpdoc-parser/issues"
   },
+  "extra": {
+    "mozart": {
+      "dep_namespace": "AVCPDP\\",
+      "dep_directory": "/dist/AVCPDP/",
+      "classmap_directory": "/dist/classes/",
+      "classmap_prefix": "AVCPDP_",
+      "packages": [
+        "aivec/wordpress-router",
+        "aivec/response-handler",
+        "aivec/core-css"
+      ]
+    }
+  },
   "require": {
     "php": ">=5.4",
     "composer/installers": "~1.0",
@@ -28,11 +41,16 @@
     "erusev/parsedown": "~1.7",
     "scribu/lib-posts-to-posts": "dev-master@dev",
     "scribu/scb-framework": "dev-master@dev",
-    "psr/log": "~1.0"
+    "psr/log": "~1.0",
+    "aivec/wordpress-router": "^7.0",
+    "aivec/response-handler": "^5.0",
+    "aivec/core-css": "^2.0",
+    "wp-cli/wp-cli": "^2.5"
   },
   "require-dev": {
     "wp-cli/i18n-command": "^2.2",
-    "aivec/phpcs-wp": "^2.0"
+    "aivec/phpcs-wp": "^2.0",
+    "coenjacobs/mozart": "^0.7.1"
   },
   "autoload": {
     "files": [
@@ -40,6 +58,7 @@
       "src/template-functions.php"
     ],
     "psr-4": {
+      "AVCPDP\\": "dist/AVCPDP",
       "Aivec\\Plugins\\DocParser\\": "src"
     }
   },
@@ -48,6 +67,11 @@
     "lint:fix": "phpcbf -ps --standard=AivecWP-5 --ignore=*/tests/* .",
     "i18n:create-pot": "./vendor/bin/wp i18n make-pot . languages/messages.pot",
     "i18n:update-pos": "@composer i18n:create-pot && find ./languages -name \"*.po\" | xargs -I % msgmerge -o % % languages/messages.pot",
-    "i18n:make-mo": "./vendor/bin/wp i18n make-mo languages"
+    "i18n:make-mo": "./vendor/bin/wp i18n make-mo languages",
+    "build": [
+      "composer install",
+      "mozart compose",
+      "composer install --no-dev"
+    ]
   }
 }

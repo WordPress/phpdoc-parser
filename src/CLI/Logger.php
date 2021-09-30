@@ -4,6 +4,7 @@ namespace Aivec\Plugins\DocParser\CLI;
 
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
+use WP_CLI\Loggers\Execution;
 
 /**
  * PSR-3 logger for WP CLI.
@@ -28,7 +29,7 @@ class Logger extends AbstractLogger
             case LogLevel::ALERT:
             case LogLevel::EMERGENCY:
             case LogLevel::CRITICAL:
-                \WP_CLI::error($message);
+                \WP_CLI::error($message, false);
                 break;
 
             default:
