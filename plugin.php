@@ -16,21 +16,15 @@ define('AVCPDP_VERSION', '%%VERSION%%');
 define('AVCPDP_LANG_DIR', __DIR__ . '/languages');
 define('AVCPDP_PLUGIN_DIR', ABSPATH . 'wp-content/plugins/' . plugin_basename(dirname(__FILE__)));
 define('AVCPDP_PLUGIN_URL', site_url() . '/wp-content/plugins/' . plugin_basename(dirname(__FILE__)));
+define('AVCPDP_DIST_DIR', AVCPDP_PLUGIN_DIR . '/dist');
+define('AVCPDP_DIST_URL', AVCPDP_PLUGIN_URL . '/dist');
 load_plugin_textdomain('wp-parser', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require __DIR__ . '/vendor/autoload.php';
 }
 
-Aivec\Plugins\DocParser\Master::init();
-
-add_filter('wp_parser_exclude_directories', function () {
-    return ['vendor', 'dist', 'tests', 'semantic', 'node_modules'];
-});
-
-add_filter('wp_parser_exclude_directories_strict', function () {
-    return true;
-});
+(new Aivec\Plugins\DocParser\Master())->init();
 
 register_activation_hook(__FILE__, ['P2P_Storage', 'init']);
 register_activation_hook(__FILE__, ['P2P_Storage', 'install']);

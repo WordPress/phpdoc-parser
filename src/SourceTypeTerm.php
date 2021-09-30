@@ -41,7 +41,7 @@ class SourceTypeTerm
      * Adds item image pick field to term edit page
      *
      * @author Seiyu Inoue <s.inoue@aivec.co.jp>
-     * @param mixed $term
+     * @param \WP_Term $term
      * @return void
      */
     public static function addFieldsItemImage($term) {

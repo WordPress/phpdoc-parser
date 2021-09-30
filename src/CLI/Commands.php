@@ -4,6 +4,7 @@ namespace Aivec\Plugins\DocParser\CLI;
 
 use Aivec\Plugins\DocParser\Importer\Importer;
 use Aivec\Plugins\DocParser\Importer\Parser;
+use Aivec\Plugins\DocParser\API\Commands as API;
 use WP_CLI;
 use WP_CLI_Command;
 
@@ -78,7 +79,7 @@ class Commands extends WP_CLI_Command
      * Generate JSON containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
      *
      * @subcommand create
-     * @synopsis   <directory> [--quick] [--import-internal] [--user]
+     * @synopsis   <directory> [--quick] [--import-internal] [--user] [--trash-old-refs]
      *
      * @param array $args
      * @param array $assoc_args
@@ -88,74 +89,17 @@ class Commands extends WP_CLI_Command
         list( $directory ) = $args;
         $directory = realpath($directory);
 
-        if (empty($directory)) {
-            WP_CLI::error(sprintf("Can't read %1\$s. Does the file exist?", $directory));
+        add_action('avcpdp_command_print_line', function ($message) {
+            WP_CLI::line($message);
+        }, 10, 1);
+
+        $trashOldRefs = isset($assoc_args['trash-old-refs']) && $assoc_args['trash-old-refs'] === true;
+        try {
+            (new API())->create($directory, $trashOldRefs, $assoc_args['quick'], $assoc_args['import-internal']);
+        } catch (CliErrorException $e) {
+            WP_CLI::error($e->getMessage());
             exit;
         }
-
-        WP_CLI::line();
-
-        $parser_meta_filen = 'docparser-meta.json';
-        $parser_meta_filep = '';
-        if ($directory === '.') {
-            $parser_meta_filep = "./{$parser_meta_filen}";
-        } else {
-            $parser_meta_filep = "{$directory}/{$parser_meta_filen}";
-        }
-
-        WP_CLI::line(sprintf('Getting source meta data from %1$s', $parser_meta_filep));
-
-        if (!file_exists($parser_meta_filep)) {
-            WP_CLI::error(sprintf('Missing required file: %1$s', $parser_meta_filep));
-            exit;
-        }
-
-        $metaf = file_get_contents($parser_meta_filep);
-        if (empty($metaf)) {
-            WP_CLI::error(sprintf("Can't read %1\$s. Possible permissions error.", $parser_meta_filep));
-            exit;
-        }
-
-        $parser_meta = json_decode($metaf, true);
-        if ($parser_meta === null) {
-            WP_CLI::error(sprintf(
-                '%1$s is malformed. Make sure the file is in proper JSON format.',
-                $parser_meta_filen
-            ));
-            exit;
-        }
-
-        $types = ['plugin', 'theme', 'composer-packages'];
-        $validtypesm = 'Valid types are "plugin", "theme", and "composer-package"';
-        if (empty($parser_meta['type'])) {
-            WP_CLI::error('The "type" key is missing.', false);
-            WP_CLI::log($validtypesm);
-            exit;
-        }
-
-        if (!in_array($parser_meta['type'], $types, true)) {
-            WP_CLI::error($validtypesm);
-            exit;
-        }
-
-        if (empty($parser_meta['name'])) {
-            WP_CLI::error('The "name" key is missing or contains an empty value.');
-            exit;
-        }
-
-        if (!is_string($parser_meta['name'])) {
-            WP_CLI::error('"name" must be a string.');
-            exit;
-        }
-
-        $data = $this->_get_phpdoc_data($directory, 'array');
-        $data = [
-            'meta' => $parser_meta,
-            'files' => $data,
-        ];
-
-        // Import data
-        $this->_do_import($data, isset($assoc_args['quick']), isset($assoc_args['import-internal']));
     }
 
     /**
@@ -200,9 +144,15 @@ class Commands extends WP_CLI_Command
         }
 
         // Run the importer
-        $importer = new Importer($data['meta']);
+        $importer = new Importer($data['config'], $data['trash_old_refs']);
         $importer->setLogger(new Logger());
-        $importer->import($data['files'], $skip_sleep, $import_ignored);
+
+        try {
+            $importer->import($data['files'], $skip_sleep, $import_ignored);
+        } catch (CliErrorException $e) {
+            WP_CLI::error($e->getMessage());
+            exit;
+        }
 
         WP_CLI::line();
     }
