@@ -83,11 +83,6 @@ class SourceTypeTerm
             return;
         }
 
-        $term_meta = get_term_meta($term_id, 'item_image', true);
-        if ($term_meta) {
-            @unlink($term_meta['file']);
-        }
-
         $file = $_FILES['item_image'];
         $file_type = wp_check_filetype($file['name']);
         if ($file_type['ext'] != 'svg') {
@@ -103,6 +98,11 @@ class SourceTypeTerm
 
         if (isset($upload['error']) && $upload['error']) {
             wp_die('Upload error : ' . $upload['error']);
+        }
+
+        $term_meta = get_term_meta($term_id, 'item_image', true);
+        if ($term_meta) {
+            @unlink($term_meta['file']);
         }
 
         $term_meta = [
