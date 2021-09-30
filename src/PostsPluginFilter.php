@@ -38,13 +38,13 @@ class PostsPluginFilter
         }
 
         $show_option_all = __('All Plugins', 'wp-parser');
-        $plugin_term_id = get_query_var('plugin');
+        $plugin_term_id = get_query_var('avcpdp_plugin');
         $args = [
             'show_option_all' => $show_option_all,
             'selected' => $plugin_term_id,
             'hide_empty' => 0,
             'child_of' => $plugin_term->term_id,
-            'name' => 'plugin',
+            'name' => 'avcpdp_plugin',
             'taxonomy' => $plugin_term->taxonomy,
         ];
 
@@ -59,7 +59,7 @@ class PostsPluginFilter
      * @return array $vars
      */
     public static function addSourceTypePlugin($vars) {
-        $vars[] = 'plugin';
+        $vars[] = 'avcpdp_plugin';
         return $vars;
     }
 
@@ -73,7 +73,7 @@ class PostsPluginFilter
     public static function postsWhereSourceTypePlugin($where) {
         global $wpdb;
         if (is_admin()) {
-            $value = get_query_var('plugin');
+            $value = get_query_var('avcpdp_plugin');
             if (!empty($value)) {
                 $where .= $wpdb->prepare(
                     " AND EXISTS ( SELECT 
