@@ -7,7 +7,6 @@ use Aivec\Plugins\DocParser\CLI\Logger;
 use Aivec\Plugins\DocParser\Importer\Importer;
 use Aivec\Plugins\DocParser\Importer\Parser;
 use Aivec\Plugins\DocParser\Models\ImportConfig;
-use Exception;
 
 // phpcs:disable PSR1.Methods.CamelCapsMethodName.NotCamelCaps
 // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
@@ -34,7 +33,7 @@ class Commands
 
         do_action('avcpdp_command_print_line', '');
 
-        $parser_meta_filen = 'docparser-meta.json';
+        $parser_meta_filen = 'docparser.config.json';
         $parser_meta_filep = '';
         if ($directory === '.') {
             $parser_meta_filep = "./{$parser_meta_filen}";
