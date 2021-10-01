@@ -49,6 +49,7 @@ class Master
         Queries::init();
         Formatting::init();
         SourceTypeTerm::init();
+        PostsPluginFilter::init();
         if (is_admin()) {
             Admin::init();
         }
