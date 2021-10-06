@@ -50,9 +50,8 @@ function avcpdp_is_parsed_post_type($post_type = null) {
         return in_array($post_type, avcpdp_get_parsed_post_types());
     }
 
-    $pid = get_the_ID();
-    if (!empty($pid)) {
-        return in_array(get_post_type($pid), avcpdp_get_parsed_post_types());
+    if (is_single()) {
+        return in_array(get_post_type(), avcpdp_get_parsed_post_types());
     }
 
     $ptypes = get_query_var('post_type');
@@ -119,6 +118,25 @@ function avcpdp_post_type_has_source_code($post_type = null) {
  * @return string
  */
 function avcpdp_get_search_link($s = '', $args = [], $post_types = []) {
+    $args = avcpdp_get_search_args($s, $args, $post_types);
+    foreach ($args as $argk => $argsv) {
+        if (is_string($argsv)) {
+            $args[$argk] = rawurlencode($argsv);
+        }
+    }
+    return add_query_arg($args, home_url('/'));
+}
+
+/**
+ * Returns search arguments
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $s
+ * @param array  $args
+ * @param array  $post_types
+ * @return (string|array)[]
+ */
+function avcpdp_get_search_args($s = '', $args = [], $post_types = []) {
     $sttstring = '';
     $stterms = avcpdp_get_source_type_terms();
     if (!empty($stterms)) {
@@ -127,14 +145,16 @@ function avcpdp_get_search_link($s = '', $args = [], $post_types = []) {
     if (empty($post_types)) {
         $post_types = avcpdp_get_parsed_post_types();
     }
-    $defaultargs = [
-        's' => $s,
-        'post_type' => $post_types,
-        'taxonomy' => Registrations::SOURCE_TYPE_TAX_SLUG,
-        Registrations::SOURCE_TYPE_TAX_SLUG => $sttstring,
-    ];
 
-    return add_query_arg(array_merge($defaultargs, $args), get_home_url());
+    return array_merge(
+        [
+            's' => $s,
+            'post_type' => $post_types,
+            'taxonomy' => Registrations::SOURCE_TYPE_TAX_SLUG,
+            Registrations::SOURCE_TYPE_TAX_SLUG => $sttstring,
+        ],
+        $args
+    );
 }
 
 /**
