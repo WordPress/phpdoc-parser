@@ -485,6 +485,54 @@ function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page
 }
 
 /**
+ * Returns list of tags that have at least one association with a `wp-parser-*` post
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array  $stterms Source type terms
+ * @param string $fields
+ * @param bool   $hide_empty
+ * @return WP_Term[]
+ */
+function avcpdp_get_associated_tags($stterms, $fields = 'all', $hide_empty = true) {
+    $terms = get_tags([
+        'hide_empty' => $hide_empty,
+        'fields' => $fields,
+    ]);
+    if ($terms instanceof WP_Error) {
+        return [];
+    }
+
+    $tagswithposts = [];
+    foreach ($terms as $tag) {
+        $q = new WP_Query([
+            'fields' => 'ids',
+            'post_type' => avcpdp_get_parsed_post_types(),
+            'tax_query' => [
+                'relation' => 'AND',
+                [
+                    'taxonomy' => 'post_tag',
+                    'field' => 'slug',
+                    'terms' => $tag->slug,
+                    'include_children' => true,
+                ],
+                [
+                    'taxonomy' => Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG,
+                    'field' => 'slug',
+                    'terms' => [$stterms['type']->slug, $stterms['name']->slug],
+                    'include_children' => false,
+                    'operator' => 'AND',
+                ],
+            ],
+        ]);
+        if ($q->post_count > 0) {
+            $tagswithposts[] = $tag;
+        }
+    }
+
+    return $tagswithposts;
+}
+
+/**
  * Returns list of role terms for a source
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
