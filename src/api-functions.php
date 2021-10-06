@@ -1,5 +1,7 @@
 <?php
 
+use Aivec\Plugins\DocParser\Registrations;
+
 /**
  * Returns the slug for the source type taxonomy
  *
@@ -34,13 +36,40 @@ function avcpdp_get_parsed_post_types($labels = '') {
 /**
  * Checks if given post type is one of the parsed post types.
  *
+ * If no post type is provided, this function will use the post type of
+ * the current post, or the queried post type if archive or search
+ *
+ * If archive or search, `false` will be returned if any of the queried
+ * post types are not a `wp-parser-*` post type
+ *
  * @param null|string $post_type Optional. The post type. Default null.
- * @return bool True if post has a parsed post type
+ * @return bool
  */
 function avcpdp_is_parsed_post_type($post_type = null) {
-    $post_type = $post_type ? $post_type : get_post_type();
+    if (!empty($post_type)) {
+        return in_array($post_type, avcpdp_get_parsed_post_types());
+    }
 
-    return in_array($post_type, avcpdp_get_parsed_post_types());
+    $pid = get_the_ID();
+    if (!empty($pid)) {
+        return in_array(get_post_type($pid), avcpdp_get_parsed_post_types());
+    }
+
+    $ptypes = get_query_var('post_type');
+    $ptypes = !empty($ptypes) ? $ptypes : '';
+    if (is_array($ptypes)) {
+        foreach ($ptypes as $ptype) {
+            if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
+                return false;
+            }
+        }
+    } else {
+        if (!in_array($ptypes, avcpdp_get_parsed_post_types(), true)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -81,21 +110,143 @@ function avcpdp_post_type_has_source_code($post_type = null) {
 }
 
 /**
+ * Returns search page link
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $s
+ * @param array  $args
+ * @param array  $post_types
+ * @return string
+ */
+function avcpdp_get_search_link($s = '', $args = [], $post_types = []) {
+    $sttstring = '';
+    $stterms = avcpdp_get_source_type_terms();
+    if (!empty($stterms)) {
+        $sttstring = $stterms['type']->slug . ',' . $stterms['name']->slug;
+    }
+    if (empty($post_types)) {
+        $post_types = avcpdp_get_parsed_post_types();
+    }
+    $defaultargs = [
+        's' => $s,
+        'post_type' => $post_types,
+        'taxonomy' => Registrations::SOURCE_TYPE_TAX_SLUG,
+        Registrations::SOURCE_TYPE_TAX_SLUG => $sttstring,
+    ];
+
+    return add_query_arg(array_merge($defaultargs, $args), get_home_url());
+}
+
+/**
+ * Returns `true` if the current query is the main query and a search query
+ * for at least one of the 4 `wp-parser-*` reference post types
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return bool
+ */
+function avcpdp_is_reference_search() {
+    // only process main query
+    if (!is_main_query()) {
+        return false;
+    }
+    // check if search query
+    if (!is_search()) {
+        return false;
+    }
+
+    return avcpdp_is_parsed_post_type();
+}
+
+/**
+ * Returns source type "type" and "name" terms for the current page
+ *
+ * If the current page is an archive or search page and at least one
+ * of the queried post types is a `wp-parser-*` post type, this function
+ * will attempt to extract the source type terms from the taxonomy query.
+ *
+ * If the current page is a single page, source type terms associated with
+ * the post ID will be returned.
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return array {
+ *     A key-value map of source type terms. Empty array if the source type terms could
+ *     not be determined
+ *
+ *     @type \WP_Term $type The type of source (plugin, theme, or composer-package)
+ *     @type \WP_Term $name The unique name for the source (eg: my-plugin)
+ * }
+ */
+function avcpdp_get_source_type_terms() {
+    if (is_archive() || is_search()) {
+        return avcpdp_get_reference_archive_source_type_terms();
+    }
+
+    return avcpdp_get_post_source_type_terms();
+}
+
+/**
+ * Returns source type "type" and "name" terms for the current post
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param int|null $post_id
+ * @return array
+ */
+function avcpdp_get_post_source_type_terms($post_id = null) {
+    if ($post_id === null) {
+        $post_id = get_the_ID();
+    }
+
+    if (empty($post_id)) {
+        return [];
+    }
+
+    $terms = wp_get_post_terms($post_id, Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
+    if (empty($terms)) {
+        return [];
+    }
+
+    $res = [];
+    foreach ($terms as $term) {
+        if ($term->parent === 0) {
+            $res['type'] = $term;
+        } else {
+            $res['name'] = $term;
+        }
+    }
+
+    if (empty($res['type']) || empty($res['name'])) {
+        return [];
+    }
+
+    return $res;
+}
+
+/**
  * Returns the source type terms for the `wp-parser-*` post type currently being queried
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
  * @return WP_Term[]
  */
 function avcpdp_get_reference_archive_source_type_terms() {
-    if (!is_archive()) {
+    if (!is_archive() && !is_search()) {
         // not a code reference archive, cannot get source type terms
         return [];
     }
-    $ptype = get_query_var('post_type');
-    if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
-        // only get source type terms from `wp-parser-*` post types
-        return [];
+    // only get source type terms from `wp-parser-*` post types
+    $ptypes = get_query_var('post_type');
+    $ptypes = !empty($ptypes) ? $ptypes : '';
+    if (is_array($ptypes)) {
+        foreach ($ptypes as $ptype) {
+            if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
+                return false;
+            }
+        }
+    } else {
+        if (!in_array($ptypes, avcpdp_get_parsed_post_types(), true)) {
+            return false;
+        }
     }
+
     $stype = get_query_var(\Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
     if (empty($stype)) {
         // source type not queried for, cannot determine URL
@@ -273,43 +424,6 @@ function avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms
     }
 
     return $trail;
-}
-
-/**
- * Returns source type "type" and "name" terms for the current post
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int|null $post_id
- * @return array|null
- */
-function avcpdp_get_post_source_type_terms($post_id = null) {
-    if ($post_id === null) {
-        $post_id = get_the_ID();
-    }
-
-    if (empty($post_id)) {
-        return null;
-    }
-
-    $terms = wp_get_post_terms($post_id, Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
-    if (empty($terms)) {
-        return null;
-    }
-
-    $res = [];
-    foreach ($terms as $term) {
-        if ($term->parent === 0) {
-            $res['type'] = $term;
-        } else {
-            $res['name'] = $term;
-        }
-    }
-
-    if (empty($res['type']) || empty($res['name'])) {
-        return null;
-    }
-
-    return $res;
 }
 
 /**
