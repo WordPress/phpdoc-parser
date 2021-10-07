@@ -15,48 +15,43 @@ class Queries
      */
     public static function init() {
         add_action('pre_get_posts', [get_class(), 'preGetPosts'], 10, 1);
+        add_filter('posts_orderby', [get_class(), 'orderByNotDeprecated'], 10, 2);
         add_filter('query_vars', [get_class(), 'addCustomQueryVars'], 10, 1);
         add_action('parse_tax_query', [get_class(), 'taxQueryNoChildren'], 10, 1);
         add_filter('pre_handle_404', [get_class(), 'force404onWrongSourceType'], 10, 2);
-        add_filter('posts_results', [get_class(), 'orderByNotDeprecated'], 10, 1);
     }
 
     /**
-     * Uses PHP to put deprecated wp-parser-* posts at the end of the list for
-     * archive pages
+     * Filters the ORDER BY clause so that deprecated functions/methods/classes are
+     * put at the bottom of the results
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
-     * @param \WP_Posts[] $posts
-     * @return \WP_Posts[]
+     * @param string    $orderby
+     * @param \WP_Query $query
+     * @return string
      */
-    public static function orderByNotDeprecated($posts) {
-        global $wp_query;
+    public static function orderByNotDeprecated($orderby, $query) {
+        if ($query->order_by_not_deprecated) {
+            $case = "CASE 
+                WHEN wp_postmeta.meta_value NOT LIKE '%name\";s:10:\"deprecated%' THEN 1 
+                ELSE 2
+            END";
 
-        if (!$wp_query->is_main_query() || !$wp_query->is_post_type_archive()) {
-            return $posts;
+            $orderby = !empty($orderby) ? "{$case}, {$orderby}" : $case;
+            return $orderby;
         }
 
-        $ptype = !empty($wp_query->query['post_type']) ? $wp_query->query['post_type'] : '';
-        if (!avcpdp_is_parsed_post_type($ptype)) {
-            return $posts;
+        if ($query->order_by_not_deprecated_hook) {
+            $case = "CASE
+                WHEN wp_postmeta.meta_value != 'filter_deprecated' AND wp_postmeta.meta_value != 'action_deprecated' THEN 1
+                ELSE 2
+            END";
+
+            $orderby = !empty($orderby) ? "{$case}, {$orderby}" : $case;
+            return $orderby;
         }
 
-        $isdeprecated = [];
-        $notdeprecated = [];
-        foreach ($posts as $post) {
-            $tags = get_post_meta($post->ID, '_wp-parser_tags', true);
-            $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
-            $deprecated = array_shift($deprecated);
-            if ($deprecated) {
-                $isdeprecated[] = $post;
-            } else {
-                $notdeprecated[] = $post;
-            }
-        }
-
-        $posts = array_merge($notdeprecated, $isdeprecated);
-
-        return $posts;
+        return $orderby;
     }
 
     /**
@@ -66,28 +61,61 @@ class Queries
      * @return void
      */
     public static function preGetPosts($query) {
-        if ($query->is_main_query() && $query->is_post_type_archive()) {
+        $orderbynotdep = false;
+        $orderbynotdephook = false;
+        $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
+        if ($query->is_post_type_archive()) {
+            if (!avcpdp_is_parsed_post_type($ptype)) {
+                return;
+            }
+
             $query->set('orderby', 'title');
             $query->set('order', 'ASC');
-            $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
             $hook_type = !empty($query->query['hook_type']) ? $query->query['hook_type'] : '';
-            if ($ptype === 'wp-parser-hook' && ($hook_type === 'filter' || $hook_type === 'action')) {
-                $query->set('meta_key', '_wp-parser_hook_type');
-                $query->set('meta_value', $hook_type);
+            if ($ptype === 'wp-parser-hook') {
+                if ($hook_type === 'filter' || $hook_type === 'action') {
+                    $query->set('meta_key', '_wp-parser_hook_type');
+                    $query->set('meta_value', $hook_type);
+                } else {
+                    $orderbynotdephook = true;
+                }
+            } else {
+                $orderbynotdep = true;
             }
         }
 
-        if (
-            $query->is_main_query()
-            && $query->is_search()
-            && empty($query->query['post_type'])
-            && !empty($query->query['avcpdp_search'])
-        ) {
-            $query->set('post_type', avcpdp_get_parsed_post_types());
+        if ($query->is_search() && !empty($query->query['avcpdp_search'])) {
+            if (empty($ptype)) {
+                $query->set('post_type', avcpdp_get_parsed_post_types());
+                $orderbynotdep = true;
+            } else {
+                if (
+                    $ptype === 'wp-parser-hook'
+                    || (
+                        is_array($ptype) && count($ptype) === 1 && $ptype[0] === 'wp-parser-hook'
+                    )
+                ) {
+                    $orderbynotdephook = true;
+                } else {
+                    $orderbynotdep = true;
+                }
+            }
+            $query->set('orderby', 'title');
+            $query->set('order', 'ASC');
         }
 
-        if ($query->is_main_query() && $query->is_tax() && $query->get('wp-parser-source-file')) {
-            $query->set('wp-parser-source-file', str_replace(['.php', '/'], ['-php', '_'], $query->query['wp-parser-source-file']));
+        if ($orderbynotdep === true) {
+            // JOIN on `_wp-parser_tags` so that we can ORDER BY not deprecated
+            $query->set('meta_key', '_wp-parser_tags');
+            // set arbitrary member variable so we don't have to do these checks again...
+            $query->order_by_not_deprecated = true;
+        }
+
+        if ($orderbynotdephook === true) {
+            // JOIN on `_wp-parser_hook_type` so that we can ORDER BY not deprecated
+            $query->set('meta_key', '_wp-parser_hook_type');
+            // set arbitrary member variable so we don't have to do these checks again...
+            $query->order_by_not_deprecated_hook = true;
         }
 
         // For search query modifications see DevHub_Search.

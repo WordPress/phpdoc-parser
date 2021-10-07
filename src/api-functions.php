@@ -585,15 +585,19 @@ function avcpdp_get_source_type_plugin_terms() {
  * Returns list of reference post type posts for a given role slug
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param WP_Term[] $stterms
- * @param string    $role
- * @param int       $posts_per_page
+ * @param WP_Term[]    $stterms
+ * @param string       $role
+ * @param array|string $post_type
+ * @param int          $posts_per_page
  * @return WP_Query
  */
-function avcpdp_get_reference_post_list_by_role($stterms, $role, $posts_per_page = 5) {
+function avcpdp_get_reference_post_list_by_role($stterms, $role, $post_type, $posts_per_page = 5) {
+    if (empty($post_type)) {
+        $post_type = avcpdp_get_parsed_post_types();
+    }
     $q = new WP_Query([
         'fields' => 'ids',
-        'post_type' => avcpdp_get_parsed_post_types(),
+        'post_type' => $post_type,
         'posts_per_page' => $posts_per_page,
         'tax_query' => [
             'relation' => 'AND',
@@ -668,12 +672,13 @@ function avcpdp_get_associated_tags($stterms, $fields = 'all', $hide_empty = tru
  * Returns list of role terms for a source
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param array  $stterms Source type terms
- * @param string $fields
- * @param bool   $hide_empty
+ * @param array        $stterms Source type terms
+ * @param array|string $post_type
+ * @param string       $fields
+ * @param bool         $hide_empty
  * @return WP_Term[]
  */
-function avcpdp_get_role_terms($stterms, $fields = 'all', $hide_empty = true) {
+function avcpdp_get_role_terms($stterms, $post_type, $fields = 'all', $hide_empty = true) {
     $terms = get_terms([
         'taxonomy' => Aivec\Plugins\DocParser\Registrations::ROLE_TAX_SLUG,
         'hide_empty' => $hide_empty,
@@ -683,11 +688,15 @@ function avcpdp_get_role_terms($stterms, $fields = 'all', $hide_empty = true) {
         return [];
     }
 
+    if (empty($post_type)) {
+        $post_type = avcpdp_get_parsed_post_types();
+    }
+
     $roleswithposts = [];
     foreach ($terms as $role) {
         $q = new WP_Query([
             'fields' => 'ids',
-            'post_type' => avcpdp_get_parsed_post_types(),
+            'post_type' => $post_type,
             'tax_query' => [
                 'relation' => 'AND',
                 [
