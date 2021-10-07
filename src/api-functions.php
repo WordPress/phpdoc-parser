@@ -109,6 +109,32 @@ function avcpdp_post_type_has_source_code($post_type = null) {
 }
 
 /**
+ * Returns the SVG logo term meta for the current reference
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return array {
+ *     The SVG logo term meta data
+ *
+ *     @type string $file Image path
+ *     @type string $url  Image URL
+ *     @type string $type File extension
+ * }
+ */
+function avcpdp_get_reference_logo() {
+    $stterms = avcpdp_get_source_type_terms();
+    if (empty($stterms)) {
+        return null;
+    }
+
+    $svglogo = get_term_meta($stterms['name']->term_id, 'item_image', true);
+    if (empty($svglogo)) {
+        return null;
+    }
+
+    return $svglogo;
+}
+
+/**
  * Returns search page link
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
