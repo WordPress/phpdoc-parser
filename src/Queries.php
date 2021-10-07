@@ -15,7 +15,7 @@ class Queries
      */
     public static function init() {
         add_action('pre_get_posts', [get_class(), 'preGetPosts'], 10, 1);
-        add_filter('query_vars', [get_class(), 'addHookTypeQueryVar'], 10, 1);
+        add_filter('query_vars', [get_class(), 'addCustomQueryVars'], 10, 1);
         add_action('parse_tax_query', [get_class(), 'taxQueryNoChildren'], 10, 1);
         add_filter('pre_handle_404', [get_class(), 'force404onWrongSourceType'], 10, 2);
         add_filter('posts_results', [get_class(), 'orderByNotDeprecated'], 10, 1);
@@ -72,9 +72,18 @@ class Queries
             $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
             $hook_type = !empty($query->query['hook_type']) ? $query->query['hook_type'] : '';
             if ($ptype === 'wp-parser-hook' && ($hook_type === 'filter' || $hook_type === 'action')) {
-                $query->query_vars['meta_key'] = '_wp-parser_hook_type';
-                $query->query_vars['meta_value'] = $hook_type;
+                $query->set('meta_key', '_wp-parser_hook_type');
+                $query->set('meta_value', $hook_type);
             }
+        }
+
+        if (
+            $query->is_main_query()
+            && $query->is_search()
+            && empty($query->query['post_type'])
+            && !empty($query->query['avcpdp_search'])
+        ) {
+            $query->set('post_type', avcpdp_get_parsed_post_types());
         }
 
         if ($query->is_main_query() && $query->is_tax() && $query->get('wp-parser-source-file')) {
@@ -85,13 +94,15 @@ class Queries
     }
 
     /**
-     * Adds `hook_type` query var for filtering hooks by type
+     * Adds `hook_type` query var for filtering hooks by type and
+     * `avcpdp_search` for reference search
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param array $qvars
      * @return array
      */
-    public static function addHookTypeQueryVar($qvars) {
+    public static function addCustomQueryVars($qvars) {
+        $qvars[] = 'avcpdp_search';
         $qvars[] = 'hook_type';
         return $qvars;
     }

@@ -142,14 +142,12 @@ function avcpdp_get_search_args($s = '', $args = [], $post_types = []) {
     if (!empty($stterms)) {
         $sttstring = $stterms['type']->slug . ',' . $stterms['name']->slug;
     }
-    if (empty($post_types)) {
-        $post_types = avcpdp_get_parsed_post_types();
-    }
 
     return array_merge(
         [
             's' => $s,
             'post_type' => $post_types,
+            'avcpdp_search' => 1,
             'taxonomy' => Registrations::SOURCE_TYPE_TAX_SLUG,
             Registrations::SOURCE_TYPE_TAX_SLUG => $sttstring,
         ],
