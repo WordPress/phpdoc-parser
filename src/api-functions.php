@@ -47,11 +47,11 @@ function avcpdp_get_parsed_post_types($labels = '') {
  */
 function avcpdp_is_parsed_post_type($post_type = null) {
     if (!empty($post_type)) {
-        return in_array($post_type, avcpdp_get_parsed_post_types());
+        return in_array($post_type, avcpdp_get_parsed_post_types(), true);
     }
 
     if (is_single()) {
-        return in_array(get_post_type(), avcpdp_get_parsed_post_types());
+        return in_array(get_post_type(), avcpdp_get_parsed_post_types(), true);
     }
 
     $ptypes = get_query_var('post_type');
@@ -69,6 +69,49 @@ function avcpdp_is_parsed_post_type($post_type = null) {
     }
 
     return true;
+}
+
+/**
+ * Gets the current parsed post type
+ *
+ * This function will use the post type of the current post, or the
+ * queried post type if archive or search
+ *
+ * If archive or search, `null` will be returned if any of the queried
+ * post types are not a `wp-parser-*` post type
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return string|string[]|null
+ */
+function avcpdp_get_parsed_post_type() {
+    if (is_single()) {
+        $sptype = get_post_type();
+        if (!in_array($sptype, avcpdp_get_parsed_post_types(), true)) {
+            return null;
+        }
+
+        return $sptype;
+    }
+
+    $ptypes = get_query_var('post_type');
+    $ptypes = !empty($ptypes) ? $ptypes : null;
+    if ($ptypes === null) {
+        return null;
+    }
+
+    if (is_array($ptypes)) {
+        foreach ($ptypes as $ptype) {
+            if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
+                return null;
+            }
+        }
+    } else {
+        if (!in_array($ptypes, avcpdp_get_parsed_post_types(), true)) {
+            return null;
+        }
+    }
+
+    return $ptypes;
 }
 
 /**
@@ -308,39 +351,63 @@ function avcpdp_get_reference_archive_source_type_terms() {
 }
 
 /**
- * Returns the base URL for the `wp-parser-*` post type currently being queried
+ * Returns the base URL for the `wp-parser-*` post type of the current post/query
  *
  * This function will return an empty string if the current main query is not related
- * to a reference post type
+ * to a reference post type or if the current page is a singular page but the post
+ * type is not a reference post type
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return string Example: `/reference/plugin/my-plugin/functions`
+ */
+function avcpdp_get_reference_base_url() {
+    $baseurl = avcpdp_get_reference_type_base_url();
+    if (empty($baseurl)) {
+        return '';
+    }
+    $ptype = avcpdp_get_parsed_post_type();
+    if (!is_string($ptype)) {
+        return '';
+    }
+    $parsertype = avcpdp_get_reference_post_type_url_slug($ptype);
+    $baseurl .= "/{$parsertype}";
+
+    return $baseurl;
+}
+
+/**
+ * Returns URL portion for a `wp-parser-*` post type
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param string $ptype
  * @return string
  */
-function avcpdp_get_reference_archive_base_url() {
-    if (!is_archive()) {
-        // not a code reference archive, cannot determine URL
-        return '';
-    }
-    $ptype = get_query_var('post_type');
-    if (!in_array($ptype, avcpdp_get_parsed_post_types(), true)) {
-        // only show filter by category section for `wp-parser-*` post types
-        return '';
-    }
-    $stype = get_query_var(\Aivec\Plugins\DocParser\Registrations::SOURCE_TYPE_TAX_SLUG);
-    if (empty($stype)) {
-        // source type not queried for, cannot determine URL
-        return '';
-    }
-    $stypepieces = explode(',', $stype);
-    if (!avcpdp_source_type_term_slugs_are_valid($stypepieces)) {
-        // the combination of source type terms are not valid
+function avcpdp_get_reference_post_type_url_slug($ptype) {
+    if (!avcpdp_is_parsed_post_type($ptype)) {
         return '';
     }
 
-    $type = $stypepieces[0];
-    $name = $stypepieces[1];
-    $parsertype = \Aivec\Plugins\DocParser\Registrations::WP_PARSER_PT_MAP[$ptype]['urlpiece'];
-    $baseurl = home_url("/reference/{$type}/{$name}/{$parsertype}");
+    return \Aivec\Plugins\DocParser\Registrations::WP_PARSER_PT_MAP[$ptype]['urlpiece'];
+}
+
+/**
+ * Returns the base URL for the source type terms of the current post/query
+ *
+ * This function will return an empty string if the current main query does not
+ * contain a source type taxonomy search or if the current page is a singular page
+ * but the post does not have source type terms applied to it.
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @return string Example: `/reference/plugin/my-plugin`
+ */
+function avcpdp_get_reference_type_base_url() {
+    $stterms = avcpdp_get_source_type_terms();
+    if (empty($stterms)) {
+        return '';
+    }
+    $type = $stterms['type']->slug;
+    $name = $stterms['name']->slug;
+    $baseurl = home_url("/reference/{$type}/{$name}");
 
     return $baseurl;
 }
