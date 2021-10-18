@@ -443,59 +443,16 @@ function avcpdp_get_reference_single_base_url($pid = null) {
 }
 
 /**
- * Returns hierarchical descending array of reference landing page posts tied to the current reference
- * single post via the source type taxonomy
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param int|null $pid Optional. Post ID. Defaults to current post
- * @return array
- */
-function avcpdp_get_reference_landing_page_posts_from_reference_single_post($pid = null) {
-    if (empty($pid)) {
-        $pid = get_the_ID();
-    }
-    if (empty($pid)) {
-        return [];
-    }
-    if (!is_single($pid)) {
-        return [];
-    }
-    if (!avcpdp_is_parsed_post_type()) {
-        return [];
-    }
-    if (!avcpdp_source_type_terms_are_valid_for_post($pid)) {
-        return [];
-    }
-
-    $stterms = avcpdp_get_post_source_type_terms($pid);
-
-    return avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms);
-}
-
-/**
- * Returns hierarchical descending array of reference landing page posts tied to the source types terms
- * of the current `wp-parser-*` post type currently being queired
+ * Returns hierarchical descending array of reference landing page posts tied to the current source types terms
  *
  * @author Evan D Shaw <evandanielshaw@gmail.com>
  * @return array
  */
-function avcpdp_get_reference_landing_page_posts_from_archive() {
-    $stterms = avcpdp_get_reference_archive_source_type_terms();
+function avcpdp_get_reference_landing_page_posts_from_source_type_terms() {
+    $stterms = avcpdp_get_source_type_terms();
     if (empty($stterms)) {
         return [];
     }
-
-    return avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms);
-}
-
-/**
- * Returns hierarchical descending array of reference landing page posts tied to the given source types terms
- *
- * @author Evan D Shaw <evandanielshaw@gmail.com>
- * @param array $stterms
- * @return array
- */
-function avcpdp_get_reference_landing_page_posts_from_source_type_terms($stterms) {
     $trail = [];
     $stypelanding = get_posts([
         'order' => 'ASC',
