@@ -34,17 +34,17 @@ class Formatting
         add_filter('the_excerpt', [get_class(), 'autolinkReferences'], 11);
         add_filter('the_content', [get_class(), 'autolinkReferences'], 11);
 
-        add_filter('devhub-parameter-type', [get_class(), 'autolinkReferences']);
+        add_filter('avcapps-parameter-type', [get_class(), 'autolinkReferences']);
 
-        add_filter('devhub-format-description', [get_class(), 'autolinkReferences']);
-        add_filter('devhub-format-description', [get_class(), 'fixParamHashFormatting'], 9);
-        add_filter('devhub-format-description', [get_class(), 'fixParamDescriptionHtmlAsCode']);
-        add_filter('devhub-format-description', [get_class(), 'convertListsToMarkup']);
+        add_filter('avcpdp-format-description', [get_class(), 'autolinkReferences']);
+        add_filter('avcpdp-format-description', [get_class(), 'fixParamHashFormatting'], 9);
+        add_filter('avcpdp-format-description', [get_class(), 'fixParamDescriptionHtmlAsCode']);
+        add_filter('avcpdp-format-description', [get_class(), 'convertListsToMarkup']);
 
-        add_filter('devhub-format-hash-param-description', [get_class(), 'autolinkReferences']);
-        add_filter('devhub-format-hash-param-description', [get_class(), 'fixParamDescriptionParsedownBug']);
+        add_filter('avcpdp-format-hash-param-description', [get_class(), 'autolinkReferences']);
+        add_filter('avcpdp-format-hash-param-description', [get_class(), 'fixParamDescriptionParsedownBug']);
 
-        add_filter('devhub-function-return-type', [get_class(), 'autolinkReferences'], 10, 2);
+        add_filter('avcapps-function-return-type', [get_class(), 'autolinkReferences'], 10, 2);
 
         add_filter('syntaxhighlighter_htmlresult', [get_class(), 'fixCodeEntityEncoding'], 20);
     }
@@ -167,38 +167,31 @@ class Formatting
         } elseif (false !== strpos($link, '::$')) {
             // Nothing to link to currently.
         } elseif (false !== strpos($link, '::')) {
-            // Link to class method: {@see WP_Query::query()}
-            $url = get_post_type_archive_link('wp-parser-class') .
-                    str_replace(['::', '()'], ['/', ''], $link);
+            // Link to class method: {@see \Namespace\Classname::someMethod()}
+            $post = self::getPostFromReference($link, 'wp-parser-method');
+            if ($post !== null) {
+                $url = get_permalink($post->ID);
+            }
         } elseif (1 === preg_match('/^(?:\'|(?:&#8216;))([\$\w\-&;]+)(?:\'|(?:&#8217;))$/', $link, $hook)) {
             // Link to hook: {@see 'pre_get_search_form'}
             if (!empty($hook[1])) {
-                $url = get_post_type_archive_link('wp-parser-hook') .
-                        sanitize_title_with_dashes(html_entity_decode($hook[1])) . '/';
+                $post = self::getPostFromReference($hook[1], 'wp-parser-hook');
+                if ($post !== null) {
+                    $url = get_permalink($post->ID);
+                }
             }
-        } elseif (
-            (in_array($link, [
-                'wpdb',
-                'wp_atom_server',
-                'wp_xmlrpc_server', // Exceptions that start with lowercase letter
-                'AtomFeed',
-                'AtomEntry',
-                'AtomParser',
-                'MagpieRSS',
-                'Requests',
-                'RSSCache',
-                'Translations',
-                'Walker', // Exceptions that lack an underscore
-            ]))
-            ||
-            (1 === preg_match('/^_?[A-Z][a-zA-Z]+_\w+/', $link)) // Otherwise, class names start with (optional underscore, then) uppercase and have underscore
-        ) {
-            // Link to class: {@see WP_Query}
-            $url = get_post_type_archive_link('wp-parser-class') . sanitize_key($link);
+        } elseif (1 === preg_match('/\\\?(?:[A-Z]+[A-Za-z]*)+(?:\\\{1}[A-Z]+[A-Za-z]*)+/', $link)) {
+            // Link to a PSR-4 class: {@see \Namespace\Classname}
+            $post = self::getPostFromReference($link, 'wp-parser-class');
+            if ($post !== null) {
+                $url = get_permalink($post->ID);
+            }
         } else {
             // Link to function: {@see esc_attr()}
-            $url = get_post_type_archive_link('wp-parser-function') .
-                    sanitize_title_with_dashes(html_entity_decode($link));
+            $post = self::getPostFromReference($link, 'wp-parser-function');
+            if ($post !== null) {
+                $url = get_permalink($post->ID);
+            }
         }
 
         if ($url) {
@@ -221,7 +214,7 @@ class Formatting
          * @param array  $attrs The HTML attributes applied to the link's anchor element.
          * @param string $url   The URL for the link.
          */
-        $attrs = (array)apply_filters('devhub-format-link-attributes', ['href' => $url], $url);
+        $attrs = (array)apply_filters('avcpdp-format-link-attributes', ['href' => $url], $url);
 
         // Make sure the filter didn't completely remove the href attribute.
         if (empty($attrs['href'])) {
@@ -292,11 +285,11 @@ class Formatting
         // Convert any @link or @see to actual link.
         $text = self::makeDoclinkClickable($text);
 
-        return apply_filters('devhub-format-description', $text);
+        return apply_filters('avcpdp-format-description', $text);
     }
 
     /**
-     * Returns the post given a function/method/class raw reference string
+     * Returns the post given a function/method/class/hook raw reference string
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param string $ref
@@ -559,18 +552,20 @@ class Formatting
             list( $wordtype, $type, $name, $description ) = explode(' ', $part . '    ', 4); // extra spaces ensure we'll always have 4 items.
             $description = trim($description);
 
+            $tclass = 'ref-arg-type';
             $type = apply_filters('avcpdp_filter_param_hash_type', $type, $text);
             if (strpos($type, '\\') !== false) {
                 $type = ltrim($type, '\\');
+                $tclass .= ' ref-arg-type--class';
             }
 
-            $description = apply_filters('devhub-format-hash-param-description', $description);
+            $description = apply_filters('avcpdp-format-hash-param-description', $description);
 
             $skip_closing_li = false;
 
             // Handle nested hashes.
             if (($description && '{' === $description[0]) || '{' === $name) {
-                $description = ltrim($description, '{') . '<ul class="param-hash">';
+                $description = ltrim($description, '{') . '<ul class="ref-params ref-param-hash">';
                 $skip_closing_li = true;
             } elseif ('}' === substr($description, -1)) {
                 $description = substr($description, 0, -1) . "</li></ul>\n";
@@ -587,7 +582,7 @@ class Formatting
                 if ($in_list) {
                     $new_text .= '<li>';
                 } else {
-                    $new_text .= '<ul class="param-hash"><li>';
+                    $new_text .= '<ul class="ref-params ref-param-hash"><li>';
                     $in_list = true;
                 }
 
@@ -602,7 +597,7 @@ class Formatting
                 if ($name) {
                     $new_text .= "<b>'{$name}'</b><br />";
                 }
-                $new_text .= "<i><span class='type'>({$type})</span></i><span class='description'>{$description}</span>";
+                $new_text .= "<i><span class='{$tclass}'>({$type})</span></i><span class='ref-params__description'>{$description}</span>";
                 if (!$skip_closing_li) {
                     $new_text .= '</li>';
                 }

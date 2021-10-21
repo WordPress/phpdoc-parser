@@ -54,9 +54,9 @@ class Admin
          *
          * @param bool True if admin.css should be enqueued, false otherwise.
          */
-        if ((bool)apply_filters('devhub-admin_enqueue_scripts', in_array(get_current_screen()->id, $screen_ids))) {
+        if ((bool)apply_filters('avcpdp_admin_enqueue_scripts', in_array(get_current_screen()->id, $screen_ids))) {
             wp_enqueue_style(
-                'wporg-admin',
+                'avcpdp-admin',
                 AVCPDP_PLUGIN_URL . '/src/styles/admin.css',
                 [],
                 AVCPDP_VERSION

@@ -74,7 +74,7 @@ class Explanations
         add_filter('post_row_actions', [$this, 'explRowAction'], 10, 2);
 
         // Script and styles.
-        add_filter('devhub-admin_enqueue_scripts', [$this, 'adminEnqueueBaseScripts']);
+        add_filter('avcpdp_admin_enqueue_scripts', [$this, 'adminEnqueueBaseScripts']);
         add_action('admin_enqueue_scripts', [$this, 'adminEnqueueScripts']);
 
         // AJAX.
