@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+use Aivec\PtBundler\Bundler;
+
+passthru('composer install');
+
+require_once(__DIR__ . '/vendor/autoload.php');
+
+(new Bundler('wp-phpdoc-parser'))
+    ->setFoldersToInclude(['dist', 'languages', 'src', 'vendor'])
+    ->setFilesToInclude(['plugin.php'])
+    ->setTargetsToCleanBeforeBuild(['dist', 'node_modules', 'vendor'])
+    ->setBuildCallback(function () {
+        passthru('npm run build:prod');
+        passthru('composer build');
+    })
+    ->setTargetsToCleanAfterBuild([
+        'vendor/aivec',
+        'vendor/nikic',
+        'vendor/bin',
+    ])
+    ->setCleanupCallback(function () {
+        passthru('composer dump-autoload');
+    })
+    ->setArchiveTargetsToClean([
+        'dist/**/*.map',
+        'src/**/*.tsx',
+    ])
+    ->createZipArchive();

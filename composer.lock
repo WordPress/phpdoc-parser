@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f522ec19be9b5b2d536898d75568ed62",
+    "content-hash": "4405fb731bddee0911f9543cc8c75755",
     "packages": [
         {
             "name": "aivec/core-css",
@@ -1138,6 +1138,52 @@
             "time": "2021-09-13T13:58:46+00:00"
         },
         {
+            "name": "aivec/pt-bundler",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aivec/pt-bundler.git",
+                "reference": "2de06683d6f4b7c1f238c20d4393f609f2a092d9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aivec/pt-bundler/zipball/2de06683d6f4b7c1f238c20d4393f609f2a092d9",
+                "reference": "2de06683d6f4b7c1f238c20d4393f609f2a092d9",
+                "shasum": ""
+            },
+            "require": {
+                "ext-zip": "*",
+                "php": ">=7.2",
+                "symfony/filesystem": "^5.2"
+            },
+            "require-dev": {
+                "aivec/phpcs-wp": "^2.0",
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Aivec\\PtBundler\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Evan Shaw",
+                    "email": "evandanielshaw@gmail.com"
+                }
+            ],
+            "description": "WordPress plugin/theme ZIP bundler library",
+            "support": {
+                "issues": "https://github.com/aivec/pt-bundler/issues",
+                "source": "https://github.com/aivec/pt-bundler/tree/v1.1.0"
+            },
+            "time": "2021-05-24T09:33:33+00:00"
+        },
+        {
             "name": "coenjacobs/mozart",
             "version": "0.7.1",
             "source": {
@@ -2062,6 +2108,69 @@
             "time": "2021-03-23T23:28:01+00:00"
         },
         {
+            "name": "symfony/filesystem",
+            "version": "v5.3.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/filesystem.git",
+                "reference": "343f4fe324383ca46792cae728a3b6e2f708fb32"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/343f4fe324383ca46792cae728a3b6e2f708fb32",
+                "reference": "343f4fe324383ca46792cae728a3b6e2f708fb32",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.5",
+                "symfony/polyfill-ctype": "~1.8",
+                "symfony/polyfill-php80": "^1.16"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Filesystem\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides basic utilities for the filesystem",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/filesystem/tree/v5.3.4"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2021-07-21T12:40:44+00:00"
+        },
+        {
             "name": "symfony/polyfill-ctype",
             "version": "v1.23.0",
             "source": {
@@ -2754,5 +2863,5 @@
         "php": ">=5.4"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.1.0"
 }

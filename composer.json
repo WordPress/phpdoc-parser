@@ -50,7 +50,8 @@
   "require-dev": {
     "wp-cli/i18n-command": "^2.2",
     "aivec/phpcs-wp": "^2.0",
-    "coenjacobs/mozart": "^0.7.1"
+    "coenjacobs/mozart": "^0.7.1",
+    "aivec/pt-bundler": "^1.1"
   },
   "autoload": {
     "files": [
