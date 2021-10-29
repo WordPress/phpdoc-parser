@@ -11,14 +11,14 @@ require_once(__DIR__ . '/vendor/autoload.php');
 (new Bundler('wp-phpdoc-parser'))
     ->setFoldersToInclude(['dist', 'languages', 'src', 'vendor'])
     ->setFilesToInclude(['plugin.php'])
-    ->setTargetsToCleanBeforeBuild(['dist', 'vendor'])
+    ->setTargetsToCleanBeforeBuild(['dist'])
     ->setBuildCallback(function () {
         passthru('npm run build:prod');
         passthru('composer build');
     })
     ->setTargetsToCleanAfterBuild([
         'vendor/aivec',
-        'vendor/nikic',
+        'vendor/nikic/fast-route',
         'vendor/bin',
     ])
     ->setCleanupCallback(function () {
