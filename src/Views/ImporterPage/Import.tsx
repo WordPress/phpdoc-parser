@@ -51,7 +51,7 @@ const Import = ({
   return (
     <div>
       <h3>{__('Import', 'wp-parser')}</h3>
-      <div className="avc-v2 flex column-nowrap mb-05rem-c-all">
+      <div className="avc-v3 flex column-nowrap mb-05rem-c-all">
         <div>{__('Enter the folder name of the plugin/theme/composer-package', 'wp-parser')}</div>
         <div>
           <input type="text" onChange={updateFolderName} value={fname} />
@@ -59,7 +59,7 @@ const Import = ({
         <div>
           <label>
             <input
-              className="avc-v2 mr-05rem"
+              className="avc-v3 mr-05rem"
               type="checkbox"
               onChange={updateTrashOldRefs}
               defaultChecked={trashOldRefs}

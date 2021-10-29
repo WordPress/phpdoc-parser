@@ -2,6 +2,8 @@
 
 namespace Aivec\Plugins\DocParser;
 
+use AVCPDP\Aivec\Core\CSS\Loader;
+
 /**
  * Class to handle editing parsed content for the Function-, Class-, Hook-,
  * and Method-editing screens.
@@ -50,10 +52,12 @@ class ParsedContent
     public function init() {
         // Data.
         add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
-        add_action('save_post', [$this, 'savePost']);
+        add_action('save_post', [$this, 'saveParsedContent']);
+        add_action('save_post', [$this, 'saveItemImportance']);
+        add_action('admin_enqueue_scripts', [get_class(), 'loadAssets'], 10, 1);
 
         // Register meta fields.
-        register_meta('post', 'wporg_parsed_content', 'wp_kses_post', '__return_false');
+        register_meta('post', 'phpdoc_parsed_content', 'wp_kses_post', '__return_false');
         foreach ($this->post_types as $ptype) {
             foreach ($this->meta_fields as $key) {
                 register_post_meta(
@@ -69,6 +73,30 @@ class ParsedContent
     }
 
     /**
+     * Loads admin edit page assets
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param string $screenid
+     * @return void
+     */
+    public static function loadAssets($screenid) {
+        if ($screenid !== 'post.php') {
+            return;
+        }
+
+        $post_id = isset($_REQUEST['post']) ? (int)$_REQUEST['post'] : 0;
+        if ($post_id < 1) {
+            return;
+        }
+
+        if (!in_array(get_post_type($post_id), avcpdp_get_parsed_post_types(), true)) {
+            return;
+        }
+
+        Loader::loadCoreCss();
+    }
+
+    /**
      * Adds parsed content meta box and removes `postexcerpt` meta box
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
@@ -79,14 +107,64 @@ class ParsedContent
         if (in_array($screen, $this->post_types, true)) {
             remove_meta_box('postexcerpt', $screen, 'normal');
             add_meta_box(
-                'wporg_parsed_content',
+                'phpdoc_parsed_content',
                 __('Parsed Content', 'wp-parser'),
                 [$this, 'addParsedMetaBox'],
                 $screen,
                 'normal',
                 'high'
             );
+            add_meta_box(
+                'phpdoc_item_importance',
+                __('Item Importance', 'wp-parser'),
+                [$this, 'addItemImportanceMetaBox'],
+                $screen,
+                'side',
+                'high'
+            );
         }
+    }
+
+    /**
+     * Shows item importance meta box on post edit page for `wp-parser-*` post types
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param \WP_Post $post Current post object.
+     * @return void
+     */
+    public function addItemImportanceMetaBox($post) {
+        wp_nonce_field('phpdoc-item-importance', 'phpdoc-item-importance-nonce');
+        $important = (int)get_post_meta($post->ID, '_wp-parser_important', true);
+        ?>
+        <div class="avc-v3 flex row-wrap">
+            <div class="avc-v3 flex ai-center mr-05rem">
+                <label class="avc-v3 mr-02rem" for="item_importance_1">
+                    <?php esc_html_e('Not Important', 'wp-parser'); ?>
+                </label>
+                <input
+                    class="avc-v3 m-0"
+                    type="radio"
+                    name="item_importance"
+                    id="item_importance_1"
+                    value="0"
+                    <?php echo $important === 0 ? ' checked' : ''; ?>
+                />
+            </div>
+            <div class="avc-v3 flex ai-center">
+                <label class="avc-v3 mr-02rem" for="item_importance_2">
+                    <?php esc_html_e('Important', 'wp-parser'); ?>
+                </label>
+                <input
+                    class="avc-v3 m-0"
+                    type="radio"
+                    name="item_importance"
+                    id="item_importance_2"
+                    value="1"
+                    <?php echo $important === 1 ? ' checked' : ''; ?>
+                />
+            </div>
+        </div>
+        <?php
     }
 
     /**
@@ -104,7 +182,7 @@ class ParsedContent
         $translated_description = (string)get_post_meta($post->ID, 'translated_description', true);
         $translated_return = (string)get_post_meta($post->ID, 'translated_return', true);
 
-        wp_nonce_field('wporg-parsed-content', 'wporg-parsed-content-nonce');
+        wp_nonce_field('phpdoc-parsed-content', 'phpdoc-parsed-content-nonce');
         ?>
         <table class="form-table">
             <tbody>
@@ -137,7 +215,7 @@ class ParsedContent
             <?php endif; ?>
             <tr valign="top" data-id="<?php the_id(); ?>">
                 <th scope="row">
-                    <label for="wporg_parsed_content"><?php _e('Parsed Description:', 'wp-parser'); ?></label>
+                    <label for="phpdoc_parsed_content"><?php _e('Parsed Description:', 'wp-parser'); ?></label>
                 </th>
                 <td>
                     <div class="wporg_parsed_readonly"><?php echo htmlspecialchars(apply_filters('the_content', $content)); ?></div>
@@ -172,7 +250,7 @@ class ParsedContent
                     <tr valign="top">
                         <th scope="row">
                             <div class="parser-tags">
-                                <label for="wporg_parsed_content"><?php echo $name; ?></label>
+                                <label for="phpdoc_parsed_content"><?php echo $name; ?></label>
                                 <div class="types">
                                     <span class="type">
                                         <?php // translators: the type ?>
@@ -219,7 +297,7 @@ class ParsedContent
                     <tr valign="top">
                         <th scope="row">
                             <div class="parser-tags">
-                                <label for="wporg_parsed_content"><?php _e('Parsed Return:', 'wp-parser'); ?></label>
+                                <label for="phpdoc_parsed_content"><?php _e('Parsed Return:', 'wp-parser'); ?></label>
                                 <div class="types">
                                     <span class="type">
                                         <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($return['type'])); ?>
@@ -347,19 +425,18 @@ class ParsedContent
     }
 
     /**
-     * Handle saving parsed content.
+     * Handles saving parsed content.
      *
      * Excerpt (short description) saving is handled by core.
      *
      * @param int $post_id Post ID.
      * @return void
      */
-    public function savePost($post_id) {
-        if (empty($_POST['wporg-parsed-content-nonce']) || !wp_verify_nonce($_POST['wporg-parsed-content-nonce'], 'wporg-parsed-content')) {
+    public function saveParsedContent($post_id) {
+        if (empty($_POST['phpdoc-parsed-content-nonce']) || !wp_verify_nonce($_POST['phpdoc-parsed-content-nonce'], 'phpdoc-parsed-content')) {
             return;
         }
 
-        // No cheaters!
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -369,5 +446,23 @@ class ParsedContent
             // Parsed content.
             empty($_POST[$key]) ? delete_post_meta($post_id, $key) : update_post_meta($post_id, $key, $_POST[$key]);
         }
+    }
+
+    /**
+     * Handles saving item importance
+     *
+     * @param int $post_id Post ID.
+     * @return void
+     */
+    public function saveItemImportance($post_id) {
+        if (empty($_POST['phpdoc-item-importance-nonce']) || !wp_verify_nonce($_POST['phpdoc-item-importance-nonce'], 'phpdoc-item-importance')) {
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        update_post_meta($post_id, '_wp-parser_important', (bool)(int)$_POST['item_importance']);
     }
 }

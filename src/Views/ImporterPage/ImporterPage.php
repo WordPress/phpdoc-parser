@@ -3,7 +3,7 @@
 namespace Aivec\Plugins\DocParser\Views\ImporterPage;
 
 use Aivec\Plugins\DocParser\Master;
-use AVCPDP\Aivec\Core\CSS\PluginLoader;
+use AVCPDP\Aivec\Core\CSS\Loader;
 
 /**
  * Importer page for importing source code from the admin console
@@ -64,7 +64,7 @@ class ImporterPage
             true
         );
 
-        PluginLoader::loadCoreCss();
+        Loader::loadCoreCss();
         wp_enqueue_style(
             'avcpdp-importer-page',
             AVCPDP_PLUGIN_URL . '/src/Views/ImporterPage/importer-page.css',
@@ -139,7 +139,7 @@ class ImporterPage
             <h1><?php echo esc_html__('AVC WP Parser Importer', 'cptmp') ?></h1>
             <div
                 id="<?php echo esc_attr(Master::REACT_DOM_NODE); ?>"
-                class="avc-v2 flex column-nowrap"
+                class="avc-v3 flex column-nowrap"
             ></div>
         </div>
         <?php

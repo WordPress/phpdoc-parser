@@ -48,7 +48,7 @@ const UpdateServerFolderLocation = ({
   return (
     <div>
       <h3>{__('Source folders parent path', 'wp-parser')}</h3>
-      <div className="avc-v2 mb-05rem-c-all">
+      <div className="avc-v3 mb-05rem-c-all">
         <div>
           {__('Enter the absolute path to the location of the source folders', 'wp-parser')}
         </div>

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: AVC WP Parser %%VERSION%%\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
-"POT-Creation-Date: 2021-09-15T10:16:52+09:00\n"
+"POT-Creation-Date: 2021-10-29T12:06:34+09:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,25 +42,35 @@ msgstr ""
 msgid "https://github.com/aivec/phpdoc-parser/graphs/contributors"
 msgstr "https://github.com/aivec/phpdoc-parser/graphs/contributors"
 
-#: src/api-functions.php:21 src/Registrations.php:191 src/Registrations.php:193
-#: src/Registrations.php:195 src/Registrations.php:205
+#: src/api-functions.php:23 src/Registrations.php:190 src/Registrations.php:192
+#: src/Registrations.php:194 src/Registrations.php:204
 msgid "Classes"
 msgstr "クラス"
 
-#: src/api-functions.php:22 src/Registrations.php:131 src/Registrations.php:133
-#: src/Registrations.php:135 src/Registrations.php:145
+#: src/api-functions.php:24 src/Registrations.php:130 src/Registrations.php:132
+#: src/Registrations.php:134 src/Registrations.php:144
 msgid "Functions"
 msgstr "ファンクション"
 
-#: src/api-functions.php:23 src/Registrations.php:221 src/Registrations.php:223
-#: src/Registrations.php:225 src/Registrations.php:235
+#: src/api-functions.php:25 src/Registrations.php:220 src/Registrations.php:222
+#: src/Registrations.php:224 src/Registrations.php:234
 msgid "Hooks"
 msgstr "フック"
 
-#: src/api-functions.php:24 src/Registrations.php:161 src/Registrations.php:163
-#: src/Registrations.php:165 src/Registrations.php:175
+#: src/api-functions.php:26 src/Registrations.php:160 src/Registrations.php:162
+#: src/Registrations.php:164 src/Registrations.php:174
 msgid "Methods"
 msgstr "関数"
+
+#. translators: name of the missing field
+#: src/ErrorStore.php:30
+msgid "\"%s\" is required"
+msgstr ""
+
+#. translators: name of the plugin/theme/composer-package
+#: src/ErrorStore.php:39
+msgid "\"%s\" does not exist"
+msgstr ""
 
 #: src/Explanations/Explanations.php:93 src/Explanations/Explanations.php:95
 msgid "Explanations"
@@ -161,11 +171,11 @@ msgstr ""
 msgid "Post has an explanation."
 msgstr ""
 
-#: src/Importer/Importer.php:339
+#: src/Importer/Importer.php:336
 msgid "Functions Reference"
 msgstr "ファンクション・レファレンス"
 
-#: src/Importer/Importer.php:343
+#: src/Importer/Importer.php:340
 msgid "Hooks Reference"
 msgstr "フック・レファレンス"
 
@@ -191,338 +201,396 @@ msgstr "利用しているフック"
 msgid "Used by Methods"
 msgstr "利用されている関数"
 
-#: src/ParsedContent.php:83
+#: src/ParsedContent.php:111
 msgid "Parsed Content"
 msgstr "パースしたコンテンツ"
 
-#: src/ParsedContent.php:112
+#: src/ParsedContent.php:119
+msgid "Item Importance"
+msgstr "重要ステータス"
+
+#: src/ParsedContent.php:142
+msgid "Not Important"
+msgstr "重要ではない"
+
+#: src/ParsedContent.php:155
+msgid "Important"
+msgstr "重要"
+
+#: src/ParsedContent.php:191
 msgid "Parsed Summary:"
 msgstr "概要"
 
-#: src/ParsedContent.php:121
+#: src/ParsedContent.php:200
 msgid "Translated Summary:"
 msgstr "概要 (翻訳)"
 
-#: src/ParsedContent.php:139
+#: src/ParsedContent.php:218
 msgid "Parsed Description:"
 msgstr "説明"
 
-#: src/ParsedContent.php:148
+#: src/ParsedContent.php:227
 msgid "Translated Description:"
 msgstr "説明 (翻訳)"
 
-#: src/ParsedContent.php:166
+#: src/ParsedContent.php:245
 msgid "Tags (args, return)"
 msgstr "(パラメータ、戻り値)"
 
 #. translators: the type
-#: src/ParsedContent.php:178 src/ParsedContent.php:224
+#: src/ParsedContent.php:257 src/ParsedContent.php:303
 msgid "(%s)"
 msgstr "(%s)"
 
 #. translators: the arg name
-#: src/ParsedContent.php:198
+#: src/ParsedContent.php:277
 msgid "%s (Translated)"
 msgstr "%s (翻訳)"
 
-#: src/ParsedContent.php:221
+#: src/ParsedContent.php:300
 msgid "Parsed Return:"
 msgstr "戻り値"
 
-#: src/ParsedContent.php:237
+#: src/ParsedContent.php:316
 msgid "Translated Return:"
 msgstr "戻り値 (翻訳)"
 
-#: src/Registrations.php:134
+#: src/PostsPluginFilter.php:40
+msgid "All Plugins"
+msgstr "プラグイン"
+
+#: src/Registrations.php:133
 msgid "Function"
 msgstr "ファンクション"
 
-#: src/Registrations.php:136
+#: src/Registrations.php:135
 msgid "New Function"
 msgstr "ファンクションを新規追加"
 
-#: src/Registrations.php:137 src/Registrations.php:167
-#: src/Registrations.php:197 src/Registrations.php:227
-#: src/Registrations.php:260
+#: src/Registrations.php:136 src/Registrations.php:166
+#: src/Registrations.php:196 src/Registrations.php:226
+#: src/Registrations.php:259
 msgid "Add New"
 msgstr "新規追加"
 
-#: src/Registrations.php:138
+#: src/Registrations.php:137
 msgid "Add New Function"
 msgstr "ファンクションを新規追加"
 
-#: src/Registrations.php:139
+#: src/Registrations.php:138
 msgid "Edit Function"
 msgstr "ファンクションを編集"
 
-#: src/Registrations.php:140
+#: src/Registrations.php:139
 msgid "View Function"
 msgstr "ファンクションを見る"
 
-#: src/Registrations.php:141
+#: src/Registrations.php:140
 msgid "Search Functions"
 msgstr "ファンクションを検索"
 
-#: src/Registrations.php:142
+#: src/Registrations.php:141
 msgid "No Functions found"
 msgstr "ファンクションの結果がありません"
 
-#: src/Registrations.php:143
+#: src/Registrations.php:142
 msgid "No Functions found in trash"
 msgstr "ゴミ箱の中にファンクションがありません"
 
-#: src/Registrations.php:144
+#: src/Registrations.php:143
 msgid "Parent Function"
 msgstr "親ファンクション"
 
-#: src/Registrations.php:164
+#: src/Registrations.php:163
 msgid "Method"
 msgstr "関数"
 
-#: src/Registrations.php:166
+#: src/Registrations.php:165
 msgid "New Method"
 msgstr "関数を新規追加"
 
-#: src/Registrations.php:168
+#: src/Registrations.php:167
 msgid "Add New Method"
 msgstr "関数を新規追加"
 
-#: src/Registrations.php:169
+#: src/Registrations.php:168
 msgid "Edit Method"
 msgstr "関数を編集"
 
-#: src/Registrations.php:170
+#: src/Registrations.php:169
 msgid "View Method"
 msgstr "関数を見る"
 
-#: src/Registrations.php:171
+#: src/Registrations.php:170
 msgid "Search Methods"
 msgstr "関数を検索"
 
-#: src/Registrations.php:172
+#: src/Registrations.php:171
 msgid "No Methods found"
 msgstr "関数の結果がありません"
 
-#: src/Registrations.php:173
+#: src/Registrations.php:172
 msgid "No Methods found in trash"
 msgstr "ゴミ箱の中に関数がありません"
 
-#: src/Registrations.php:174
+#: src/Registrations.php:173
 msgid "Parent Method"
 msgstr "親関数"
 
-#: src/Registrations.php:194
+#: src/Registrations.php:193
 msgid "Class"
 msgstr "クラス"
 
-#: src/Registrations.php:196
+#: src/Registrations.php:195
 msgid "New Class"
 msgstr "クラスを新規追加"
 
-#: src/Registrations.php:198
+#: src/Registrations.php:197
 msgid "Add New Class"
 msgstr "クラスを新規追加"
 
-#: src/Registrations.php:199
+#: src/Registrations.php:198
 msgid "Edit Class"
 msgstr "クラスを編集"
 
-#: src/Registrations.php:200
+#: src/Registrations.php:199
 msgid "View Class"
 msgstr "クラスを見る"
 
-#: src/Registrations.php:201
+#: src/Registrations.php:200
 msgid "Search Classes"
 msgstr "クラスを検索"
 
-#: src/Registrations.php:202
+#: src/Registrations.php:201
 msgid "No Classes found"
 msgstr "クラスの結果がありません"
 
-#: src/Registrations.php:203
+#: src/Registrations.php:202
 msgid "No Classes found in trash"
 msgstr "ゴミ箱の中にクラスがありません"
 
-#: src/Registrations.php:204
+#: src/Registrations.php:203
 msgid "Parent Class"
 msgstr "親クラス"
 
-#: src/Registrations.php:224
+#: src/Registrations.php:223
 msgid "Hook"
 msgstr "フック"
 
-#: src/Registrations.php:226
+#: src/Registrations.php:225
 msgid "New Hook"
 msgstr "フックを新規追加"
 
-#: src/Registrations.php:228
+#: src/Registrations.php:227
 msgid "Add New Hook"
 msgstr "フックを新規追加"
 
-#: src/Registrations.php:229
+#: src/Registrations.php:228
 msgid "Edit Hook"
 msgstr "フックを編集"
 
-#: src/Registrations.php:230
+#: src/Registrations.php:229
 msgid "View Hook"
 msgstr "フックを見る"
 
-#: src/Registrations.php:231
+#: src/Registrations.php:230
 msgid "Search Hooks"
 msgstr "フックを検索"
 
-#: src/Registrations.php:232
+#: src/Registrations.php:231
 msgid "No Hooks found"
 msgstr "フックの結果がありません"
 
-#: src/Registrations.php:233
+#: src/Registrations.php:232
 msgid "No Hooks found in trash"
 msgstr "ゴミ箱の中にフックがありません"
 
-#: src/Registrations.php:234
+#: src/Registrations.php:233
 msgid "Parent Hook"
 msgstr "親フック"
 
-#: src/Registrations.php:254 src/Registrations.php:256
-#: src/Registrations.php:258 src/Registrations.php:267
+#: src/Registrations.php:253 src/Registrations.php:255
+#: src/Registrations.php:257 src/Registrations.php:266
 msgid "Reference Landing Pages"
 msgstr "レファレンスのランディングページ"
 
-#: src/Registrations.php:257
+#: src/Registrations.php:256
 msgid "Reference Landing Page"
 msgstr "レファレンスのランディングページ"
 
-#: src/Registrations.php:259
+#: src/Registrations.php:258
 msgid "New Reference Landing Page"
 msgstr "レファレンスのランディングページを新規追加"
 
-#: src/Registrations.php:261
+#: src/Registrations.php:260
 msgid "Add New Reference Landing Page"
 msgstr "レファレンスのランディングページを新規追加"
 
-#: src/Registrations.php:262
+#: src/Registrations.php:261
 msgid "Edit Reference Landing Page"
 msgstr "レファレンスのランディングページを編集"
 
-#: src/Registrations.php:263
+#: src/Registrations.php:262
 msgid "View Reference Landing Page"
 msgstr "レファレンスのランディングページを見る"
 
-#: src/Registrations.php:264
+#: src/Registrations.php:263
 msgid "Search Reference Landing Pages"
 msgstr "レファレンスのランディングページを検索"
 
-#: src/Registrations.php:265
+#: src/Registrations.php:264
 msgid "No Pages found"
 msgstr "レファレンスのランディングページの結果がありません"
 
-#: src/Registrations.php:266
+#: src/Registrations.php:265
 msgid "No Pages found in trash"
 msgstr "ゴミ箱の中にレファレンスのランディングページがありません"
 
-#: src/Registrations.php:302 src/Registrations.php:304
-#: src/Registrations.php:318
+#: src/Registrations.php:301 src/Registrations.php:303
+#: src/Registrations.php:317
 msgid "Files"
 msgstr "ファイル"
 
-#: src/Registrations.php:305
+#: src/Registrations.php:304
 msgctxt "taxonomy general name"
 msgid "File"
 msgstr "ファイル"
 
-#: src/Registrations.php:306
+#: src/Registrations.php:305
 msgid "Search Files"
 msgstr "ファイルを検索"
 
-#: src/Registrations.php:308
+#: src/Registrations.php:307
 msgid "All Files"
 msgstr "全てのファイル"
 
-#: src/Registrations.php:309
+#: src/Registrations.php:308
 msgid "Parent File"
 msgstr "親ファイル"
 
-#: src/Registrations.php:310
+#: src/Registrations.php:309
 msgid "Parent File:"
 msgstr "親ファイル:"
 
-#: src/Registrations.php:311
+#: src/Registrations.php:310
 msgid "Edit File"
 msgstr "ファイルを編集"
 
-#: src/Registrations.php:312
+#: src/Registrations.php:311
 msgid "Update File"
 msgstr "ファイルを更新"
 
-#: src/Registrations.php:313 src/Registrations.php:314
+#: src/Registrations.php:312 src/Registrations.php:313
 msgid "New File"
 msgstr "ファイルを新規追加"
 
-#: src/Registrations.php:315
+#: src/Registrations.php:314
 msgid "Files separated by comma"
 msgstr "コンマで区切られているファイル"
 
-#: src/Registrations.php:316
+#: src/Registrations.php:315
 msgid "Add or remove Files"
 msgstr "ファイルを新規追加・削除する"
 
-#: src/Registrations.php:317
+#: src/Registrations.php:316
 msgid "Choose from the most used Files"
 msgstr "よく使われているファイルから選択"
 
-#: src/Registrations.php:358
+#: src/Registrations.php:357
 msgid "@since"
 msgstr "@since"
 
-#: src/Registrations.php:376
+#: src/Registrations.php:375
 msgid "Namespaces"
 msgstr "ネームスペース"
 
-#: src/Registrations.php:390
-msgid "Source Version"
-msgstr "バージョン"
-
-#: src/Registrations.php:404
+#: src/Registrations.php:389
 msgid "Source Type"
 msgstr "ソースタイプ"
 
-#: src/Registrations.php:420 src/Registrations.php:515
+#: src/Registrations.php:405 src/Registrations.php:500
 msgid "Plugin"
 msgstr "プラグイン"
 
-#: src/Registrations.php:428 src/Registrations.php:519
+#: src/Registrations.php:413 src/Registrations.php:504
 msgid "Theme"
 msgstr "テーマ"
 
-#: src/Registrations.php:436 src/Registrations.php:523
+#: src/Registrations.php:421 src/Registrations.php:508
 msgid "Composer Package"
 msgstr "Composerパッケージ"
 
-#: src/Registrations.php:448
+#: src/Registrations.php:433
 msgid "Role"
 msgstr "区分"
 
-#: src/Registrations.php:462
+#: src/Registrations.php:447
 msgid "Display"
 msgstr "表示系"
 
-#: src/Registrations.php:463
+#: src/Registrations.php:448
 msgid "Condition"
 msgstr "条件判断"
 
-#: src/Registrations.php:464
+#: src/Registrations.php:449
 msgid "Utility"
 msgstr "ユーティリティー"
 
-#: src/Registrations.php:465
+#: src/Registrations.php:450
 msgid "Setter"
 msgstr "データセット"
 
-#: src/Registrations.php:466
+#: src/Registrations.php:451
 msgid "Getter"
 msgstr "データ取得"
 
-#: src/Registrations.php:672
+#: src/Registrations.php:657
 msgctxt "separator"
 msgid " or "
 msgstr ""
+
+#: src/SourceTypeTerm.php:53
+msgid "Item Image"
+msgstr ""
+
+#: src/SourceTypeTerm.php:56
+msgid "Pick a item image to make an association.(svg Only)"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10297
+#: dist/js/Views/ImporterPage/App.js:10311
+#: dist/js/Views/ImporterPage/App.js:10318
+msgid "Import"
+msgstr "インポート"
+
+#: dist/js/Views/ImporterPage/App.js:10299
+msgid "Enter the folder name of the plugin/theme/composer-package"
+msgstr "プラグイン・テーマ・Composerパッケージのフォルダー名を入力してください。"
+
+#: dist/js/Views/ImporterPage/App.js:10308
+msgid "Trash old references"
+msgstr "過去のレファレンスをゴミ箱に移動"
+
+#: dist/js/Views/ImporterPage/App.js:10314
+msgid "Importing..."
+msgstr "インポート中..."
+
+#: dist/js/Views/ImporterPage/App.js:10448
+msgid "Updated"
+msgstr "更新しました。"
+
+#: dist/js/Views/ImporterPage/App.js:10462
+msgid "Source folders parent path"
+msgstr "ソースの親フォルダー"
+
+#: dist/js/Views/ImporterPage/App.js:10464
+msgid "Enter the absolute path to the location of the source folders"
+msgstr "ソースフォルダーが入っている親フォルダーの絶対パス"
+
+#: dist/js/Views/ImporterPage/App.js:10471
+msgid "Updating..."
+msgstr "更新中..."
+
+#: dist/js/Views/ImporterPage/App.js:10475
+msgid "Update"
+msgstr "パスを更新する"

@@ -177,6 +177,7 @@ class Importer implements LoggerAwareInterface
      * @param array $data
      * @param bool  $skip_sleep               Optional; defaults to false. If true, the sleep() calls are skipped.
      * @param bool  $import_ignored_functions Optional; defaults to false. If true, functions marked `@ignore` will be imported.
+     * @throws CliErrorException Thrown when an error occurs.
      * @return void
      */
     public function import(array $data, $skip_sleep = false, $import_ignored_functions = false) {
@@ -968,6 +969,18 @@ class Importer implements LoggerAwareInterface
         // Recored the namespace if there is one.
         if (!empty($data['namespace'])) {
             $anything_updated[] = update_post_meta($post_id, '_wp_parser_namespace', (string)addslashes($data['namespace']));
+        }
+
+        $important = wp_list_filter($data['doc']['tags'], ['name' => 'important']);
+        $pimportant = get_post_meta($post_id, '_wp-parser_important', true);
+        // only set important if it doesn't already exist so that updates
+        // to this value from the admin console aren't overridden
+        if ($pimportant === '') {
+            if (!empty($important)) {
+                $anything_updated[] = update_post_meta($post_id, '_wp-parser_important', true);
+            } else {
+                $anything_updated[] = update_post_meta($post_id, '_wp-parser_important', false);
+            }
         }
 
         // We have to add slashes so that namespace slashes aren't stripped by update_post_meta
