@@ -1,0 +1,7 @@
+.item-importance-container {
+  color: #cd0000;
+}
+
+.fixed .column-item_importance {
+  width: 5em;
+}

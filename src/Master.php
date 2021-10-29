@@ -46,6 +46,7 @@ class Master
         (new Registrations())->init();
         (new Explanations\Explanations())->init();
         (new ParsedContent())->init();
+        PostAddons\ItemImportance\ItemImportance::init();
         Queries::init();
         Formatting::init();
         SourceTypeTerm::init();

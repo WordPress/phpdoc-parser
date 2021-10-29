@@ -61,6 +61,10 @@ class Queries
      * @return void
      */
     public static function preGetPosts($query) {
+        if (is_admin()) {
+            return;
+        }
+
         $orderbynotdep = false;
         $orderbynotdephook = false;
         $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
