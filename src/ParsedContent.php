@@ -498,10 +498,6 @@ class ParsedContent
     /**
      * Retrieve deprecated type and description if available.
      *
-     * If there is no explicit deprecated value, or it is explicitly "void", then
-     * an empty string is returned. This rules out display of deprecated type for
-     * non-returning functions.
-     *
      * @param int $post_id
      * @return array
      */
@@ -518,7 +514,6 @@ class ParsedContent
 
         $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
 
-        // If there is no explicit or non-"void" return value, don't display one.
         if (empty($deprecated) || !isset($deprecated['content'])) {
             return [
                 'content' => '',
