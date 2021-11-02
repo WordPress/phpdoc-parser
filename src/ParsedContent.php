@@ -31,6 +31,8 @@ class ParsedContent
         'translated_summary',
         'translated_description',
         'translated_return',
+        'translated_deprecated',
+        'translated_sinces',
     ];
 
     /**
@@ -178,9 +180,13 @@ class ParsedContent
         $excerpt = $post->post_excerpt;
         $params = self::getParams($post->ID);
         $return = self::getReturn($post->ID);
+        $deprecated = self::getDeprecated($post->ID);
+        $sinces = self::getSinces($post->ID);
         $translated_summary = (string)get_post_meta($post->ID, 'translated_summary', true);
         $translated_description = (string)get_post_meta($post->ID, 'translated_description', true);
         $translated_return = (string)get_post_meta($post->ID, 'translated_return', true);
+        $translated_deprecated = (string)get_post_meta($post->ID, 'translated_deprecated', true);
+        $translated_sinces = (array)get_post_meta($post->ID, 'translated_sinces', true);
 
         wp_nonce_field('phpdoc-parsed-content', 'phpdoc-parsed-content-nonce');
         ?>
@@ -266,9 +272,9 @@ class ParsedContent
                 </tr>
                 <?php if (current_user_can('manage_options')) : ?>
                     <?php
-                    $clean_name = str_replace('$', '', $name);
-                    $translated_key = "translated_{$clean_name}";
-                    $translated_key_val = (string)get_post_meta($post->ID, $translated_key, true);
+                        $clean_name = str_replace('$', '', $name);
+                        $translated_key = "translated_{$clean_name}";
+                        $translated_key_val = (string)get_post_meta($post->ID, $translated_key, true);
                     ?>
                     <tr valign="top">
                         <th scope="row">
@@ -329,6 +335,90 @@ class ParsedContent
                         </td>
                     </tr>
                 <?php endif; ?>
+            <?php endif; ?>
+            <?php if (!empty($deprecated['content'])) : ?>
+                <tr class="t-section">
+                    <td colspan="2">
+                        <h2><?php _e('Tags (deprecated)', 'wp-parser'); ?></h2>
+                    </td>
+                </tr>
+                <tr>
+                    <tr valign="top">
+                        <th scope="row">
+                            <div class="parser-tags">
+                                <label for="phpdoc_parsed_content"><?php printf($deprecated['content']); ?></label>
+                            </div>
+                        </th>
+                        <td>
+                            <div class="wporg_parsed_readonly"><?php echo $deprecated['description']; ?></div>
+                        </td>
+                    </tr>
+                </tr>
+                <?php if (current_user_can('manage_options')) : ?>
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="<?php echo $deprecated['content']; ?>">
+                                <?php // translators: the arg name ?>
+                                <?php printf(__('%s (Translated)', 'wp-parser'), $deprecated['content']); ?>
+                            </label>
+                        </th>
+                        <td>
+                            <div class="translated_deprecated">
+                                <?php
+                                    wp_editor($translated_deprecated, 'translated_deprecated', [
+                                        'media_buttons' => false,
+                                        'tinymce' => false,
+                                        'quicktags' => false,
+                                        'textarea_rows' => 2,
+                                    ]);
+                                ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            <?php endif; ?>
+            <?php if (count($sinces)) : ?>
+                <tr class="t-section">
+                    <td colspan="2">
+                        <h2><?php _e('Tags (since)', 'wp-parser'); ?></h2>
+                    </td>
+                </tr>
+                <?php foreach ($sinces as $i => $since) : ?>
+                    <tr>
+                        <tr valign="top">
+                            <th scope="row">
+                                <div class="parser-tags">
+                                    <label for="phpdoc_parsed_content"><?php  printf($since['content']); ?></label>
+                                </div>
+                            </th>
+                            <td>
+                                <div class="wporg_parsed_readonly"><?php echo $since['description']; ?></div>
+                            </td>
+                        </tr>
+                    </tr>
+                    <?php if (current_user_can('manage_options')) : ?>
+                        <tr valign="top">
+                            <th scope="row">
+                                <label for="<?php echo $since['content']; ?>">
+                                    <?php // translators: the arg name ?>
+                                    <?php printf(__('%s (Translated)', 'wp-parser'), $since['content']); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <div class="<?php echo $since['content']; ?>">
+                                    <?php
+                                    wp_editor($translated_sinces[$i], 'translated_sinces[]', [
+                                        'media_buttons' => false,
+                                        'tinymce' => false,
+                                        'quicktags' => false,
+                                        'textarea_rows' => 2,
+                                    ]);
+                                    ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             <?php endif; ?>
             </tbody>
         </table>
@@ -403,6 +493,76 @@ class ParsedContent
             'type' => $type,
             'content' => htmlspecialchars($return['content']),
         ];
+    }
+
+    /**
+     * Retrieve deprecated type and description if available.
+     *
+     * @param int $post_id
+     * @return array
+     */
+    public static function getDeprecated($post_id = null) {
+        if (empty($post_id)) {
+            $post_id = get_the_ID();
+        }
+
+        $deprecated = [];
+        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+        if (!$tags) {
+            return $deprecated;
+        }
+
+        $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
+
+        if (empty($deprecated)) {
+            return [
+                'content' => '',
+                'description' => '',
+            ];
+        }
+
+        $deprecated = array_shift($deprecated);
+
+        if (!isset($deprecated['content'])) {
+            return [
+                'content' => '',
+                'description' => '',
+            ];
+        }
+
+        return [
+            'content' => htmlspecialchars($deprecated['content']),
+            'description' => htmlspecialchars(isset($deprecated['description']) ? $deprecated['description'] : ''),
+        ];
+    }
+
+    /**
+     * Retrieve sinces as a key value array
+     *
+     * @param int $post_id
+     * @return array
+     */
+    public static function getSinces($post_id = null) {
+        if (empty($post_id)) {
+            $post_id = get_the_ID();
+        }
+
+        $sinces = [];
+        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+        if (!$tags) {
+            return $sinces;
+        }
+
+        foreach ($tags as $tag) {
+            if (!empty($tag['name']) && 'since' == $tag['name'] && isset($tag['content'])) {
+                $sinces[] = [
+                    'content' => htmlspecialchars($tag['content']),
+                    'description' => htmlspecialchars(isset($tag['description']) ? $tag['description'] : ''),
+                ];
+            }
+        }
+
+        return $sinces;
     }
 
     /**
