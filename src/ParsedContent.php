@@ -514,7 +514,7 @@ class ParsedContent
 
         $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
 
-        if (empty($deprecated) || !isset($deprecated['content'])) {
+        if (empty($deprecated)) {
             return [
                 'content' => '',
                 'description' => '',
@@ -522,6 +522,13 @@ class ParsedContent
         }
 
         $deprecated = array_shift($deprecated);
+
+        if (!isset($deprecated['content'])) {
+            return [
+                'content' => '',
+                'description' => '',
+            ];
+        }
 
         return [
             'content' => htmlspecialchars($deprecated['content']),
