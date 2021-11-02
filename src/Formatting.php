@@ -523,6 +523,76 @@ class Formatting
     }
 
     /**
+     * Returns hierarchical array for a param hash array type
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param string $text
+     * @param array  $pieces
+     * @return (int|array)[]
+     */
+    public static function getParamHashArrayRecursive($text, $pieces = []) {
+        if (!$text || '{' != $text[0]) {
+            return [
+                'numparsed' => 0,
+                'pieces' => [],
+            ];
+        }
+
+        $index = 0;
+        $noprocessrange = 0;
+        $text = trim(substr($text, 1, -1));
+        $text = str_replace('@type', "\n@type", $text);
+        $parts = explode("\n", $text);
+
+        foreach ($parts as $part) {
+            if ($index < $noprocessrange) {
+                $index++;
+                continue;
+            }
+
+            $part = preg_replace('/\s+/', ' ', $part);
+            list( $wordtype, $type, $name, $rawdescription ) = explode(' ', $part . '    ', 4); // extra spaces ensure we'll always have 4 items.
+            $description = trim($rawdescription);
+
+            $piece = [];
+            if ('@type' != $wordtype) {
+                $pieces['description'] = $part;
+            } else {
+                $piece['name'] = $name;
+                $piece['type'] = $type;
+                $piece['wordtype'] = $wordtype;
+                $piece['description'] = $description;
+            }
+
+            // Handle nested hashes.
+            if (($description && '{' === $description[0]) || '{' === $name) {
+                $deschashpieces = explode('{', $rawdescription);
+                $nestedtext = join('    ', array_slice($parts, $index + 1));
+                $nestedtext = '{' . $deschashpieces[1] . '    ' . $nestedtext;
+                $results = self::getParamHashArrayRecursive($nestedtext, $piece);
+                $noprocessrange = $index + $results['numparsed'];
+                $piece['pieces'] = $results['pieces'];
+                $pieces['pieces'][] = $piece['pieces'];
+            } elseif ('}' === substr($description, -1)) {
+                $pieces['pieces'][] = $piece;
+                return [
+                    'numparsed' => $index + 1,
+                    'pieces' => $pieces,
+                ];
+            } elseif (!empty($piece)) {
+                $pieces['pieces'][] = $piece;
+            }
+
+            $index++;
+        }
+
+        return [
+            'numparsed' => $index,
+            'pieces' => $pieces,
+        ];
+    }
+
+    /**
      * Formats the output of params defined using hash notation.
      *
      * This is a temporary measure until the parser parses the hash notation
