@@ -528,14 +528,12 @@ class Formatting
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param string $text
      * @param array  $pieces
-     * @return (int|array)[]
+     * @param string $key
+     * @return array
      */
-    public static function getParamHashArrayRecursive($text, $pieces = []) {
+    public static function getParamHashMapRecursive($text, $pieces = [], $key = '') {
         if (!$text || '{' != $text[0]) {
-            return [
-                'numparsed' => 0,
-                'pieces' => [],
-            ];
+            return [];
         }
 
         $index = 0;
@@ -551,45 +549,75 @@ class Formatting
             }
 
             $part = preg_replace('/\s+/', ' ', $part);
-            list( $wordtype, $type, $name, $rawdescription ) = explode(' ', $part . '    ', 4); // extra spaces ensure we'll always have 4 items.
+            // extra spaces ensure we'll always have 4 items.
+            list($wordtype, $type, $name, $rawdescription) = explode(' ', $part . '    ', 4);
             $description = trim($rawdescription);
 
-            $piece = [];
             if ('@type' != $wordtype) {
-                $pieces['description'] = $part;
+                $pieces['description'] = [
+                    'name' => $key,
+                    'type' => 'array',
+                    'wordtype' => null,
+                    'value' => $part,
+                ];
             } else {
-                $piece['name'] = $name;
-                $piece['type'] = $type;
-                $piece['wordtype'] = $wordtype;
-                $piece['description'] = $description;
+                $pieces[$name] = [
+                    'name' => $name,
+                    'type' => $type,
+                    'wordtype' => $wordtype,
+                    'value' => $description,
+                ];
+            }
+
+            $islinkbrace = false;
+            preg_match('/({.*(?:@see|@link).+?})(.*)/', $description, $matches);
+            if (!empty($matches)) {
+                if (trim($matches[count($matches) - 1]) === '') {
+                    // If there are no braces after the @see|@link closing brace,
+                    // the closing brace is a link brace, not a hash param closing brace
+                    $islinkbrace = true;
+                }
             }
 
             // Handle nested hashes.
             if (($description && '{' === $description[0]) || '{' === $name) {
-                $deschashpieces = explode('{', $rawdescription);
+                $deschashpieces = explode('{', $rawdescription, 2);
                 $nestedtext = join('    ', array_slice($parts, $index + 1));
                 $nestedtext = '{' . $deschashpieces[1] . '    ' . $nestedtext;
-                $results = self::getParamHashArrayRecursive($nestedtext, $piece);
-                $noprocessrange = $index + $results['numparsed'];
-                $piece['pieces'] = $results['pieces'];
-                $pieces['pieces'][] = $piece['pieces'];
-            } elseif ('}' === substr($description, -1)) {
-                $pieces['pieces'][] = $piece;
-                return [
-                    'numparsed' => $index + 1,
-                    'pieces' => $pieces,
-                ];
-            } elseif (!empty($piece)) {
-                $pieces['pieces'][] = $piece;
+                $pieces[$name] = self::getParamHashMapRecursive($nestedtext, [], $name);
+                $numprocessed = self::countNestedHashParamLeafNodes($pieces[$name]);
+                $noprocessrange = $index + $numprocessed;
+            // Sometimes nested hashes contain links (eg. {@see 'hook_name'}) so we
+            // need to make sure that if the last character is a closing brace it
+            // isn't for a link
+            } elseif ('}' === substr($description, -1) && !$islinkbrace) {
+                return $pieces;
             }
 
             $index++;
         }
 
-        return [
-            'numparsed' => $index,
-            'pieces' => $pieces,
-        ];
+        return $pieces;
+    }
+
+    /**
+     * Recursively counts all leaf nodes of a nested hash param
+     *
+     * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param array $na
+     * @return int
+     */
+    public static function countNestedHashParamLeafNodes($na) {
+        $num = 0;
+        foreach ($na as $el) {
+            if (!isset($el['value']) || is_array($el['value'])) {
+                $num += self::countNestedHashParamLeafNodes($el);
+            } else {
+                $num++;
+            }
+        }
+
+        return $num;
     }
 
     /**
