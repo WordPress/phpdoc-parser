@@ -30,6 +30,7 @@ class ParsedContent
     public $meta_fields = [
         'translated_summary',
         'translated_description',
+        'translated_params',
         'translated_return',
         'translated_deprecated',
         'translated_sinces',
@@ -184,9 +185,10 @@ class ParsedContent
         $sinces = self::getSinces($post->ID);
         $translated_summary = (string)get_post_meta($post->ID, 'translated_summary', true);
         $translated_description = (string)get_post_meta($post->ID, 'translated_description', true);
+        $translated_params = (array)get_post_meta($post->ID, 'translated_params', true);
+        $translated_return = get_post_meta($post->ID, 'translated_return', true);
         $translated_deprecated = (string)get_post_meta($post->ID, 'translated_deprecated', true);
         $translated_sinces = (array)get_post_meta($post->ID, 'translated_sinces', true);
-        $translated_return = get_post_meta($post->ID, 'translated_return', true);
 
         wp_nonce_field('phpdoc-parsed-content', 'phpdoc-parsed-content-nonce');
         ?>
@@ -252,50 +254,58 @@ class ParsedContent
                 </td>
             </tr>
             <?php foreach ($params as $name => $data) : ?>
-                <tr>
-                    <tr valign="top">
-                        <th scope="row">
-                            <div class="parser-tags">
-                                <label for="phpdoc_parsed_content"><?php echo $name; ?></label>
-                                <div class="types">
-                                    <span class="type">
-                                        <?php // translators: the type ?>
-                                        <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['types'])); ?>
-                                    </span>
+                <?php if ($data['ishash'] === false) : ?>
+                    <tr>
+                        <tr valign="top">
+                            <th scope="row">
+                                <div class="parser-tags">
+                                    <label for="phpdoc_parsed_content"><?php echo $name; ?></label>
+                                    <div class="types">
+                                        <span class="type">
+                                            <?php // translators: the type ?>
+                                            <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['types'])); ?>
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </th>
-                        <td>
-                            <div class="wporg_parsed_readonly"><?php echo $data['content']; ?></div>
-                        </td>
+                            </th>
+                            <td>
+                                <div class="wporg_parsed_readonly"><?php echo $data['content']; ?></div>
+                            </td>
+                        </tr>
                     </tr>
-                </tr>
-                <?php if (current_user_can('manage_options')) : ?>
+                    <?php if (current_user_can('manage_options')) : ?>
+                        <?php $translated_key = "translated_params[{$name}]"; ?>
+                        <tr valign="top">
+                            <th scope="row">
+                                <label for="<?php echo $translated_key; ?>">
+                                    <?php // translators: the arg name ?>
+                                    <?php printf(__('%s (Translated)', 'wp-parser'), $name); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <div class="<?php echo $translated_key; ?>">
+                                    <?php
+                                    wp_editor(
+                                        isset($translated_params[$name]) ? $translated_params[$name] : '',
+                                        $translated_key,
+                                        [
+                                            'media_buttons' => false,
+                                            'tinymce' => false,
+                                            'quicktags' => false,
+                                            'textarea_rows' => 2,
+                                        ]
+                                    );
+                                    ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                <?php else : ?>
                     <?php
-                        $clean_name = str_replace('$', '', $name);
-                        $translated_key = "translated_{$clean_name}";
-                        $translated_key_val = (string)get_post_meta($post->ID, $translated_key, true);
+                    $hasha = $data['hierarchical'];
+                    $hasha = [$name => $hasha];
+                    self::hashParamRowsRecursive('translated_params', $hasha, $translated_params);
                     ?>
-                    <tr valign="top">
-                        <th scope="row">
-                            <label for="<?php echo $translated_key; ?>">
-                                <?php // translators: the arg name ?>
-                                <?php printf(__('%s (Translated)', 'wp-parser'), $name); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <div class="<?php echo $translated_key; ?>">
-                                <?php
-                                wp_editor($translated_key_val, $translated_key, [
-                                    'media_buttons' => false,
-                                    'tinymce' => false,
-                                    'quicktags' => false,
-                                    'textarea_rows' => 10,
-                                ]);
-                                ?>
-                            </div>
-                        </td>
-                    </tr>
                 <?php endif; ?>
             <?php endforeach; ?>
             <?php if (!empty($return['type'])) : ?>
@@ -359,7 +369,7 @@ class ParsedContent
                     <?php
                     $hasha = $return['hierarchical'];
                     $hasha['description']['name'] = __('Parsed Return:', 'wp-parser');
-                    self::hashParamRowsRecursive($hasha, $translated_return);
+                    self::hashParamRowsRecursive('translated_return', $hasha, $translated_return);
                     ?>
                 <?php endif; ?>
             <?php endif; ?>
@@ -462,19 +472,21 @@ class ParsedContent
      * Recursively displays table rows for a hash type parameter
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
+     * @param string $namekey
      * @param array  $pieces
-     * @param array  $treturn
+     * @param array  $tpieces
      * @param string $namespace
      * @param int    $level Recursion level
      * @return void
      */
-    public static function hashParamRowsRecursive($pieces, $treturn, $namespace = '', $level = 0) {
+    public static function hashParamRowsRecursive($namekey, $pieces, $tpieces, $namespace = '', $level = 0) {
         $index = 0;
         foreach ($pieces as $key => $piece) :
             if (!isset($piece['value']) || is_array($piece['value'])) {
                 self::hashParamRowsRecursive(
+                    $namekey,
                     $piece,
-                    isset($treturn[$key]) ? $treturn[$key] : [],
+                    isset($tpieces[$key]) ? $tpieces[$key] : [],
                     "{$namespace}[{$key}]",
                     $level + 1
                 );
@@ -482,8 +494,8 @@ class ParsedContent
             }
             $value = $piece['value'];
             $tvalue = '';
-            if (!empty($value) && !is_array($value)) {
-                $tvalue = isset($treturn[$key]) ? $treturn[$key] : '';
+            if (!is_array($value)) {
+                $tvalue = isset($tpieces[$key]) ? $tpieces[$key] : '';
             }
             $padding = $level;
             if ($level > 0 && $key === 'description') {
@@ -522,7 +534,7 @@ class ParsedContent
                 <td>
                     <div class="wporg_parsed_readonly">
                         <?php
-                        wp_editor($tvalue, "translated_return{$namespace}[{$key}]", [
+                        wp_editor($tvalue, "{$namekey}{$namespace}[{$key}]", [
                             'media_buttons' => false,
                             'tinymce' => false,
                             'quicktags' => false,
@@ -562,8 +574,19 @@ class ParsedContent
                         $types[$i] = sprintf('<span class="%s">%s</span>', $v, $v);
                     }
 
+                    $content = htmlspecialchars((string)$params[$tag['variable']]['content']);
                     $params[$tag['variable']]['types'] = implode('|', $types);
-                    $params[$tag['variable']]['content'] = htmlspecialchars($params[$tag['variable']]['content']);
+                    $params[$tag['variable']]['content'] = $content;
+                    $params[$tag['variable']]['ishash'] = false;
+                    $params[$tag['variable']]['hierarchical'] = null;
+                    if ('{' == $content[0]) {
+                        $params[$tag['variable']]['ishash'] = true;
+                        $params[$tag['variable']]['hierarchical'] = Formatting::getParamHashMapRecursive(
+                            $content,
+                            [],
+                            $params[$tag['variable']]['variable']
+                        );
+                    }
                 }
             }
         }
@@ -595,7 +618,6 @@ class ParsedContent
                 'type' => '',
                 'ishash' => false,
                 'content' => '',
-                'parts' => null,
                 'hierarchical' => null,
             ];
         }
@@ -604,13 +626,9 @@ class ParsedContent
         $types = $return['types'];
         $type = empty($types) ? '' : esc_html(implode('|', $types));
         $content = htmlspecialchars($return['content']);
-        $parts = null;
         $hierarchical = null;
         $ishash = '{' == $content[0];
         if ($ishash) {
-            $text = trim(substr($content, 1, -1));
-            $text = str_replace('@type', "\n@type", $text);
-            $parts = explode("\n", $text);
             $hierarchical = Formatting::getParamHashMapRecursive($content);
         }
 
@@ -618,7 +636,6 @@ class ParsedContent
             'type' => $type,
             'ishash' => $ishash,
             'content' => $content,
-            'parts' => $parts,
             'hierarchical' => $hierarchical,
         ];
     }

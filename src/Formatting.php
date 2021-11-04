@@ -284,8 +284,12 @@ class Formatting
 
         // Convert any @link or @see to actual link.
         $text = self::makeDoclinkClickable($text);
+        $text = self::autolinkReferences($text);
+        // $text = self::fixParamHashFormatting($text);
+        $text = self::fixParamDescriptionHtmlAsCode($text);
+        $text = self::convertListsToMarkup($text);
 
-        return apply_filters('avcpdp-format-description', $text);
+        return $text;
     }
 
     /**
@@ -513,7 +517,7 @@ class Formatting
             // $text = preg_replace( '~(</li>)(\s+</li>)~smU', '$1</ul>$2', $text );
             $text = preg_replace('~(</li>)(\s*</li>)~smU', '$1</ul>$2', $text);
 
-            // Closethe list if it hasn't been closed and it's the end of the description.
+            // Close the list if it hasn't been closed and it's the end of the description.
             if ('</li>' === substr(trim($text), -5)) {
                 $text .= '</ul>';
             }
@@ -591,6 +595,7 @@ class Formatting
             // need to make sure that if the last character is a closing brace it
             // isn't for a link
             } elseif ('}' === substr($description, -1) && !$islinkbrace) {
+                $pieces[$name]['value'] = trim(substr($description, 0, -1));
                 return $pieces;
             }
 
