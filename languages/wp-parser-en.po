@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: AVC WP Parser %%VERSION%%\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
-"POT-Creation-Date: 2021-10-29T12:06:34+09:00\n"
+"POT-Creation-Date: 2021-11-04T13:47:34+09:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -206,58 +206,79 @@ msgstr "Hooks"
 msgid "Used by Methods"
 msgstr "Methods"
 
-#: src/ParsedContent.php:111
+#: src/ParsedContent.php:113
 msgid "Parsed Content"
 msgstr ""
 
-#: src/ParsedContent.php:119
+#: src/ParsedContent.php:121
 msgid "Item Importance"
 msgstr ""
 
-#: src/ParsedContent.php:142
+#: src/ParsedContent.php:144
 msgid "Not Important"
 msgstr ""
 
-#: src/ParsedContent.php:155
+#: src/ParsedContent.php:157
+#: src/PostAddons/ItemImportance/ItemImportance.php:148
+#: src/PostAddons/ItemImportance/ItemImportance.php:150
 msgid "Important"
 msgstr ""
 
-#: src/ParsedContent.php:191
+#: src/ParsedContent.php:197
 msgid "Parsed Summary:"
 msgstr ""
 
-#: src/ParsedContent.php:200
+#: src/ParsedContent.php:206
 msgid "Translated Summary:"
 msgstr ""
 
-#: src/ParsedContent.php:218
+#: src/ParsedContent.php:224
 msgid "Parsed Description:"
 msgstr ""
 
-#: src/ParsedContent.php:227
+#: src/ParsedContent.php:233
 msgid "Translated Description:"
 msgstr ""
 
-#: src/ParsedContent.php:245
-msgid "Tags (args, return)"
+#: src/ParsedContent.php:251
+msgid "Parameters"
 msgstr ""
 
 #. translators: the type
-#: src/ParsedContent.php:257 src/ParsedContent.php:303
+#. translators: param type
+#: src/ParsedContent.php:263 src/ParsedContent.php:315
+#: src/ParsedContent.php:495
 msgid "(%s)"
 msgstr ""
 
 #. translators: the arg name
-#: src/ParsedContent.php:277
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#: src/ParsedContent.php:283 src/ParsedContent.php:334
+#: src/ParsedContent.php:389 src/ParsedContent.php:431
+#: src/ParsedContent.php:512
 msgid "%s (Translated)"
 msgstr ""
 
-#: src/ParsedContent.php:300
+#. translators: the arg name
+#: src/ParsedContent.php:304 src/ParsedContent.php:312
+#: src/ParsedContent.php:335 src/ParsedContent.php:361
 msgid "Parsed Return:"
 msgstr ""
 
-#: src/ParsedContent.php:316
-msgid "Translated Return:"
+#: src/ParsedContent.php:369
+msgid "Tags (deprecated)"
+msgstr ""
+
+#: src/ParsedContent.php:410
+msgid "Tags (since)"
+msgstr ""
+
+#: src/PostAddons/ItemImportance/ItemImportance.php:123
+#: src/PostAddons/ItemImportance/ItemImportance.php:124
+msgid "Important?"
 msgstr ""
 
 #: src/PostsPluginFilter.php:40

@@ -1,5 +1,6 @@
 <?php
 
+use Aivec\Plugins\DocParser\Formatting;
 use Aivec\Plugins\DocParser\Registrations;
 
 /**
@@ -1277,4 +1278,114 @@ function avcpdp_get_all_parser_posts_for_source($source_type, $source_name) {
     ]);
 
     return $q;
+}
+
+/**
+ * Returns since tags data.
+ *
+ * @param int|null $post_id Post ID, defaults to the ID of the global $post.
+ * @return array
+ */
+function avcpdp_get_sinces($post_id = null) {
+    $post_id = empty($post_id) ? get_the_ID() : $post_id;
+
+    // Since terms assigned to the post.
+    $since_terms = wp_get_post_terms($post_id, 'wp-parser-since');
+
+    // Since data stored in meta.
+    $since_meta = get_post_meta($post_id, '_wp-parser_tags', true);
+
+    $since_tags = wp_filter_object_list($since_meta, ['name' => 'since']);
+    $translated_sinces = (array)get_post_meta($post_id, 'translated_sinces', true);
+
+    $data = [];
+
+    // Pair the term data with meta data.
+    foreach ($since_terms as $since_term) {
+        foreach ($since_tags as $meta) {
+            if (is_array($meta) && $since_term->name == $meta['content']) {
+                $raw_description = !empty($meta['description']) ? $meta['description'] : '';
+                $translated_description = !empty($translated_sinces[$since_term->name]) ? $translated_sinces[$since_term->name] : '';
+                $description = !empty($translated_description) ? $translated_description : $raw_description;
+                $data[$since_term->name] = [
+                    'version' => $since_term->name,
+                    'since_url' => get_term_link($since_term),
+                    'since_term' => $since_term,
+                    'description' => $description,
+                    'formatted_description' => Formatting::formatParamDescription($description),
+                    'raw_description' => $raw_description,
+                    'translated_raw_description' => $translated_description,
+                ];
+            }
+        }
+    }
+
+    return $data;
+}
+
+/**
+ * Returns deprecated tag data.
+ *
+ * @param int|null $post_id Optional. Post ID. Default is the ID of the global `$post`.
+ * @return null|array
+ */
+function avcpdp_get_deprecated($post_id = null) {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+
+    $types = explode('-', get_post_type($post_id));
+    $type = array_pop($types);
+    $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+    $deprecated = wp_filter_object_list($tags, ['name' => 'deprecated']);
+    $deprecated = array_shift($deprecated);
+
+    if (!$deprecated) {
+        return null;
+    }
+
+    $translated_deprecated = (string)get_post_meta($post_id, 'translated_deprecated', true);
+
+    $raw_description = !empty($deprecated['description']) ? $deprecated['description'] : '';
+    $translated_raw_description = !empty($translated_deprecated) ? $translated_deprecated : '';
+    $description = !empty($translated_raw_description) ? sanitize_text_field($translated_raw_description) : sanitize_text_field($raw_description);
+
+    $refers = null;
+    $referral_link = null;
+    $referral = wp_filter_object_list($tags, ['name' => 'see']);
+    $referral = array_shift($referral);
+
+    // Construct message pointing visitor to preferred alternative, as provided
+    // via @see, if present.
+    if (!empty($referral['refers'])) {
+        $refers = sanitize_text_field($referral['refers']);
+
+        if ($refers) {
+            // For some reason, the parser may have dropped the parentheses, so add them.
+            if (in_array($type, ['function', 'method']) && false === strpos($refers, '()')) {
+                $refers .= '()';
+            }
+
+            $referral_link = Formatting::linkInternalElement($refers);
+        }
+    }
+
+    $since_url = '';
+    $version = $deprecated['content'];
+    $since_term = get_term_by('name', $version, 'wp-parser-since');
+    if ($since_term) {
+        $since_url = get_term_link($since_term);
+    }
+
+    return [
+        'version' => $deprecated['content'],
+        'since_url' => $since_url,
+        'since_term' => $since_term || null,
+        'description' => $description,
+        'formatted_description' => Formatting::formatParamDescription($description),
+        'raw_description' => $raw_description,
+        'translated_raw_description' => $translated_raw_description,
+        'refers' => $refers,
+        'referral_link' => $referral_link,
+    ];
 }

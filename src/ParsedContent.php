@@ -410,12 +410,14 @@ class ParsedContent
                         <h2><?php _e('Tags (since)', 'wp-parser'); ?></h2>
                     </td>
                 </tr>
-                <?php foreach ($sinces as $i => $since) : ?>
+                <?php foreach ($sinces as $since) :
+                    $version = $since['content'];
+                    ?>
                     <tr>
                         <tr valign="top">
                             <th scope="row">
                                 <div class="parser-tags">
-                                    <label for="phpdoc_parsed_content"><?php  printf($since['content']); ?></label>
+                                    <label for="phpdoc_parsed_content"><?php  printf($version); ?></label>
                                 </div>
                             </th>
                             <td>
@@ -434,12 +436,16 @@ class ParsedContent
                             <td>
                                 <div class="<?php echo $since['content']; ?>">
                                     <?php
-                                    wp_editor($translated_sinces[$i], 'translated_sinces[]', [
-                                        'media_buttons' => false,
-                                        'tinymce' => false,
-                                        'quicktags' => false,
-                                        'textarea_rows' => 2,
-                                    ]);
+                                    wp_editor(
+                                        isset($translated_sinces[$version]) ? $translated_sinces[$version] : '',
+                                        "translated_sinces[{$version}]",
+                                        [
+                                            'media_buttons' => false,
+                                            'tinymce' => false,
+                                            'quicktags' => false,
+                                            'textarea_rows' => 2,
+                                        ]
+                                    );
                                     ?>
                                 </div>
                             </td>

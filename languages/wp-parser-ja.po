@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: AVC WP Parser %%VERSION%%\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
-"POT-Creation-Date: 2021-10-29T12:06:34+09:00\n"
+"POT-Creation-Date: 2021-11-04T13:47:34+09:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -201,59 +201,81 @@ msgstr "利用しているフック"
 msgid "Used by Methods"
 msgstr "利用されている関数"
 
-#: src/ParsedContent.php:111
+#: src/ParsedContent.php:113
 msgid "Parsed Content"
 msgstr "パースしたコンテンツ"
 
-#: src/ParsedContent.php:119
+#: src/ParsedContent.php:121
 msgid "Item Importance"
 msgstr "重要ステータス"
 
-#: src/ParsedContent.php:142
+#: src/ParsedContent.php:144
 msgid "Not Important"
 msgstr "重要ではない"
 
-#: src/ParsedContent.php:155
+#: src/ParsedContent.php:157
+#: src/PostAddons/ItemImportance/ItemImportance.php:148
+#: src/PostAddons/ItemImportance/ItemImportance.php:150
 msgid "Important"
 msgstr "重要"
 
-#: src/ParsedContent.php:191
+#: src/ParsedContent.php:197
 msgid "Parsed Summary:"
 msgstr "概要"
 
-#: src/ParsedContent.php:200
+#: src/ParsedContent.php:206
 msgid "Translated Summary:"
 msgstr "概要 (翻訳)"
 
-#: src/ParsedContent.php:218
+#: src/ParsedContent.php:224
 msgid "Parsed Description:"
 msgstr "説明"
 
-#: src/ParsedContent.php:227
+#: src/ParsedContent.php:233
 msgid "Translated Description:"
 msgstr "説明 (翻訳)"
 
-#: src/ParsedContent.php:245
-msgid "Tags (args, return)"
-msgstr "(パラメータ、戻り値)"
+#: src/ParsedContent.php:251
+msgid "Parameters"
+msgstr ""
 
 #. translators: the type
-#: src/ParsedContent.php:257 src/ParsedContent.php:303
+#. translators: param type
+#: src/ParsedContent.php:263 src/ParsedContent.php:315
+#: src/ParsedContent.php:495
 msgid "(%s)"
 msgstr "(%s)"
 
 #. translators: the arg name
-#: src/ParsedContent.php:277
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#: src/ParsedContent.php:283 src/ParsedContent.php:334
+#: src/ParsedContent.php:389 src/ParsedContent.php:431
+#: src/ParsedContent.php:512
 msgid "%s (Translated)"
 msgstr "%s (翻訳)"
 
-#: src/ParsedContent.php:300
+#. translators: the arg name
+#: src/ParsedContent.php:304 src/ParsedContent.php:312
+#: src/ParsedContent.php:335 src/ParsedContent.php:361
 msgid "Parsed Return:"
 msgstr "戻り値"
 
-#: src/ParsedContent.php:316
-msgid "Translated Return:"
-msgstr "戻り値 (翻訳)"
+#: src/ParsedContent.php:369
+msgid "Tags (deprecated)"
+msgstr ""
+
+#: src/ParsedContent.php:410
+msgid "Tags (since)"
+msgstr ""
+
+#: src/PostAddons/ItemImportance/ItemImportance.php:123
+#: src/PostAddons/ItemImportance/ItemImportance.php:124
+#, fuzzy
+msgid "Important?"
+msgstr "重要"
 
 #: src/PostsPluginFilter.php:40
 msgid "All Plugins"
@@ -565,7 +587,8 @@ msgstr "インポート"
 
 #: dist/js/Views/ImporterPage/App.js:10299
 msgid "Enter the folder name of the plugin/theme/composer-package"
-msgstr "プラグイン・テーマ・Composerパッケージのフォルダー名を入力してください。"
+msgstr ""
+"プラグイン・テーマ・Composerパッケージのフォルダー名を入力してください。"
 
 #: dist/js/Views/ImporterPage/App.js:10308
 msgid "Trash old references"
@@ -594,3 +617,9 @@ msgstr "更新中..."
 #: dist/js/Views/ImporterPage/App.js:10475
 msgid "Update"
 msgstr "パスを更新する"
+
+#~ msgid "Tags (args, return)"
+#~ msgstr "(パラメータ、戻り値)"
+
+#~ msgid "Translated Return:"
+#~ msgstr "戻り値 (翻訳)"
