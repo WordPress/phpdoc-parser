@@ -1389,3 +1389,211 @@ function avcpdp_get_deprecated($post_id = null) {
         'referral_link' => $referral_link,
     ];
 }
+
+/**
+ * Retrieve parameters as an array
+ *
+ * @param int|null $post_id
+ * @return array
+ */
+function avcpdp_get_params($post_id = null) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+    $params = [];
+    $args = get_post_meta($post_id, '_wp-parser_args', true);
+    $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+    $tparams = (array)get_post_meta($post_id, 'translated_params', true);
+
+    if ($tags) {
+        $encountered_optional = false;
+        foreach ($tags as $tag) {
+            if (!empty($tag['name']) && 'param' === strtolower($tag['name'])) {
+                $key = $tag['variable'];
+                $param = [];
+
+                $param['variable'] = $key;
+                $param['ishash'] = false;
+                $param['hierarchical'] = null;
+                $param = array_merge($param, avcpdp_build_param_types($tag['types']));
+                $param['raw_content'] = $tag['content'];
+                $param['raw_translated_content'] = '';
+                if (isset($tparams[$key])) {
+                    $param['raw_translated_content'] = $tparams[$key];
+                }
+
+                // Normalize spacing at beginning of hash notation params.
+                if ($tag['content'] && '{' == $tag['content'][0]) {
+                    $tag['content'] = '{ ' . trim(substr($tag['content'], 1));
+                    $param['ishash'] = true;
+                }
+
+                if (strtolower(substr($tag['content'], 0, 8)) == 'optional') {
+                    $param['required'] = false;
+                    $param['content'] = substr($tag['content'], 9);
+                    $encountered_optional = true;
+                } elseif (strtolower(substr($tag['content'], 2, 9)) == 'optional.') { // Hash notation param
+                    $param['required'] = false;
+                    $param['content'] = '{ ' . substr($tag['content'], 12);
+                    $encountered_optional = true;
+                } elseif ($encountered_optional) {
+                    $param['required'] = false;
+                } else {
+                    $param['required'] = true;
+                }
+
+                $param['raw_content_formatted'] = Formatting::formatParamDescription(
+                    $tag['content']
+                );
+                $param['raw_translated_content_formatted'] = Formatting::formatParamDescription(
+                    $param['ishash'] ? '' : $param['raw_translated_content']
+                );
+                if ($param['ishash'] === true) {
+                    $param['hierarchical'] = Formatting::getParamHashMapRecursive(
+                        $param['raw_content'],
+                        isset($tparams[$key]) ? (array)$tparams[$key] : []
+                    );
+                }
+
+                $param['content'] = $param['raw_content_formatted'];
+                if (!empty($param['raw_translated_content_formatted'])) {
+                    $param['content'] = $param['raw_translated_content_formatted'];
+                }
+
+                $params[$key] = $param;
+            }
+        }
+    }
+
+    if ($args) {
+        foreach ($args as $arg) {
+            if (!empty($arg['name']) && !empty($params[$arg['name']])) {
+                $params[$arg['name']]['raw_default'] = $arg['default'];
+
+                // If a default value was supplied
+                if (!empty($arg['default'])) {
+                    // Ensure the parameter was marked as optional (sometimes they aren't
+                    // properly and explicitly documented as such)
+                    $params[$arg['name']]['required'] = false;
+
+                    // If a known default is stated in the parameter's description, try to remove it
+                    // since the actual default value is displayed immediately following description.
+                    $default = htmlentities($arg['default']);
+                    $params[$arg['name']]['default'] = $default;
+                    if ($params[$arg['name']]['ishash'] === true) {
+                        // skip hash parameters
+                        continue;
+                    }
+
+                    $params[$arg['name']]['content'] = str_replace("default is {$default}.", '', $params[$arg['name']]['content']);
+                    $params[$arg['name']]['content'] = str_replace("Default {$default}.", '', $params[$arg['name']]['content']);
+
+                    // When the default is '', docs sometimes say "Default empty." or similar.
+                    if ("''" == $arg['default']) {
+                        $params[$arg['name']]['content'] = str_replace('Default empty.', '', $params[$arg['name']]['content']);
+                        $params[$arg['name']]['content'] = str_replace('Default empty string.', '', $params[$arg['name']]['content']);
+
+                        // Only a few cases of this. Remove once core is fixed.
+                        $params[$arg['name']]['content'] = str_replace('default is empty string.', '', $params[$arg['name']]['content']);
+                    // When the default is array(), docs sometimes say "Default empty array." or similar.
+                    } elseif ('array()' == $arg['default']) {
+                        $params[$arg['name']]['content'] = str_replace('Default empty array.', '', $params[$arg['name']]['content']);
+                        // Not as common.
+                        $params[$arg['name']]['content'] = str_replace('Default empty.', '', $params[$arg['name']]['content']);
+                    }
+                }
+            }
+        }
+    }
+
+    return $params;
+}
+
+/**
+ * Retrieves return type and description if available.
+ *
+ * If there is no explicit return value, or it is explicitly "void", then
+ * an empty string is returned. This rules out display of return type for
+ * classes, hooks, and non-returning functions.
+ *
+ * @param int $post_id
+ * @return string|array
+ */
+function avcpdp_get_return($post_id = null) {
+    if (empty($post_id)) {
+        $post_id = get_the_ID();
+    }
+
+    $tags = get_post_meta($post_id, '_wp-parser_tags', true);
+    $return = wp_filter_object_list($tags, ['name' => 'return']);
+    $translated_return = get_post_meta($post_id, 'translated_return', true);
+
+    // If there is no explicit or non-"void" return value, don't display one.
+    if (empty($return)) {
+        return '';
+    }
+
+    $return = array_shift($return);
+    $data = [];
+    $data['ishash'] = false;
+    $data['hierarchical'] = null;
+    $data = array_merge($data, avcpdp_build_param_types($return['types']));
+    $data['raw_content'] = $return['content'];
+    $data['raw_translated_content'] = '';
+    if (!empty($translated_return)) {
+        $data['raw_translated_content'] = $translated_return;
+    }
+
+    // Normalize spacing at beginning of hash notation params.
+    if ($return['content'] && '{' == $return['content'][0]) {
+        $return['content'] = '{ ' . trim(substr($return['content'], 1));
+        $data['ishash'] = true;
+    }
+
+    $data['raw_content_formatted'] = Formatting::formatParamDescription(
+        $return['content']
+    );
+    $data['raw_translated_content_formatted'] = Formatting::formatParamDescription(
+        $data['ishash'] ? '' : $data['raw_translated_content']
+    );
+    if ($data['ishash'] === true) {
+        $data['hierarchical'] = Formatting::getParamHashMapRecursive(
+            $data['raw_content'],
+            !empty($translated_return) ? (array)$translated_return : []
+        );
+    }
+
+    $data['content'] = $data['raw_content_formatted'];
+    if (!empty($data['raw_translated_content_formatted'])) {
+        $data['content'] = $data['raw_translated_content_formatted'];
+    }
+
+    return $data;
+}
+
+/**
+ * Builds types meta data for an array of param types
+ *
+ * @author Evan D Shaw <evandanielshaw@gmail.com>
+ * @param array $types
+ * @return array
+ */
+function avcpdp_build_param_types($types) {
+    $types = !empty($types) ? (array)$types : [];
+    $data = [];
+    $data['type'] = implode('|', $types);
+    $data['types'] = $types;
+    $data['types_formatted'] = $types;
+    $data['types_meta'] = [];
+    foreach ((array)$types as $i => $typeval) {
+        if (strpos($typeval, '\\') !== false) {
+            $typeval = ltrim($typeval, '\\');
+            $data['types_meta'][] = ['isclass' => true];
+        } else {
+            $data['types_meta'][] = ['isclass' => false];
+        }
+        $data['types_formatted'][$i] = Formatting::autolinkReferences($typeval);
+    }
+
+    return $data;
+}

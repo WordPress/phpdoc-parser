@@ -1,7 +1,8 @@
 <?php
 
-namespace Aivec\Plugins\DocParser;
+namespace Aivec\Plugins\DocParser\PostAddons\ParsedContent;
 
+use Aivec\Plugins\DocParser\Formatting;
 use AVCPDP\Aivec\Core\CSS\Loader;
 
 /**
@@ -97,6 +98,12 @@ class ParsedContent
         }
 
         Loader::loadCoreCss();
+        wp_enqueue_style(
+            'avcpdp-postaddons-parsed-content',
+            AVCPDP_PLUGIN_URL . '/src/PostAddons/ParsedContent/parsed-content.css',
+            [],
+            AVCPDP_VERSION
+        );
     }
 
     /**
@@ -179,16 +186,12 @@ class ParsedContent
     public function addParsedMetaBox($post) {
         $content = $post->post_content;
         $excerpt = $post->post_excerpt;
-        $params = self::getParams($post->ID);
-        $return = self::getReturn($post->ID);
-        $deprecated = self::getDeprecated($post->ID);
-        $sinces = self::getSinces($post->ID);
         $translated_summary = (string)get_post_meta($post->ID, 'translated_summary', true);
         $translated_description = (string)get_post_meta($post->ID, 'translated_description', true);
-        $translated_params = (array)get_post_meta($post->ID, 'translated_params', true);
-        $translated_return = get_post_meta($post->ID, 'translated_return', true);
-        $translated_deprecated = (string)get_post_meta($post->ID, 'translated_deprecated', true);
-        $translated_sinces = (array)get_post_meta($post->ID, 'translated_sinces', true);
+        $params = avcpdp_get_params($post->ID);
+        $return = avcpdp_get_return($post->ID);
+        $deprecated = avcpdp_get_deprecated($post->ID);
+        $sinces = avcpdp_get_sinces($post->ID);
 
         wp_nonce_field('phpdoc-parsed-content', 'phpdoc-parsed-content-nonce');
         ?>
@@ -263,13 +266,13 @@ class ParsedContent
                                     <div class="types">
                                         <span class="type">
                                             <?php // translators: the type ?>
-                                            <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['types'])); ?>
+                                            <?php printf(__('(%s)', 'wp-parser'), wp_kses_post($data['type'])); ?>
                                         </span>
                                     </div>
                                 </div>
                             </th>
                             <td>
-                                <div class="wporg_parsed_readonly"><?php echo $data['content']; ?></div>
+                                <div class="wporg_parsed_readonly"><?php echo htmlspecialchars($data['raw_content']); ?></div>
                             </td>
                         </tr>
                     </tr>
@@ -285,8 +288,12 @@ class ParsedContent
                             <td>
                                 <div class="<?php echo $translated_key; ?>">
                                     <?php
+                                    // reset the value if it used to be a hash
+                                    if (is_array($data['raw_translated_content'])) {
+                                        $data['raw_translated_content'] = '';
+                                    }
                                     wp_editor(
-                                        isset($translated_params[$name]) ? $translated_params[$name] : '',
+                                        isset($data['raw_translated_content']) ? $data['raw_translated_content'] : '',
                                         $translated_key,
                                         [
                                             'media_buttons' => false,
@@ -303,8 +310,8 @@ class ParsedContent
                 <?php else : ?>
                     <?php
                     $hasha = $data['hierarchical'];
-                    $hasha = [$name => $hasha];
-                    self::hashParamRowsRecursive('translated_params', $hasha, $translated_params);
+                    $hasha['description']['name'] = $name;
+                    self::hashParamRowsRecursive('translated_params', [$name => $hasha]);
                     ?>
                 <?php endif; ?>
             <?php endforeach; ?>
@@ -329,7 +336,7 @@ class ParsedContent
                             </th>
                             <td>
                                 <div class="wporg_parsed_readonly">
-                                    <?php echo $return['content']; ?>
+                                    <?php echo htmlspecialchars($return['raw_content']); ?>
                                 </div>
                             </td>
                         </tr>
@@ -351,10 +358,10 @@ class ParsedContent
                                 <div class="translated_return">
                                     <?php
                                     // reset the value if it used to be a hash
-                                    if (is_array($translated_return)) {
-                                        $translated_return = '';
+                                    if (is_array($return['raw_translated_content'])) {
+                                        $return['raw_translated_content'] = '';
                                     }
-                                    wp_editor($translated_return, 'translated_return', [
+                                    wp_editor($return['raw_translated_content'], 'translated_return', [
                                         'media_buttons' => false,
                                         'tinymce' => false,
                                         'quicktags' => false,
@@ -369,11 +376,11 @@ class ParsedContent
                     <?php
                     $hasha = $return['hierarchical'];
                     $hasha['description']['name'] = __('Parsed Return:', 'wp-parser');
-                    self::hashParamRowsRecursive('translated_return', $hasha, $translated_return);
+                    self::hashParamRowsRecursive('translated_return', $hasha);
                     ?>
                 <?php endif; ?>
             <?php endif; ?>
-            <?php if (!empty($deprecated['content'])) : ?>
+            <?php if ($deprecated !== null && !empty($deprecated['version'])) : ?>
                 <tr class="t-section">
                     <td colspan="2">
                         <h2><?php _e('Tags (deprecated)', 'wp-parser'); ?></h2>
@@ -383,26 +390,28 @@ class ParsedContent
                     <tr valign="top">
                         <th scope="row">
                             <div class="parser-tags">
-                                <label for="phpdoc_parsed_content"><?php printf($deprecated['content']); ?></label>
+                                <label for="phpdoc_parsed_content"><?php printf($deprecated['version']); ?></label>
                             </div>
                         </th>
                         <td>
-                            <div class="wporg_parsed_readonly"><?php echo $deprecated['description']; ?></div>
+                            <div class="wporg_parsed_readonly">
+                                <?php echo htmlspecialchars($deprecated['raw_description']); ?>
+                            </div>
                         </td>
                     </tr>
                 </tr>
                 <?php if (current_user_can('manage_options')) : ?>
                     <tr valign="top">
                         <th scope="row">
-                            <label for="<?php echo $deprecated['content']; ?>">
+                            <label for="<?php echo $deprecated['version']; ?>">
                                 <?php // translators: the arg name ?>
-                                <?php printf(__('%s (Translated)', 'wp-parser'), $deprecated['content']); ?>
+                                <?php printf(__('%s (Translated)', 'wp-parser'), $deprecated['version']); ?>
                             </label>
                         </th>
                         <td>
                             <div class="translated_deprecated">
                                 <?php
-                                    wp_editor($translated_deprecated, 'translated_deprecated', [
+                                    wp_editor($deprecated['translated_raw_description'], 'translated_deprecated', [
                                         'media_buttons' => false,
                                         'tinymce' => false,
                                         'quicktags' => false,
@@ -421,33 +430,33 @@ class ParsedContent
                     </td>
                 </tr>
                 <?php foreach ($sinces as $since) :
-                    $version = $since['content'];
+                    $version = $since['version'];
                     ?>
                     <tr>
                         <tr valign="top">
                             <th scope="row">
                                 <div class="parser-tags">
-                                    <label for="phpdoc_parsed_content"><?php  printf($version); ?></label>
+                                    <label for="phpdoc_parsed_content"><?php printf($version); ?></label>
                                 </div>
                             </th>
                             <td>
-                                <div class="wporg_parsed_readonly"><?php echo $since['description']; ?></div>
+                                <div class="wporg_parsed_readonly"><?php echo htmlspecialchars($since['raw_description']); ?></div>
                             </td>
                         </tr>
                     </tr>
                     <?php if (current_user_can('manage_options')) : ?>
                         <tr valign="top">
                             <th scope="row">
-                                <label for="<?php echo $since['content']; ?>">
+                                <label for="<?php echo $version; ?>">
                                     <?php // translators: the arg name ?>
-                                    <?php printf(__('%s (Translated)', 'wp-parser'), $since['content']); ?>
+                                    <?php printf(__('%s (Translated)', 'wp-parser'), $version); ?>
                                 </label>
                             </th>
                             <td>
-                                <div class="<?php echo $since['content']; ?>">
+                                <div class="<?php echo $version; ?>">
                                     <?php
                                     wp_editor(
-                                        isset($translated_sinces[$version]) ? $translated_sinces[$version] : '',
+                                        isset($since['translated_raw_description']) ? $since['translated_raw_description'] : '',
                                         "translated_sinces[{$version}]",
                                         [
                                             'media_buttons' => false,
@@ -474,28 +483,26 @@ class ParsedContent
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param string $namekey
      * @param array  $pieces
-     * @param array  $tpieces
      * @param string $namespace
      * @param int    $level Recursion level
      * @return void
      */
-    public static function hashParamRowsRecursive($namekey, $pieces, $tpieces, $namespace = '', $level = 0) {
+    public static function hashParamRowsRecursive($namekey, $pieces, $namespace = '', $level = 0) {
         $index = 0;
         foreach ($pieces as $key => $piece) :
-            if (!isset($piece['value']) || is_array($piece['value'])) {
+            if (!isset($piece['raw_value']) || is_array($piece['raw_value'])) {
                 self::hashParamRowsRecursive(
                     $namekey,
                     $piece,
-                    isset($tpieces[$key]) ? $tpieces[$key] : [],
                     "{$namespace}[{$key}]",
                     $level + 1
                 );
                 continue;
             }
-            $value = $piece['value'];
+            $value = htmlspecialchars($piece['raw_value']);
             $tvalue = '';
             if (!is_array($value)) {
-                $tvalue = isset($tpieces[$key]) ? $tpieces[$key] : '';
+                $tvalue = isset($piece['raw_translated_value']) ? $piece['raw_translated_value'] : '';
             }
             $padding = $level;
             if ($level > 0 && $key === 'description') {
@@ -547,97 +554,6 @@ class ParsedContent
             <?php
             $index++;
         endforeach;
-    }
-
-    /**
-     * Retrieve parameters as a key value array
-     *
-     * @param int $post_id
-     * @return array
-     */
-    public static function getParams($post_id = null) {
-        if (empty($post_id)) {
-            $post_id = get_the_ID();
-        }
-        $params = [];
-        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
-
-        if ($tags) {
-            foreach ($tags as $tag) {
-                if (!empty($tag['name']) && 'param' == $tag['name']) {
-                    $params[$tag['variable']] = $tag;
-                    $types = [];
-                    foreach ($tag['types'] as $i => $v) {
-                        if (strpos($v, '\\') !== false) {
-                            $v = ltrim($v, '\\');
-                        }
-                        $types[$i] = sprintf('<span class="%s">%s</span>', $v, $v);
-                    }
-
-                    $content = htmlspecialchars((string)$params[$tag['variable']]['content']);
-                    $params[$tag['variable']]['types'] = implode('|', $types);
-                    $params[$tag['variable']]['content'] = $content;
-                    $params[$tag['variable']]['ishash'] = false;
-                    $params[$tag['variable']]['hierarchical'] = null;
-                    if ('{' == $content[0]) {
-                        $params[$tag['variable']]['ishash'] = true;
-                        $params[$tag['variable']]['hierarchical'] = Formatting::getParamHashMapRecursive(
-                            $content,
-                            [],
-                            $params[$tag['variable']]['variable']
-                        );
-                    }
-                }
-            }
-        }
-
-        return $params;
-    }
-
-    /**
-     * Retrieve return type and description if available.
-     *
-     * If there is no explicit return value, or it is explicitly "void", then
-     * an empty string is returned. This rules out display of return type for
-     * classes, hooks, and non-returning functions.
-     *
-     * @param int $post_id
-     * @return string
-     */
-    public static function getReturn($post_id = null) {
-        if (empty($post_id)) {
-            $post_id = get_the_ID();
-        }
-
-        $tags = get_post_meta($post_id, '_wp-parser_tags', true);
-        $return = wp_filter_object_list($tags, ['name' => 'return']);
-
-        // If there is no explicit or non-"void" return value, don't display one.
-        if (empty($return)) {
-            return [
-                'type' => '',
-                'ishash' => false,
-                'content' => '',
-                'hierarchical' => null,
-            ];
-        }
-
-        $return = array_shift($return);
-        $types = $return['types'];
-        $type = empty($types) ? '' : esc_html(implode('|', $types));
-        $content = htmlspecialchars($return['content']);
-        $hierarchical = null;
-        $ishash = '{' == $content[0];
-        if ($ishash) {
-            $hierarchical = Formatting::getParamHashMapRecursive($content);
-        }
-
-        return [
-            'type' => $type,
-            'ishash' => $ishash,
-            'content' => $content,
-            'hierarchical' => $hierarchical,
-        ];
     }
 
     /**
@@ -711,25 +627,6 @@ class ParsedContent
     }
 
     /**
-     * Returns indexed array of parameter post meta keys
-     *
-     * @author Evan D Shaw <evandanielshaw@gmail.com>
-     * @param int $post_id
-     * @return array
-     */
-    private function getParamMetaKeys($post_id) {
-        $keys = [];
-        $params = self::getParams($post_id);
-        foreach ($params as $name => $data) {
-            $clean_name = str_replace('$', '', $name);
-            $translated_key = "translated_{$clean_name}";
-            $keys[] = $translated_key;
-        }
-
-        return $keys;
-    }
-
-    /**
      * Handles saving parsed content.
      *
      * Excerpt (short description) saving is handled by core.
@@ -746,7 +643,6 @@ class ParsedContent
             return;
         }
 
-        $this->meta_fields = array_merge($this->meta_fields, $this->getParamMetaKeys($post_id));
         foreach ($this->meta_fields as $key) {
             // Parsed content.
             empty($_POST[$key]) ? delete_post_meta($post_id, $key) : update_post_meta($post_id, $key, $_POST[$key]);

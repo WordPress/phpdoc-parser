@@ -45,7 +45,7 @@ class Master
         (new Importer\Relationships())->init();
         (new Registrations())->init();
         (new Explanations\Explanations())->init();
-        (new ParsedContent())->init();
+        (new PostAddons\ParsedContent\ParsedContent())->init();
         PostAddons\ItemImportance\ItemImportance::init();
         Queries::init();
         Formatting::init();

@@ -36,11 +36,6 @@ class Formatting
 
         add_filter('avcapps-parameter-type', [get_class(), 'autolinkReferences']);
 
-        add_filter('avcpdp-format-description', [get_class(), 'autolinkReferences']);
-        add_filter('avcpdp-format-description', [get_class(), 'fixParamHashFormatting'], 9);
-        add_filter('avcpdp-format-description', [get_class(), 'fixParamDescriptionHtmlAsCode']);
-        add_filter('avcpdp-format-description', [get_class(), 'convertListsToMarkup']);
-
         add_filter('avcpdp-format-hash-param-description', [get_class(), 'autolinkReferences']);
         add_filter('avcpdp-format-hash-param-description', [get_class(), 'fixParamDescriptionParsedownBug']);
 
@@ -285,7 +280,6 @@ class Formatting
         // Convert any @link or @see to actual link.
         $text = self::makeDoclinkClickable($text);
         $text = self::autolinkReferences($text);
-        // $text = self::fixParamHashFormatting($text);
         $text = self::fixParamDescriptionHtmlAsCode($text);
         $text = self::convertListsToMarkup($text);
 
@@ -531,11 +525,12 @@ class Formatting
      *
      * @author Evan D Shaw <evandanielshaw@gmail.com>
      * @param string $text
+     * @param array  $tpieces Translated pieces
      * @param array  $pieces
      * @param string $key
      * @return array
      */
-    public static function getParamHashMapRecursive($text, $pieces = [], $key = '') {
+    public static function getParamHashMapRecursive($text, $tpieces = [], $pieces = [], $key = '') {
         if (!$text || '{' != $text[0]) {
             return [];
         }
@@ -558,19 +553,44 @@ class Formatting
             $description = trim($rawdescription);
 
             if ('@type' != $wordtype) {
-                $pieces['description'] = [
-                    'name' => $key,
-                    'type' => 'array',
-                    'wordtype' => null,
-                    'value' => $part,
-                ];
+                $tvalue = isset($tpieces['description']) ? $tpieces['description'] : '';
+                $value = $part;
+                if (is_string($tvalue) && !empty($tvalue)) {
+                    $value = $tvalue;
+                }
+                $value = rtrim(trim(self::formatParamDescription($value)), '}');
+                $types = avcpdp_build_param_types(['array']);
+                $pieces['description'] = array_merge(
+                    [
+                        'name' => $key,
+                        'cleanname' => str_replace('$', '', $key),
+                        'wordtype' => null,
+                        'raw_value' => $part,
+                        'raw_translated_value' => $tvalue,
+                        'value' => $value,
+                    ],
+                    $types
+                );
             } else {
-                $pieces[$name] = [
-                    'name' => $name,
-                    'type' => $type,
-                    'wordtype' => $wordtype,
-                    'value' => $description,
-                ];
+                $tvalue = isset($tpieces[$name]) ? $tpieces[$name] : '';
+                $value = $description;
+                if (is_string($tvalue) && !empty($tvalue)) {
+                    $value = $tvalue;
+                }
+                $value = rtrim(trim(self::formatParamDescription($value)), '}');
+                $types = explode('|', $type);
+                $types = avcpdp_build_param_types($types);
+                $pieces[$name] = array_merge(
+                    [
+                        'name' => $name,
+                        'cleanname' => str_replace('$', '', $name),
+                        'wordtype' => $wordtype,
+                        'raw_value' => $description,
+                        'raw_translated_value' => $tvalue,
+                        'value' => $value,
+                    ],
+                    $types
+                );
             }
 
             $islinkbrace = false;
@@ -588,14 +608,18 @@ class Formatting
                 $deschashpieces = explode('{', $rawdescription, 2);
                 $nestedtext = join('    ', array_slice($parts, $index + 1));
                 $nestedtext = '{' . $deschashpieces[1] . '    ' . $nestedtext;
-                $pieces[$name] = self::getParamHashMapRecursive($nestedtext, [], $name);
+                $pieces[$name] = self::getParamHashMapRecursive(
+                    $nestedtext,
+                    isset($tpieces[$name]) ? (array)$tpieces[$name] : [],
+                    [],
+                    $name
+                );
                 $numprocessed = self::countNestedHashParamLeafNodes($pieces[$name]);
                 $noprocessrange = $index + $numprocessed;
             // Sometimes nested hashes contain links (eg. {@see 'hook_name'}) so we
             // need to make sure that if the last character is a closing brace it
             // isn't for a link
             } elseif ('}' === substr($description, -1) && !$islinkbrace) {
-                $pieces[$name]['value'] = trim(substr($description, 0, -1));
                 return $pieces;
             }
 
@@ -623,96 +647,6 @@ class Formatting
         }
 
         return $num;
-    }
-
-    /**
-     * Formats the output of params defined using hash notation.
-     *
-     * This is a temporary measure until the parser parses the hash notation
-     * into component elements that the theme could then handle and style
-     * properly.
-     *
-     * Also, as a stopgap this is going to begin as a barebones hack to simply
-     * keep the text looking like one big jumble.
-     *
-     * @param  string $text The content for the param.
-     * @return string
-     */
-    public static function fixParamHashFormatting($text) {
-        // Don't do anything if this isn't a hash notation string.
-        if (!$text || '{' != $text[0]) {
-            return $text;
-        }
-
-        $new_text = '';
-        $text = trim(substr($text, 1, -1));
-        $text = str_replace('@type', "\n@type", $text);
-
-        $in_list = false;
-        $parts = explode("\n", $text);
-        foreach ($parts as $part) {
-            $part = preg_replace('/\s+/', ' ', $part);
-            list( $wordtype, $type, $name, $description ) = explode(' ', $part . '    ', 4); // extra spaces ensure we'll always have 4 items.
-            $description = trim($description);
-
-            $tclass = 'ref-arg-type';
-            $type = apply_filters('avcpdp_filter_param_hash_type', $type, $text);
-            if (strpos($type, '\\') !== false) {
-                $type = ltrim($type, '\\');
-                $tclass .= ' ref-arg-type--class';
-            }
-
-            $description = apply_filters('avcpdp-format-hash-param-description', $description);
-
-            $skip_closing_li = false;
-
-            // Handle nested hashes.
-            if (($description && '{' === $description[0]) || '{' === $name) {
-                $description = ltrim($description, '{') . '<ul class="ref-params ref-param-hash">';
-                $skip_closing_li = true;
-            } elseif ('}' === substr($description, -1)) {
-                $description = substr($description, 0, -1) . "</li></ul>\n";
-            }
-
-            if ('@type' != $wordtype) {
-                if ($in_list) {
-                    $in_list = false;
-                    $new_text .= "</li></ul>\n";
-                }
-
-                $new_text .= $part;
-            } else {
-                if ($in_list) {
-                    $new_text .= '<li>';
-                } else {
-                    $new_text .= '<ul class="ref-params ref-param-hash"><li>';
-                    $in_list = true;
-                }
-
-                // Normalize argument name.
-                if ($name === '{') {
-                    // No name is specified, generally indicating an array of arrays.
-                    $name = '';
-                } else {
-                    // The name is defined as a variable, so remove the leading '$'.
-                    $name = ltrim($name, '$');
-                }
-                if ($name) {
-                    $new_text .= "<b>'{$name}'</b><br />";
-                }
-                $new_text .= "<i><span class='{$tclass}'>({$type})</span></i><span class='ref-params__description'>{$description}</span>";
-                if (!$skip_closing_li) {
-                    $new_text .= '</li>';
-                }
-                $new_text .= "\n";
-            }
-        }
-
-        if ($in_list) {
-            $new_text .= "</li></ul>\n";
-        }
-
-        return $new_text;
     }
 
     /**
