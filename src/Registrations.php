@@ -70,16 +70,6 @@ class Registrations
             "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&paged=\$matches[3]",
             'top'
         );
-        add_rewrite_rule(
-            "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
-            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
-            'top'
-        );
-        add_rewrite_rule(
-            "reference/($stterms)/([a-z_\-]{1,32})/methods/?\$",
-            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]",
-            'top'
-        );
 
         // Add rewrite rules for Functions, Classes, and Hooks
         foreach (self::WP_PARSER_PT_MAP as $key => $info) {
@@ -104,6 +94,17 @@ class Registrations
                 'top'
             );
         }
+
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/classes/([^/]+)/([^/]+)/?\$",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]&name=\$matches[3]-\$matches[4]",
+            'top'
+        );
+        add_rewrite_rule(
+            "reference/($stterms)/([a-z_\-]{1,32})/methods/?\$",
+            "index.php?post_type=wp-parser-method&taxonomy={$sttax}&wp-parser-source-type=\$matches[1],\$matches[2]",
+            'top'
+        );
     }
 
     /**
