@@ -784,6 +784,7 @@ function avcpdp_get_role_terms($stterms, $post_type, $fields = 'all', $hide_empt
  */
 function avcpdp_get_hook_reference_posts($stterms, $hook_type = 'all', $posts_per_page = 20) {
     $params = [
+        'hook_type' => $hook_type, // custom param. Handled in \Aivec\Plugins\DocParser\Queries::preGetPosts()
         'fields' => 'ids',
         'post_type' => 'wp-parser-hook',
         'posts_per_page' => $posts_per_page,
@@ -798,12 +799,10 @@ function avcpdp_get_hook_reference_posts($stterms, $hook_type = 'all', $posts_pe
             ],
         ],
     ];
-    if ($hook_type === 'filter' || $hook_type === 'action') {
-        $params['meta_key'] = '_wp-parser_hook_type';
-        $params['meta_value'] = $hook_type;
-    }
 
-    return new WP_Query($params);
+    $q = new WP_Query($params);
+
+    return $q;
 }
 
 /**

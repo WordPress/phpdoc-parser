@@ -32,18 +32,16 @@ class Queries
      */
     public static function orderByNotDeprecated($orderby, $query) {
         if ($query->order_by_not_deprecated) {
-            $case = "CASE 
-                WHEN wp_postmeta.meta_value NOT LIKE '%name\";s:10:\"deprecated%' THEN 1 
-                ELSE 2
-            END";
-
-            $orderby = !empty($orderby) ? "{$case}, {$orderby}" : $case;
-            return $orderby;
-        }
-
-        if ($query->order_by_not_deprecated_hook) {
+            $mq = $query->get('meta_query');
+            $alias = 'mt1';
+            if (!empty($mq['relation']) && $mq['relation'] === 'OR') {
+                $alias = 'wp_postmeta';
+            }
             $case = "CASE
-                WHEN wp_postmeta.meta_value != 'filter_deprecated' AND wp_postmeta.meta_value != 'action_deprecated' THEN 1
+                WHEN
+                    wp_postmeta.meta_value NOT LIKE '%name\";s:10:\"deprecated%'
+                    AND {$alias}.meta_value != 'filter_deprecated' AND {$alias}.meta_value != 'action_deprecated'
+                THEN 1
                 ELSE 2
             END";
 
@@ -65,61 +63,46 @@ class Queries
             return;
         }
 
-        $orderbynotdep = false;
-        $orderbynotdephook = false;
+        $mq = $query->get('meta_query');
+        $mq = !empty($mq) ? (array)$mq : [];
+        $mq['relation'] = 'OR';
+        $mq['parser_tags_q'] = [
+            'key' => '_wp-parser_tags',
+        ];
+        $mq['parser_hook_q'] = [
+            'key' => '_wp-parser_hook_type',
+        ];
         $ptype = !empty($query->query['post_type']) ? $query->query['post_type'] : '';
+
         if ($query->is_post_type_archive()) {
             if (!avcpdp_is_parsed_post_type($ptype)) {
                 return;
             }
 
-            $query->set('orderby', 'title');
-            $query->set('order', 'ASC');
+            $query->order_by_not_deprecated = true;
             $hook_type = !empty($query->query['hook_type']) ? $query->query['hook_type'] : '';
             if ($ptype === 'wp-parser-hook') {
+                $mq['relation'] = 'AND';
                 if ($hook_type === 'filter' || $hook_type === 'action') {
-                    $query->set('meta_key', '_wp-parser_hook_type');
-                    $query->set('meta_value', $hook_type);
-                } else {
-                    $orderbynotdephook = true;
+                    $mq['parser_hook_q']['value'] = [$hook_type, "{$hook_type}_deprecated"];
+                    $mq['parser_hook_q']['compare'] = 'IN';
                 }
-            } else {
-                $orderbynotdep = true;
             }
+
+            $query->set('meta_query', $mq);
+            $query->set('orderby', 'title');
+            $query->set('order', 'ASC');
         }
 
         if ($query->is_search() && !empty($query->query['avcpdp_search'])) {
+            $query->order_by_not_deprecated = true;
             if (empty($ptype)) {
                 $query->set('post_type', avcpdp_get_parsed_post_types());
-                $orderbynotdep = true;
-            } else {
-                if (
-                    $ptype === 'wp-parser-hook'
-                    || (
-                        is_array($ptype) && count($ptype) === 1 && $ptype[0] === 'wp-parser-hook'
-                    )
-                ) {
-                    $orderbynotdephook = true;
-                } else {
-                    $orderbynotdep = true;
-                }
             }
+
+            $query->set('meta_query', $mq);
             $query->set('orderby', 'title');
             $query->set('order', 'ASC');
-        }
-
-        if ($orderbynotdep === true) {
-            // JOIN on `_wp-parser_tags` so that we can ORDER BY not deprecated
-            $query->set('meta_key', '_wp-parser_tags');
-            // set arbitrary member variable so we don't have to do these checks again...
-            $query->order_by_not_deprecated = true;
-        }
-
-        if ($orderbynotdephook === true) {
-            // JOIN on `_wp-parser_hook_type` so that we can ORDER BY not deprecated
-            $query->set('meta_key', '_wp-parser_hook_type');
-            // set arbitrary member variable so we don't have to do these checks again...
-            $query->order_by_not_deprecated_hook = true;
         }
 
         // For search query modifications see DevHub_Search.
