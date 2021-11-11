@@ -47,6 +47,14 @@ class ItemImportance
             return;
         }
 
+        $uri = $_SERVER['REQUEST_URI'];
+        $uripath = wp_parse_url($uri, PHP_URL_PATH);
+        $plistpath = wp_parse_url(admin_url('edit.php'), PHP_URL_PATH);
+        if ($uripath !== $plistpath) {
+            // only load on post list page
+            return;
+        }
+
         $mquery = $query->get('meta_query', []);
         $mquery[] = ['key' => '_wp-parser_important'];
         $query->set('meta_query', $mquery);
