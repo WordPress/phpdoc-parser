@@ -11,128 +11,126 @@ namespace WP_Parser\Tests;
  *
  * @group import
  */
-class File_Import_Test extends Import_UnitTestCase {
+class File_Import_Test extends Import_UnitTestCase
+{
+    /**
+     * Test that the term is created for this file.
+     */
+    public function test_file_term_created() {
+        $terms = get_terms(
+            $this->importer->taxonomy_file,
+            ['hide_empty' => false]
+        );
 
-	/**
-	 * Test that the term is created for this file.
-	 */
-	public function test_file_term_created() {
+        $this->assertCount(1, $terms);
 
-		$terms = get_terms(
-			$this->importer->taxonomy_file
-			, array( 'hide_empty' => false )
-		);
+        $term = $terms[0];
 
-		$this->assertCount( 1, $terms );
+        $this->assertEquals('file.inc', $term->name);
+        $this->assertEquals('file-inc', $term->slug);
+    }
 
-		$term = $terms[0];
+    /**
+     * Test that a post is created for the function.
+     */
+    public function test_function_post_created() {
+        $posts = get_posts(
+            ['post_type' => $this->importer->post_type_function]
+        );
 
-		$this->assertEquals( 'file.inc', $term->name );
-		$this->assertEquals( 'file-inc', $term->slug );
-	}
+        $this->assertCount(1, $posts);
 
-	/**
-	 * Test that a post is created for the function.
-	 */
-	public function test_function_post_created() {
+        $post = $posts[0];
 
-		$posts = get_posts(
-			array( 'post_type' => $this->importer->post_type_function )
-		);
+        // Check that the post attributes are correct.
+        $this->assertEquals(
+            '<p>This function is just here for tests. This is its longer description.</p>',
+            $post->post_content
+        );
+        $this->assertEquals('This is a function summary.', $post->post_excerpt);
+        $this->assertEquals('wp_parser_test_func', $post->post_name);
+        $this->assertEquals(0, $post->post_parent);
+        $this->assertEquals('wp_parser_test_func', $post->post_title);
 
-		$this->assertCount( 1, $posts );
+        // It should be assigned to the file's taxonomy term.
+        $terms = wp_get_object_terms(
+            $post->ID,
+            $this->importer->taxonomy_file
+        );
 
-		$post = $posts[0];
+        $this->assertCount(1, $terms);
+        $this->assertEquals('file.inc', $terms[0]->name);
 
-		// Check that the post attributes are correct.
-		$this->assertEquals(
-			'<p>This function is just here for tests. This is its longer description.</p>'
-			, $post->post_content
-		);
-		$this->assertEquals( 'This is a function summary.', $post->post_excerpt );
-		$this->assertEquals( 'wp_parser_test_func', $post->post_name );
-		$this->assertEquals( 0, $post->post_parent );
-		$this->assertEquals( 'wp_parser_test_func', $post->post_title );
+        // It should be assigned to the correct @since taxonomy term.
+        $terms = wp_get_object_terms(
+            $post->ID,
+            $this->importer->taxonomy_since_version
+        );
 
-		// It should be assigned to the file's taxonomy term.
-		$terms = wp_get_object_terms(
-			$post->ID
-			, $this->importer->taxonomy_file
-		);
+        $this->assertCount(1, $terms);
+        $this->assertEquals('1.4.0', $terms[0]->name);
 
-		$this->assertCount( 1, $terms );
-		$this->assertEquals( 'file.inc', $terms[0]->name );
+        // It should be assigned the correct @package taxonomy term.
+        $terms = wp_get_object_terms(
+            $post->ID,
+            $this->importer->taxonomy_package
+        );
 
-		// It should be assigned to the correct @since taxonomy term.
-		$terms = wp_get_object_terms(
-			$post->ID
-			, $this->importer->taxonomy_since_version
-		);
+        $this->assertCount(1, $terms);
+        $this->assertEquals('Something', $terms[0]->name);
 
-		$this->assertCount( 1, $terms );
-		$this->assertEquals( '1.4.0', $terms[0]->name );
+        // Check that the metadata was imported.
+        $this->assertEquals(
+            [
+                [
+                    'name' => '$var',
+                    'default' => null,
+                    'type' => '',
+                ],
+                [
+                    'name' => '$ids',
+                    'default' => 'array()',
+                    'type' => 'array',
+                ],
+            ],
+            get_post_meta($post->ID, '_wp-parser_args', true)
+        );
 
-		// It should be assigned the correct @package taxonomy term.
-		$terms = wp_get_object_terms(
-			$post->ID
-			, $this->importer->taxonomy_package
-		);
+        $this->assertEquals(
+            25,
+            get_post_meta($post->ID, '_wp-parser_line_num', true)
+        );
 
-		$this->assertCount( 1, $terms );
-		$this->assertEquals( 'Something', $terms[0]->name );
+        $this->assertEquals(
+            28,
+            get_post_meta($post->ID, '_wp-parser_end_line_num', true)
+        );
 
-		// Check that the metadata was imported.
-		$this->assertEquals(
-			array(
-				array(
-					'name' => '$var',
-					'default' => null,
-					'type' => '',
-				),
-				array(
-					'name' => '$ids',
-					'default' => 'array()',
-					'type' => 'array' ,
-				),
-			)
-			, get_post_meta( $post->ID, '_wp-parser_args', true )
-		);
-
-		$this->assertEquals(
-			25
-			, get_post_meta( $post->ID, '_wp-parser_line_num', true )
-		);
-
-		$this->assertEquals(
-			28
-			, get_post_meta( $post->ID, '_wp-parser_end_line_num', true )
-		);
-
-		$this->assertEquals(
-			array(
-				array(
-					'name' => 'since',
-					'content' => '1.4.0',
-				),
-				array(
-					'name' => 'param',
-					'content' => 'A string variable which is the first parameter.',
-					'types' => array( 'string' ),
-					'variable' => '$var',
-				),
-				array(
-					'name' => 'param',
-					'content' => 'An array of user IDs.',
-					'types' => array( 'int[]' ),
-					'variable' => '$ids',
-				),
-				array(
-					'name' => 'return',
-					'content' => 'The return type is random. (Not really.)',
-					'types' => array( 'mixed' ),
-				),
-			)
-			, get_post_meta( $post->ID, '_wp-parser_tags', true )
-		);
-	}
+        $this->assertEquals(
+            [
+                [
+                    'name' => 'since',
+                    'content' => '1.4.0',
+                ],
+                [
+                    'name' => 'param',
+                    'content' => 'A string variable which is the first parameter.',
+                    'types' => ['string'],
+                    'variable' => '$var',
+                ],
+                [
+                    'name' => 'param',
+                    'content' => 'An array of user IDs.',
+                    'types' => ['int[]'],
+                    'variable' => '$ids',
+                ],
+                [
+                    'name' => 'return',
+                    'content' => 'The return type is random. (Not really.)',
+                    'types' => ['mixed'],
+                ],
+            ],
+            get_post_meta($post->ID, '_wp-parser_tags', true)
+        );
+    }
 }

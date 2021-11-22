@@ -15,8 +15,7 @@
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function good_doc_function($thing, $var)
-{
+function good_doc_function($thing, $var) {
 }
 
 /**
@@ -32,8 +31,7 @@ function good_doc_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_long_description_function($thing, $var)
-{
+function missing_long_description_function($thing, $var) {
 }
 
 /**
@@ -47,8 +45,7 @@ function missing_long_description_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_description_function($thing, $var)
-{
+function missing_description_function($thing, $var) {
 }
 
 /**
@@ -64,8 +61,7 @@ function missing_description_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_since_function($thing, $var)
-{
+function missing_since_function($thing, $var) {
 }
 
 /**
@@ -82,8 +78,7 @@ function missing_since_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_see_function($thing, $var)
-{
+function missing_see_function($thing, $var) {
 }
 
 /**
@@ -100,8 +95,7 @@ function missing_see_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_link_function($thing, $var)
-{
+function missing_link_function($thing, $var) {
 }
 
 /**
@@ -118,8 +112,7 @@ function missing_link_function($thing, $var)
  * @param  type $var Optional. Description.
  * @return type Description.
  */
-function missing_global_function($thing, $var)
-{
+function missing_global_function($thing, $var) {
 }
 
 /**
@@ -135,8 +128,7 @@ function missing_global_function($thing, $var)
  *
  * @return type Description.
  */
-function missing_param_function($thing, $var)
-{
+function missing_param_function($thing, $var) {
 }
 
 /**
@@ -153,6 +145,5 @@ function missing_param_function($thing, $var)
  * @param  type $thing Description.
  * @param  type $var Optional. Description.
  */
-function missing_return_function($thing, $var)
-{
+function missing_return_function($thing, $var) {
 }

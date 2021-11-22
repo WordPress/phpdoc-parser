@@ -1,0 +1,649 @@
+# Copyright (C) 2021 Evan Shaw, Ryan McCue, Paul Gibbs, Andrey "Rarst" Savchenko and Contributors
+# This file is distributed under the same license as the AVC WP Parser plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: AVC WP Parser %%VERSION%%\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-phpdoc-parser\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2021-11-04T13:47:34+09:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.5.0\n"
+"X-Domain: wp-parser\n"
+
+#. Plugin Name of the plugin
+msgid "AVC WP Parser"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://github.com/aivec/phpdoc-parser"
+msgstr ""
+
+#. Description of the plugin
+msgid "Create a plugin/theme/composer-package source reference site powered by WordPress"
+msgstr ""
+
+#. Author of the plugin
+msgid "Evan Shaw, Ryan McCue, Paul Gibbs, Andrey \"Rarst\" Savchenko and Contributors"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://github.com/aivec/phpdoc-parser/graphs/contributors"
+msgstr ""
+
+#: src/api-functions.php:23
+#: src/Registrations.php:190
+#: src/Registrations.php:192
+#: src/Registrations.php:194
+#: src/Registrations.php:204
+msgid "Classes"
+msgstr ""
+
+#: src/api-functions.php:24
+#: src/Registrations.php:130
+#: src/Registrations.php:132
+#: src/Registrations.php:134
+#: src/Registrations.php:144
+msgid "Functions"
+msgstr ""
+
+#: src/api-functions.php:25
+#: src/Registrations.php:220
+#: src/Registrations.php:222
+#: src/Registrations.php:224
+#: src/Registrations.php:234
+msgid "Hooks"
+msgstr ""
+
+#: src/api-functions.php:26
+#: src/Registrations.php:160
+#: src/Registrations.php:162
+#: src/Registrations.php:164
+#: src/Registrations.php:174
+msgid "Methods"
+msgstr ""
+
+#. translators: name of the missing field
+#: src/ErrorStore.php:30
+msgid "\"%s\" is required"
+msgstr ""
+
+#. translators: name of the plugin/theme/composer-package
+#: src/ErrorStore.php:39
+msgid "\"%s\" does not exist"
+msgstr ""
+
+#: src/Explanations/Explanations.php:93
+#: src/Explanations/Explanations.php:95
+msgid "Explanations"
+msgstr ""
+
+#: src/Explanations/Explanations.php:94
+#: src/Explanations/Explanations.php:232
+msgid "Explanation"
+msgstr ""
+
+#: src/Explanations/Explanations.php:96
+#: src/Explanations/Explanations.php:413
+#: src/Explanations/Explanations.php:414
+#: src/Explanations/Explanations.php:442
+#: src/Explanations/Explanations.php:524
+msgid "Edit Explanation"
+msgstr ""
+
+#: src/Explanations/Explanations.php:97
+msgid "View Explanation"
+msgstr ""
+
+#: src/Explanations/Explanations.php:98
+msgid "Search Explanations"
+msgstr ""
+
+#: src/Explanations/Explanations.php:99
+msgid "No Explanations found"
+msgstr ""
+
+#: src/Explanations/Explanations.php:100
+msgid "No Explanations found in trash"
+msgstr ""
+
+#. translators: Number of pending explanation posts
+#: src/Explanations/Explanations.php:191
+msgid "Explanations %s"
+msgstr ""
+
+#: src/Explanations/Explanations.php:238
+msgid "Status:"
+msgstr ""
+
+#: src/Explanations/Explanations.php:249
+msgid "Last Modified:"
+msgstr ""
+
+#: src/Explanations/Explanations.php:278
+msgid "Associated with: "
+msgstr ""
+
+#: src/Explanations/Explanations.php:330
+msgid "Explanation Editor"
+msgstr ""
+
+#: src/Explanations/Explanations.php:421
+#: src/Explanations/Explanations.php:454
+msgid "Add Explanation"
+msgstr ""
+
+#: src/Explanations/Explanations.php:446
+msgid "Unpublish"
+msgstr ""
+
+#: src/Explanations/Explanations.php:451
+#: src/Explanations/Explanations.php:484
+msgid "None"
+msgstr ""
+
+#: src/Explanations/Explanations.php:474
+#: src/Explanations/Explanations.php:526
+msgid "Draft"
+msgstr ""
+
+#: src/Explanations/Explanations.php:477
+#: src/Explanations/Explanations.php:527
+msgid "Pending Review"
+msgstr ""
+
+#: src/Explanations/Explanations.php:480
+#: src/Explanations/Explanations.php:528
+msgid "Published"
+msgstr ""
+
+#: src/Explanations/Explanations.php:546
+msgid "Explanation already exists."
+msgstr ""
+
+#: src/Explanations/Explanations.php:565
+msgid "Explanation could not be created."
+msgstr ""
+
+#: src/Explanations/Explanations.php:591
+msgid "Explanation could not be un-published."
+msgstr ""
+
+#: src/Explanations/Explanations.php:614
+msgid "Has explanation?"
+msgstr ""
+
+#: src/Explanations/Explanations.php:615
+msgid "Explanation?"
+msgstr ""
+
+#: src/Explanations/Explanations.php:638
+msgid "Post has an explanation."
+msgstr ""
+
+#: src/Importer/Importer.php:336
+msgid "Functions Reference"
+msgstr ""
+
+#: src/Importer/Importer.php:340
+msgid "Hooks Reference"
+msgstr ""
+
+#: src/Importer/Relationships.php:100
+#: src/Importer/Relationships.php:160
+msgid "Uses Functions"
+msgstr ""
+
+#: src/Importer/Relationships.php:101
+#: src/Importer/Relationships.php:120
+#: src/Importer/Relationships.php:139
+msgid "Used by Functions"
+msgstr ""
+
+#: src/Importer/Relationships.php:119
+#: src/Importer/Relationships.php:180
+msgid "Uses Methods"
+msgstr ""
+
+#: src/Importer/Relationships.php:138
+#: src/Importer/Relationships.php:200
+msgid "Uses Hooks"
+msgstr ""
+
+#: src/Importer/Relationships.php:161
+#: src/Importer/Relationships.php:181
+#: src/Importer/Relationships.php:199
+msgid "Used by Methods"
+msgstr ""
+
+#: src/ParsedContent.php:113
+msgid "Parsed Content"
+msgstr ""
+
+#: src/ParsedContent.php:121
+msgid "Item Importance"
+msgstr ""
+
+#: src/ParsedContent.php:144
+msgid "Not Important"
+msgstr ""
+
+#: src/ParsedContent.php:157
+#: src/PostAddons/ItemImportance/ItemImportance.php:148
+#: src/PostAddons/ItemImportance/ItemImportance.php:150
+msgid "Important"
+msgstr ""
+
+#: src/ParsedContent.php:197
+msgid "Parsed Summary:"
+msgstr ""
+
+#: src/ParsedContent.php:206
+msgid "Translated Summary:"
+msgstr ""
+
+#: src/ParsedContent.php:224
+msgid "Parsed Description:"
+msgstr ""
+
+#: src/ParsedContent.php:233
+msgid "Translated Description:"
+msgstr ""
+
+#: src/ParsedContent.php:251
+msgid "Parameters"
+msgstr ""
+
+#. translators: the type
+#. translators: param type
+#: src/ParsedContent.php:263
+#: src/ParsedContent.php:315
+#: src/ParsedContent.php:495
+msgid "(%s)"
+msgstr ""
+
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#. translators: the arg name
+#: src/ParsedContent.php:283
+#: src/ParsedContent.php:334
+#: src/ParsedContent.php:389
+#: src/ParsedContent.php:431
+#: src/ParsedContent.php:512
+msgid "%s (Translated)"
+msgstr ""
+
+#. translators: the arg name
+#: src/ParsedContent.php:304
+#: src/ParsedContent.php:312
+#: src/ParsedContent.php:335
+#: src/ParsedContent.php:361
+msgid "Parsed Return:"
+msgstr ""
+
+#: src/ParsedContent.php:369
+msgid "Tags (deprecated)"
+msgstr ""
+
+#: src/ParsedContent.php:410
+msgid "Tags (since)"
+msgstr ""
+
+#: src/PostAddons/ItemImportance/ItemImportance.php:123
+#: src/PostAddons/ItemImportance/ItemImportance.php:124
+msgid "Important?"
+msgstr ""
+
+#: src/PostsPluginFilter.php:40
+msgid "All Plugins"
+msgstr ""
+
+#: src/Registrations.php:133
+msgid "Function"
+msgstr ""
+
+#: src/Registrations.php:135
+msgid "New Function"
+msgstr ""
+
+#: src/Registrations.php:136
+#: src/Registrations.php:166
+#: src/Registrations.php:196
+#: src/Registrations.php:226
+#: src/Registrations.php:259
+msgid "Add New"
+msgstr ""
+
+#: src/Registrations.php:137
+msgid "Add New Function"
+msgstr ""
+
+#: src/Registrations.php:138
+msgid "Edit Function"
+msgstr ""
+
+#: src/Registrations.php:139
+msgid "View Function"
+msgstr ""
+
+#: src/Registrations.php:140
+msgid "Search Functions"
+msgstr ""
+
+#: src/Registrations.php:141
+msgid "No Functions found"
+msgstr ""
+
+#: src/Registrations.php:142
+msgid "No Functions found in trash"
+msgstr ""
+
+#: src/Registrations.php:143
+msgid "Parent Function"
+msgstr ""
+
+#: src/Registrations.php:163
+msgid "Method"
+msgstr ""
+
+#: src/Registrations.php:165
+msgid "New Method"
+msgstr ""
+
+#: src/Registrations.php:167
+msgid "Add New Method"
+msgstr ""
+
+#: src/Registrations.php:168
+msgid "Edit Method"
+msgstr ""
+
+#: src/Registrations.php:169
+msgid "View Method"
+msgstr ""
+
+#: src/Registrations.php:170
+msgid "Search Methods"
+msgstr ""
+
+#: src/Registrations.php:171
+msgid "No Methods found"
+msgstr ""
+
+#: src/Registrations.php:172
+msgid "No Methods found in trash"
+msgstr ""
+
+#: src/Registrations.php:173
+msgid "Parent Method"
+msgstr ""
+
+#: src/Registrations.php:193
+msgid "Class"
+msgstr ""
+
+#: src/Registrations.php:195
+msgid "New Class"
+msgstr ""
+
+#: src/Registrations.php:197
+msgid "Add New Class"
+msgstr ""
+
+#: src/Registrations.php:198
+msgid "Edit Class"
+msgstr ""
+
+#: src/Registrations.php:199
+msgid "View Class"
+msgstr ""
+
+#: src/Registrations.php:200
+msgid "Search Classes"
+msgstr ""
+
+#: src/Registrations.php:201
+msgid "No Classes found"
+msgstr ""
+
+#: src/Registrations.php:202
+msgid "No Classes found in trash"
+msgstr ""
+
+#: src/Registrations.php:203
+msgid "Parent Class"
+msgstr ""
+
+#: src/Registrations.php:223
+msgid "Hook"
+msgstr ""
+
+#: src/Registrations.php:225
+msgid "New Hook"
+msgstr ""
+
+#: src/Registrations.php:227
+msgid "Add New Hook"
+msgstr ""
+
+#: src/Registrations.php:228
+msgid "Edit Hook"
+msgstr ""
+
+#: src/Registrations.php:229
+msgid "View Hook"
+msgstr ""
+
+#: src/Registrations.php:230
+msgid "Search Hooks"
+msgstr ""
+
+#: src/Registrations.php:231
+msgid "No Hooks found"
+msgstr ""
+
+#: src/Registrations.php:232
+msgid "No Hooks found in trash"
+msgstr ""
+
+#: src/Registrations.php:233
+msgid "Parent Hook"
+msgstr ""
+
+#: src/Registrations.php:253
+#: src/Registrations.php:255
+#: src/Registrations.php:257
+#: src/Registrations.php:266
+msgid "Reference Landing Pages"
+msgstr ""
+
+#: src/Registrations.php:256
+msgid "Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:258
+msgid "New Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:260
+msgid "Add New Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:261
+msgid "Edit Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:262
+msgid "View Reference Landing Page"
+msgstr ""
+
+#: src/Registrations.php:263
+msgid "Search Reference Landing Pages"
+msgstr ""
+
+#: src/Registrations.php:264
+msgid "No Pages found"
+msgstr ""
+
+#: src/Registrations.php:265
+msgid "No Pages found in trash"
+msgstr ""
+
+#: src/Registrations.php:301
+#: src/Registrations.php:303
+#: src/Registrations.php:317
+msgid "Files"
+msgstr ""
+
+#: src/Registrations.php:304
+msgctxt "taxonomy general name"
+msgid "File"
+msgstr ""
+
+#: src/Registrations.php:305
+msgid "Search Files"
+msgstr ""
+
+#: src/Registrations.php:307
+msgid "All Files"
+msgstr ""
+
+#: src/Registrations.php:308
+msgid "Parent File"
+msgstr ""
+
+#: src/Registrations.php:309
+msgid "Parent File:"
+msgstr ""
+
+#: src/Registrations.php:310
+msgid "Edit File"
+msgstr ""
+
+#: src/Registrations.php:311
+msgid "Update File"
+msgstr ""
+
+#: src/Registrations.php:312
+#: src/Registrations.php:313
+msgid "New File"
+msgstr ""
+
+#: src/Registrations.php:314
+msgid "Files separated by comma"
+msgstr ""
+
+#: src/Registrations.php:315
+msgid "Add or remove Files"
+msgstr ""
+
+#: src/Registrations.php:316
+msgid "Choose from the most used Files"
+msgstr ""
+
+#: src/Registrations.php:357
+msgid "@since"
+msgstr ""
+
+#: src/Registrations.php:375
+msgid "Namespaces"
+msgstr ""
+
+#: src/Registrations.php:389
+msgid "Source Type"
+msgstr ""
+
+#: src/Registrations.php:405
+#: src/Registrations.php:500
+msgid "Plugin"
+msgstr ""
+
+#: src/Registrations.php:413
+#: src/Registrations.php:504
+msgid "Theme"
+msgstr ""
+
+#: src/Registrations.php:421
+#: src/Registrations.php:508
+msgid "Composer Package"
+msgstr ""
+
+#: src/Registrations.php:433
+msgid "Role"
+msgstr ""
+
+#: src/Registrations.php:447
+msgid "Display"
+msgstr ""
+
+#: src/Registrations.php:448
+msgid "Condition"
+msgstr ""
+
+#: src/Registrations.php:449
+msgid "Utility"
+msgstr ""
+
+#: src/Registrations.php:450
+msgid "Setter"
+msgstr ""
+
+#: src/Registrations.php:451
+msgid "Getter"
+msgstr ""
+
+#: src/Registrations.php:657
+msgctxt "separator"
+msgid " or "
+msgstr ""
+
+#: src/SourceTypeTerm.php:53
+msgid "Item Image"
+msgstr ""
+
+#: src/SourceTypeTerm.php:56
+msgid "Pick a item image to make an association.(svg Only)"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10297
+#: dist/js/Views/ImporterPage/App.js:10311
+#: dist/js/Views/ImporterPage/App.js:10318
+msgid "Import"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10299
+msgid "Enter the folder name of the plugin/theme/composer-package"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10308
+msgid "Trash old references"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10314
+msgid "Importing..."
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10448
+msgid "Updated"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10462
+msgid "Source folders parent path"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10464
+msgid "Enter the absolute path to the location of the source folders"
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10471
+msgid "Updating..."
+msgstr ""
+
+#: dist/js/Views/ImporterPage/App.js:10475
+msgid "Update"
+msgstr ""

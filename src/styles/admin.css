@@ -1,0 +1,146 @@
+/* =Admin CSS
+----------------------------------------------- */
+
+.post-type-wp-parser-function .form-table .t-section td,
+.post-type-wp-parser-class .form-table .t-section td,
+.post-type-wp-parser-method .form-table .t-section td,
+.post-type-wp-parser-hook .form-table .t-section td {
+  padding: 0;
+}
+
+#poststuff .t-section h2 {
+  padding: 10px 0;
+  border-bottom: 1px solid #c3c4c7;
+  font-weight: 700;
+}
+
+.parser-tags {
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.parser-tags .type {
+  font-weight: 400;
+}
+
+#wporg_parsed_ticket {
+  width: 100px;
+}
+
+#ticket_info_icon {
+  font-size: 14px;
+  color: #a00;
+}
+
+.attachment_controls .spinner {
+  position: relative;
+  margin-top: 3px;
+  bottom: 4px;
+  float: none;
+}
+
+.attachment_controls {
+  margin-bottom: 10px;
+  display: block;
+}
+
+/* Explanations */
+.fixed .column-has_explanation {
+  width: 2em;
+}
+
+.fixed .column-has_explanation .dashicons {
+  width: 30px;
+}
+
+.fixed tbody .column-has_explanation a {
+  color: #72777c;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.fixed tbody .column-has_explanation a:focus, .fixed tbody .column-has_explanation a:hover {
+  color: #0073aa;
+}
+
+.fixed tbody .column-has_explanation a .dashicons {
+  font-size: 26px;
+}
+
+@media screen and (max-width: 782px) {
+  .fixed tbody .column-has_explanation a .screen-reader-text {
+    position: static;
+    -webkit-clip-path: none;
+    clip-path: none;
+    width: auto;
+    height: auto;
+    margin: 0;
+  }
+}
+
+@media screen and (max-width: 782px) {
+  .fixed tbody .column-has_explanation a [aria-hidden="true"] {
+    display: none;
+  }
+}
+
+.post-type-wporg_explanations .page-title-action {
+  display: none;
+}
+
+.expl-row-actions {
+  display: block;
+}
+
+.expl-row-actions a {
+  display: inline-block;
+}
+
+.expl-row-actions a:first-child {
+  padding-right: 6px;
+  padding-left: 0;
+}
+
+.expl-row-actions a:nth-child(n+2) {
+  padding-left: 8px;
+  border-left: 1px solid #ccc;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.status.pending {
+  color: red;
+}
+
+.status.publish {
+  color: green;
+}
+
+.post-type-wp-parser-function .form-table th,
+.post-type-wp-parser-class .form-table th,
+.post-type-wp-parser-method .form-table th,
+.post-type-wp-parser-hook .form-table th {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.post-type-wp-parser-function .form-table td,
+.post-type-wp-parser-class .form-table td,
+.post-type-wp-parser-method .form-table td,
+.post-type-wp-parser-hook .form-table td {
+  padding: 10px;
+}
+
+.post-type-wp-parser-function .form-table td p,
+.post-type-wp-parser-class .form-table td p,
+.post-type-wp-parser-method .form-table td p,
+.post-type-wp-parser-hook .form-table td p {
+  margin-top: 0;
+}
+
+/* Parsed Content Meta Box */
+.wporg_parsed_content {
+  width: 100%;
+}

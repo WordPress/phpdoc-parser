@@ -1,0 +1,4 @@
+.form-table th {
+  max-width: 140px;
+  overflow-x: auto;
+}

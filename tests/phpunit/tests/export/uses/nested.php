@@ -9,210 +9,205 @@ namespace WP_Parser\Tests;
 /**
  * Test that function use is exported correctly when function declarations are nested.
  */
-class Export_Nested_Function_Use extends Export_UnitTestCase {
+class Export_Nested_Function_Use extends Export_UnitTestCase
+{
+    /**
+     * Test that the uses data of the outer function is correct.
+     */
+    public function test_top_function_uses_correct() {
+        $this->assertFunctionUsesFunction(
+            'test',
+            [
+                'name' => 'a_function',
+                'line' => 5,
+                'end_line' => 5,
+            ]
+        );
 
-	/**
-	 * Test that the uses data of the outer function is correct.
-	 */
-	public function test_top_function_uses_correct() {
+        $this->assertFunctionUsesFunction(
+            'test',
+            [
+                'name' => 'sub_test',
+                'line' => 14,
+                'end_line' => 14,
+            ]
+        );
 
-		$this->assertFunctionUsesFunction(
-			'test'
-			, array(
-				'name'     => 'a_function',
-				'line'     => 5,
-				'end_line' => 5,
-			)
-		);
+        $this->assertFunctionUsesMethod(
+            'test',
+            [
+                'name' => 'do_things',
+                'line' => 16,
+                'end_line' => 16,
+                'class' => '\My_Class',
+                'static' => true,
+            ]
+        );
 
-		$this->assertFunctionUsesFunction(
-			'test'
-			, array(
-				'name'     => 'sub_test',
-				'line'     => 14,
-				'end_line' => 14,
-			)
-		);
+        $this->assertFunctionNotUsesFunction(
+            'test',
+            [
+                'name' => 'b_function',
+                'line' => 9,
+                'end_line' => 9,
+            ]
+        );
 
-		$this->assertFunctionUsesMethod(
-			'test'
-			, array(
-				'name'     => 'do_things',
-				'line'     => 16,
-				'end_line' => 16,
-				'class'    => '\My_Class',
-				'static'   => true,
-			)
-		);
+        $this->assertFunctionNotUsesMethod(
+            'test',
+            [
+                'name' => 'static_method',
+                'line' => 11,
+                'end_line' => 11,
+                'class' => '\My_Class',
+                'static' => true,
+            ]
+        );
+    }
 
-		$this->assertFunctionNotUsesFunction(
-			'test'
-			, array(
-				'name'     => 'b_function',
-				'line'     => 9,
-				'end_line' => 9,
-			)
-		);
+    /**
+     * Test that the usages of the nested function is correct.
+     */
+    public function test_nested_function_uses_correct() {
+        $this->assertFunctionUsesFunction(
+            'sub_test',
+            [
+                'name' => 'b_function',
+                'line' => 9,
+                'end_line' => 9,
+            ]
+        );
 
-		$this->assertFunctionNotUsesMethod(
-			'test'
-			, array(
-				'name'     => 'static_method',
-				'line'     => 11,
-				'end_line' => 11,
-				'class'    => '\My_Class',
-				'static'   => true,
-			)
-		);
-	}
+        $this->assertFunctionUsesMethod(
+            'sub_test',
+            [
+                'name' => 'static_method',
+                'line' => 11,
+                'end_line' => 11,
+                'class' => '\My_Class',
+                'static' => true,
+            ]
+        );
 
-	/**
-	 * Test that the usages of the nested function is correct.
-	 */
-	public function test_nested_function_uses_correct() {
+        $this->assertFunctionNotUsesFunction(
+            'sub_test',
+            [
+                'name' => 'a_function',
+                'line' => 5,
+                'end_line' => 5,
+            ]
+        );
 
-		$this->assertFunctionUsesFunction(
-			'sub_test'
-			, array(
-				'name'     => 'b_function',
-				'line'     => 9,
-				'end_line' => 9,
-			)
-		);
+        $this->assertFunctionNotUsesFunction(
+            'sub_test',
+            [
+                'name' => 'sub_test',
+                'line' => 14,
+                'end_line' => 14,
+            ]
+        );
 
-		$this->assertFunctionUsesMethod(
-			'sub_test'
-			, array(
-				'name'     => 'static_method',
-				'line'     => 11,
-				'end_line' => 11,
-				'class'    => '\My_Class',
-				'static'   => true,
-			)
-		);
+        $this->assertFunctionNotUsesMethod(
+            'sub_test',
+            [
+                'name' => 'do_things',
+                'line' => 16,
+                'end_line' => 16,
+            ]
+        );
+    }
 
-		$this->assertFunctionNotUsesFunction(
-			'sub_test'
-			, array(
-				'name'     => 'a_function',
-				'line'     => 5,
-				'end_line' => 5,
-			)
-		);
+    /**
+     * Test that the uses data of the outer method is correct.
+     */
+    public function test_method_uses_correct() {
+        $this->assertMethodUsesMethod(
+            'My_Class',
+            'a_method',
+            [
+                'name' => 'do_it',
+                'line' => 23,
+                'end_line' => 23,
+                'class' => '\My_Class',
+                'static' => false,
+            ]
+        );
 
-		$this->assertFunctionNotUsesFunction(
-			'sub_test'
-			, array(
-				'name'     => 'sub_test',
-				'line'     => 14,
-				'end_line' => 14,
-			)
-		);
+        $this->assertMethodUsesFunction(
+            'My_Class',
+            'a_method',
+            [
+                'name' => 'do_things',
+                'line' => 32,
+                'end_line' => 32,
+            ]
+        );
 
-		$this->assertFunctionNotUsesMethod(
-			'sub_test'
-			, array(
-				'name'     => 'do_things',
-				'line'     => 16,
-				'end_line' => 16,
-			)
-		);
-	}
+        $this->assertMethodNotUsesFunction(
+            'My_Class',
+            'a_method',
+            [
+                'name' => 'b_function',
+                'line' => 27,
+                'end_line' => 27,
+            ]
+        );
 
+        $this->assertMethodNotUsesMethod(
+            'My_Class',
+            'a_method',
+            [
+                'name' => 'a_method',
+                'line' => 29,
+                'end_line' => 29,
+                'class' => '\My_Class',
+                'static' => true,
+            ]
+        );
+    }
 
-	/**
-	 * Test that the uses data of the outer method is correct.
-	 */
-	public function test_method_uses_correct() {
+    /**
+     * Test that the usages of the nested function within a method is correct.
+     */
+    public function test_nested_function_in_method_uses_correct() {
+        $this->assertFunctionUsesFunction(
+            'sub_method_test',
+            [
+                'name' => 'b_function',
+                'line' => 27,
+                'end_line' => 27,
+            ]
+        );
 
-		$this->assertMethodUsesMethod(
-			'My_Class'
-			, 'a_method'
-			, array(
-				'name'     => 'do_it',
-				'line'     => 23,
-				'end_line' => 23,
-				'class'    => '\My_Class',
-				'static'   => false,
-			)
-		);
+        $this->assertFunctionUsesMethod(
+            'sub_method_test',
+            [
+                'name' => 'a_method',
+                'line' => 29,
+                'end_line' => 29,
+                'class' => '\My_Class',
+                'static' => true,
+            ]
+        );
 
-		$this->assertMethodUsesFunction(
-			'My_Class'
-			, 'a_method'
-			, array(
-				'name'     => 'do_things',
-				'line'     => 32,
-				'end_line' => 32,
-			)
-		);
+        $this->assertFunctionNotUsesMethod(
+            'sub_method_test',
+            [
+                'name' => 'do_it',
+                'line' => 23,
+                'end_line' => 23,
+                'class' => '\My_Class',
+                'static' => false,
+            ]
+        );
 
-		$this->assertMethodNotUsesFunction(
-			'My_Class'
-			, 'a_method'
-			, array(
-				'name'     => 'b_function',
-				'line'     => 27,
-				'end_line' => 27,
-			)
-		);
-
-		$this->assertMethodNotUsesMethod(
-			'My_Class'
-			, 'a_method'
-			, array(
-				'name'     => 'a_method',
-				'line'     => 29,
-				'end_line' => 29,
-				'class'    => '\My_Class',
-				'static'   => true,
-			)
-		);
-	}
-
-	/**
-	 * Test that the usages of the nested function within a method is correct.
-	 */
-	public function test_nested_function_in_method_uses_correct() {
-
-		$this->assertFunctionUsesFunction(
-			'sub_method_test'
-			, array(
-				'name'     => 'b_function',
-				'line'     => 27,
-				'end_line' => 27,
-			)
-		);
-
-		$this->assertFunctionUsesMethod(
-			'sub_method_test'
-			, array(
-				'name'     => 'a_method',
-				'line'     => 29,
-				'end_line' => 29,
-				'class'    => '\My_Class',
-				'static'   => true,
-			)
-		);
-
-		$this->assertFunctionNotUsesMethod(
-			'sub_method_test'
-			, array(
-				'name'     => 'do_it',
-				'line'     => 23,
-				'end_line' => 23,
-				'class'    => '\My_Class',
-				'static'   => false,
-			)
-		);
-
-		$this->assertFunctionNotUsesFunction(
-			'sub_method_test'
-			, array(
-				'name'     => 'do_things',
-				'line'     => 32,
-				'end_line' => 32,
-			)
-		);
-	}
+        $this->assertFunctionNotUsesFunction(
+            'sub_method_test',
+            [
+                'name' => 'do_things',
+                'line' => 32,
+                'end_line' => 32,
+            ]
+        );
+    }
 }

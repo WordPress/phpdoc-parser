@@ -1,35 +1,79 @@
 {
-	"name"       : "wordpress/phpdoc-parser",
-	"description": "Static code parser for WordPress source.",
-	"keywords"   : ["wordpress"],
-	"type"       : "wordpress-plugin",
-	"homepage"   : "https://github.com/WordPress/phpdoc-parser",
-	"license"    : "GPL-2.0-or-later",
-	"authors"    : [
-		{
-			"name"    : "Ryan McCue",
-			"homepage": "http://ryanmccue.info",
-			"role"    : "Developer"
-		},
-		{
-			"name"    : "Contributors",
-			"homepage": "https://github.com/WordPress/phpdoc-parser/graphs/contributors"
-		}
-	],
-	"support"    : {
-		"issues": "https://github.com/WordPress/phpdoc-parser/issues"
-	},
-	"require"    : {
-		"php"                      : ">=5.4",
-		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection" : "~3.0",
-		"erusev/parsedown"         : "~1.7",
-		"scribu/lib-posts-to-posts": "dev-master@dev",
-		"scribu/scb-framework"     : "dev-master@dev",
-		"psr/log"                  : "~1.0"
-	},
-	"autoload"   : {
-		"classmap": ["lib"],
-		"files"   : ["lib/runner.php", "lib/template.php"]
-	}
+  "name": "wordpress/phpdoc-parser",
+  "description": "Static code parser for WordPress source.",
+  "keywords": [
+    "wordpress"
+  ],
+  "type": "wordpress-plugin",
+  "homepage": "https://github.com/WordPress/phpdoc-parser",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Ryan McCue",
+      "homepage": "http://ryanmccue.info",
+      "role": "Developer"
+    },
+    {
+      "name": "Contributors",
+      "homepage": "https://github.com/WordPress/phpdoc-parser/graphs/contributors"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/WordPress/phpdoc-parser/issues"
+  },
+  "extra": {
+    "mozart": {
+      "dep_namespace": "AVCPDP\\",
+      "dep_directory": "/dist/AVCPDP/",
+      "classmap_directory": "/dist/classes/",
+      "classmap_prefix": "AVCPDP_",
+      "packages": [
+        "aivec/wordpress-router",
+        "aivec/response-handler",
+        "aivec/core-css"
+      ]
+    }
+  },
+  "require": {
+    "php": ">=5.4",
+    "composer/installers": "~1.0",
+    "phpdocumentor/reflection": "~3.0",
+    "erusev/parsedown": "~1.7",
+    "scribu/lib-posts-to-posts": "dev-master@dev",
+    "scribu/scb-framework": "dev-master@dev",
+    "psr/log": "~1.0",
+    "aivec/wordpress-router": "^7.0",
+    "aivec/response-handler": "^5.0",
+    "wp-cli/wp-cli": "^2.5",
+    "aivec/core-css": "^3.1"
+  },
+  "require-dev": {
+    "wp-cli/i18n-command": "^2.2",
+    "aivec/phpcs-wp": "^2.0",
+    "coenjacobs/mozart": "^0.7.1",
+    "aivec/pt-bundler": "^1.1"
+  },
+  "autoload": {
+    "files": [
+      "src/api-functions.php",
+      "src/template-functions.php"
+    ],
+    "psr-4": {
+      "AVCPDP\\": "dist/AVCPDP",
+      "Aivec\\Plugins\\DocParser\\": "src"
+    }
+  },
+  "scripts": {
+    "lint": "phpcs -ps --standard=AivecWP-5 --ignore=*/tests/* .",
+    "lint:fix": "phpcbf -ps --standard=AivecWP-5 --ignore=*/tests/* .",
+    "i18n:create-pot": "./vendor/bin/wp i18n make-pot . languages/messages.pot",
+    "i18n:update-pos": "@composer i18n:create-pot && find ./languages -name \"*.po\" | xargs -I % msgmerge -o % % languages/messages.pot",
+    "i18n:make-mo": "./vendor/bin/wp i18n make-mo languages",
+    "i18n:make-json": "./vendor/bin/wp i18n make-json languages --no-purge --pretty-print",
+    "build": [
+      "composer install",
+      "mozart compose",
+      "composer install --no-dev"
+    ]
+  }
 }

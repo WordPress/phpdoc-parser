@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This is a well documented filter.
  *
@@ -10,6 +11,7 @@
  * @param array $mce_translation Key/value pairs of strings.
  * @param string $mce_locale Locale.
  */
+
 $mce_translation = apply_filters('good_static_filter', $mce_translation, $mce_locale);
 
 /**
@@ -119,7 +121,7 @@ $value = apply_filters("missing_param_double_quotes_dynamic_filter_$option", $va
  * @param string $first_parameter
  * @param string $second_parameter
  */
-$value = apply_filters( 'multiple_since_tags', $first_parameter, $second_parameter );
+$value = apply_filters('multiple_since_tags', $first_parameter, $second_parameter);
 
 $mce_translation = apply_filters('no_doc_static_filter', $mce_translation, $mce_locale);
 

@@ -1,0 +1,107 @@
+{
+  "name": "@aivec/wp-phpdoc-parser",
+  "description": "WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](https://developer.wordpress.org/reference). It parses the inline documentation and produces custom post type entries in WordPress.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --ext .ts,.tsx src",
+    "lint:fix": "eslint --fix --ext .ts,.tsx src",
+    "format": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "build:dev": "cross-env NODE_ENV=development wp-scripts build --config ./node_modules/@aivec/wp-typescript-react/src/configs/webpack.config.js",
+    "build:prod": "cross-env NODE_ENV=production wp-scripts build --config ./node_modules/@aivec/wp-typescript-react/src/configs/webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aivec/phpdoc-parser.git"
+  },
+  "license": "GPL-2.0",
+  "bugs": {
+    "url": "https://github.com/aivec/phpdoc-parser/issues"
+  },
+  "homepage": "https://github.com/aivec/phpdoc-parser#readme",
+  "dependencies": {
+    "@aivec/react-material-components": "^3.0.3",
+    "@aivec/reqres-utils": "^6.0.1",
+    "@material-ui/core": "^4.12.3",
+    "@material-ui/icons": "^4.11.2",
+    "@wordpress/i18n": "^4.2.2",
+    "axios": "^0.21.4"
+  },
+  "devDependencies": {
+    "@aivec/wp-typescript-react": "^2.0.1",
+    "@types/react": "^17.0.22",
+    "@types/react-dom": "^17.0.9",
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
+    "@typescript-eslint/parser": "^4.31.2",
+    "@wordpress/scripts": "^18.0.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-typescript": "^14.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-import-resolver-typescript": "^2.5.0",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.25.3",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "typescript": "^4.4.3"
+  },
+  "eslintIgnore": [
+    "test/**/*.js"
+  ],
+  "eslintConfig": {
+    "plugins": [
+      "prettier"
+    ],
+    "extends": [
+      "airbnb-typescript",
+      "airbnb/hooks",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      "plugin:prettier/recommended"
+    ],
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "rules": {
+      "react/state-in-constructor": [
+        1,
+        "never"
+      ],
+      "react/jsx-wrap-multilines": [
+        "error",
+        {
+          "declaration": false,
+          "assignment": false
+        }
+      ],
+      "prettier/prettier": "error",
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          "selector": "default",
+          "format": [
+            "camelCase",
+            "PascalCase",
+            "UPPER_CASE"
+          ],
+          "leadingUnderscore": "allow",
+          "trailingUnderscore": "allow"
+        }
+      ]
+    },
+    "settings": {
+      "import/resolver": {
+        "typescript": {}
+      }
+    }
+  },
+  "prettier": {
+    "printWidth": 100,
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all"
+  }
+}

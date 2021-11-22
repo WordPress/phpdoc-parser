@@ -1,0 +1,42 @@
+{
+    "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+    "generator": "WP-CLI\/2.5.0",
+    "source": "dist\/js\/Views\/ImporterPage\/App.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "en",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Import": [
+                ""
+            ],
+            "Enter the folder name of the plugin\/theme\/composer-package": [
+                ""
+            ],
+            "Trash old references": [
+                ""
+            ],
+            "Importing...": [
+                ""
+            ],
+            "Updated": [
+                ""
+            ],
+            "Source folders parent path": [
+                ""
+            ],
+            "Enter the absolute path to the location of the source folders": [
+                ""
+            ],
+            "Updating...": [
+                ""
+            ],
+            "Update": [
+                ""
+            ]
+        }
+    }
+}

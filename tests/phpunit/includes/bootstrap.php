@@ -1,10 +1,10 @@
 <?php
 
-if ( ! getenv( 'WP_TESTS_DIR' ) ) {
-	exit( '$_ENV["WP_TESTS_DIR"] is not set.' . PHP_EOL );
+if (!getenv('WP_TESTS_DIR')) {
+    exit('$_ENV["WP_TESTS_DIR"] is not set.' . PHP_EOL);
 }
 
-include( __DIR__ . '/../../../vendor/autoload.php' );
+include(__DIR__ . '/../../../vendor/autoload.php');
 
 /**
  * The WordPress tests functions.
@@ -16,12 +16,12 @@ include( __DIR__ . '/../../../vendor/autoload.php' );
  *
  * @since 1.0.0
  */
-require_once getenv( 'WP_TESTS_DIR' ) . '/includes/functions.php';
+require_once getenv('WP_TESTS_DIR') . '/includes/functions.php';
 
-tests_add_filter( 'muplugins_loaded', function() {
-	$plugin_file = dirname( dirname( dirname( __DIR__ ) ) ) . '/plugin.php';
-	include( $plugin_file );
-	do_action( 'activate_' . plugin_basename( $plugin_file ) );
+tests_add_filter('muplugins_loaded', function () {
+    $plugin_file = dirname(dirname(dirname(__DIR__))) . '/plugin.php';
+    include($plugin_file);
+    do_action('activate_' . plugin_basename($plugin_file));
 });
 
 /**
@@ -32,7 +32,7 @@ tests_add_filter( 'muplugins_loaded', function() {
  *
  * @since 1.0.0
  */
-require getenv( 'WP_TESTS_DIR' ) . '/includes/bootstrap.php';
+require getenv('WP_TESTS_DIR') . '/includes/bootstrap.php';
 
-include( __DIR__ . '/export-testcase.php' );
-include( __DIR__ . '/testcases/import.php' );
+include(__DIR__ . '/export-testcase.php');
+include(__DIR__ . '/testcases/import.php');
