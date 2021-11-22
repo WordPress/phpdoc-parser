@@ -39,10 +39,12 @@ class Routes extends Router
     public function declareRoutes(WordPressRouteCollector $r) {
         $r->addGroup('/v1', function (WordPressRouteCollector $r) {
             // REST handlers
+            $zipImport = new API\ZipImport($this->master);
             $settings = new REST\Settings($this->master);
             $import = new REST\Import($this->master);
 
             // REST routes
+            $r->addPublicRoute('POST', '/deploy/zipImport', [$zipImport, 'deployToUpdateServerPackagesDir']);
             $r->addAdministratorRoute('POST', '/updateSourceFoldersAbspath', [$settings, 'updateSourceFoldersAbspath']);
             $r->addAdministratorRoute('POST', '/parser/create/{fname}', [$import, 'create']);
         });

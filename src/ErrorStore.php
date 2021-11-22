@@ -13,6 +13,9 @@ class ErrorStore extends ES
     const REQUIRED_FIELDS_MISSING = 'RequiredFieldsMissing';
     const SOURCE_NOT_FOUND = 'SourceNotFound';
     const IMPORT_ERROR = 'ImportError';
+    const JWT_UNAUTHORIZED = 'JWTUnauthorized';
+    const BASE64_DECODE_ERROR = 'Base64DecodeError';
+    const TEMP_ZIPFILE_WRITE_ERROR = 'TempZipFileWriteError';
 
     /**
      * Adds errors to the store
