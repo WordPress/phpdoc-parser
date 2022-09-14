@@ -161,6 +161,20 @@ function fix_newlines( $text ) {
 		$text
 	);
 
+	// Insert a newline when \n follows `.`.
+	$text = preg_replace(
+		"/\.[\n\r]+(?!\s*[\n\r])/m",
+		'.<br>',
+		$text
+	);
+
+	// Insert a new line when \n is followed by what appears to be a list.
+	$text = preg_replace(
+		"/[\n\r]+(\s+[*-] )(?!\s*[\n\r])/m",
+		'<br>$1',
+		$text
+	);
+
 	// Merge consecutive non-blank lines together by replacing the newlines with a space.
 	$text = preg_replace(
 		"/[\n\r](?!\s*[\n\r])/m",
@@ -406,5 +420,8 @@ function format_description( $description ) {
 		$parsedown   = \Parsedown::instance();
 		$description = $parsedown->line( $description );
 	}
+
+	$description = fix_newlines( $description );
+
 	return $description;
 }
