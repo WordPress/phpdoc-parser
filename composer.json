@@ -28,6 +28,16 @@
 		"scribu/scb-framework"     : "dev-master@dev",
 		"psr/log"                  : "~1.0"
 	},
+	"require-dev" : {
+		"phpunit/phpunit": "^7",
+		"spatie/phpunit-watcher": "^1.23",
+		"yoast/phpunit-polyfills": "^1.0"
+	},
+	"scripts"    : {
+		"test": "phpunit",
+		"test:watch": "phpunit-watcher watch < /dev/tty",
+		"test:coverage": "php -d xdebug.mode=coverage ./vendor/bin/phpunit --coverage-html coverage"
+	},
 	"autoload"   : {
 		"classmap": ["lib"],
 		"files"   : ["lib/runner.php", "lib/template.php"]
@@ -35,6 +45,8 @@
 	"config": {
 		"allow-plugins": {
 			"composer/installers": true
-		}
+		},
+		"_process-timeout-comment": "Work around `test:watch` timeout, see https://github.com/spatie/phpunit-watcher/issues/63#issuecomment-545633709",
+		"process-timeout": 0
 	}
 }

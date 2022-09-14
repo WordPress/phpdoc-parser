@@ -3,9 +3,16 @@
 	backupGlobals="false"
 	colors="true"
 	>
+
 	<testsuites>
-		<testsuite>
+		<testsuite name="tests">
 			<directory suffix=".php">tests/phpunit/tests/</directory>
 		</testsuite>
 	</testsuites>
+
+	<filter>
+		<whitelist>
+			<directory suffix=".php">lib</directory>
+		</whitelist>
+	</filter>
 </phpunit>

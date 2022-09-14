@@ -36,9 +36,9 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 	/**
 	 * Parse the file to get the exported data before the first test.
 	 */
-	public function setUp() {
+	public function set_up() {
 
-		parent::setUp();
+		parent::set_up();
 
 		if ( ! $this->export_data ) {
 			$this->parse_file();

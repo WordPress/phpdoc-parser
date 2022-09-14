@@ -21,9 +21,9 @@ class Import_UnitTestCase extends Export_UnitTestCase {
 	/**
 	 * Set up before the tests.
 	 */
-	public function setUp() {
+	public function set_up() {
 
-		parent::setUp();
+		parent::set_up();
 
 		$this->importer = new \WP_Parser\Importer;
 		$this->importer->import( array( $this->export_data ) );
