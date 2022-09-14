@@ -31,5 +31,10 @@
 	"autoload"   : {
 		"classmap": ["lib"],
 		"files"   : ["lib/runner.php", "lib/template.php"]
+	},
+	"config": {
+		"allow-plugins": {
+			"composer/installers": true
+		}
 	}
 }
