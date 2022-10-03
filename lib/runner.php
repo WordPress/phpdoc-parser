@@ -68,7 +68,7 @@ function parse_files( $files, $root ) {
 
 		foreach ( $file->getIncludes() as $include ) {
 			$out['includes'][] = array(
-				'name' => $include->getName(),
+				'name' => property_exists( $include->getNode()->expr, 'value' ) ? $include->getName() : '',
 				'line' => $include->getLineNumber(),
 				'type' => $include->getType(),
 			);
