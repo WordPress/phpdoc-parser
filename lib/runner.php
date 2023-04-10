@@ -154,9 +154,9 @@ function fix_newlines( $text ) {
 
 	// Replace newline characters within 'code' and 'pre' tags with replacement string.
 	$text = preg_replace_callback(
-		"/(?<=<pre><code>)(.+)(?=<\/code><\/pre>)/s",
+		"/(<pre><code[^>]*>)(.+)(?=<\/code><\/pre>)/sU",
 		function ( $matches ) use ( $replacement_string ) {
-			return preg_replace( '/[\n\r]/', $replacement_string, $matches[1] );
+			return preg_replace( '/[\n\r]/', $replacement_string, $matches[1] . $matches[2] );
 		},
 		$text
 	);
