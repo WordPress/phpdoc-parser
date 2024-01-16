@@ -1,0 +1,25 @@
+{
+  "name": "phpdoc-parser",
+  "version": "1.0.0",
+  "description": "WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](https://developer.wordpress.org/reference). It parses the inline documentation and produces custom post type entries in WordPress.",
+  "scripts": {
+    "wp-env": "wp-env",
+    "test": "npm-run-all test:phpunit:setup test:phpunit",
+	"test:phpunit:setup": "wp-env start",
+	"test:phpunit": "wp-env run tests-wordpress phpunit -c wp-content/plugins/phpdoc-parser/phpunit.xml.dist --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wordpress/phpdoc-parser.git"
+  },
+  "author": "phpdoc-parser Contributors",
+  "license": "GPL-2.0-or-later",
+  "bugs": {
+    "url": "https://github.com/wordpress/phpdoc-parser/issues"
+  },
+  "homepage": "https://github.com/wordpress/phpdoc-parser#readme",
+  "dependencies": {
+    "@wordpress/env": "^9.0.0",
+    "npm-run-all": "^4.1.5"
+  }
+}
