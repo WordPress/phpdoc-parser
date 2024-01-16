@@ -6,7 +6,7 @@
     "wp-env": "wp-env",
     "test": "npm-run-all test:phpunit:setup test:phpunit",
 	"test:phpunit:setup": "wp-env start",
-	"test:phpunit": "wp-env run tests-wordpress phpunit -c wp-content/plugins/phpdoc-parser/phpunit.xml.dist --verbose"
+	"test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress phpunit -c phpunit.xml.dist"
   },
   "repository": {
     "type": "git",
