@@ -35,5 +35,9 @@ class Export_Hooks extends Export_UnitTestCase {
 		$this->assertFileContainsHook(
 			array( 'name' => 'hook_{$object->property}_pre', 'line' => 7 )
 		);
+
+		$this->assertFileContainsHook(
+			array( 'type' => 'apply_filters', 'name' => 'plain_filter', 'line' => 8 )
+		);
 	}
 }
