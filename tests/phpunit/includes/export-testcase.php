@@ -59,7 +59,13 @@ class Export_UnitTestCase extends \WP_UnitTestCase {
 		foreach ( $entity[ $type ] as $exported ) {
 			if ( $exported['line'] == $expected['line'] ) {
 				foreach ( $expected as $key => $expected_value ) {
-					$this->assertEquals( $expected_value, $exported[ $key ] );
+					if ( isset( $exported[ $key ] ) ) {
+						$exported_value = $exported[ $key ];
+					} else {
+						$exported_value = _wp_array_get( $exported, explode( '.', $key ), null );
+					}
+
+					$this->assertEquals( $expected_value, $exported_value );
 				}
 
 				return;

@@ -37,7 +37,13 @@ class Export_Hooks extends Export_UnitTestCase {
 		);
 
 		$this->assertFileContainsHook(
-			array( 'type' => 'apply_filters', 'name' => 'plain_filter', 'line' => 8 )
+			array(
+				'type' => 'filter',
+				'name' => 'plain_filter',
+				'line' => 8,
+				'arguments.0' => '$variable',
+				'arguments.1' => '$filter_context'
+			)
 		);
 	}
 }
