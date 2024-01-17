@@ -8,6 +8,9 @@ namespace WP_Parser\Tests;
 
 /**
  * Test that docblocks are exported correctly.
+ *
+ * @group export
+ * @group export-docblocks
  */
 class Export_Docblocks extends Export_UnitTestCase {
 

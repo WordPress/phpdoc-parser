@@ -8,6 +8,9 @@ namespace WP_Parser\Tests;
 
 /**
  * Test that use of the __construct() method is exported for new Class() statements.
+ *
+ * @group export-uses
+ * @group export-uses-constructor
  */
 class Export_Constructor_Use extends Export_UnitTestCase {
 

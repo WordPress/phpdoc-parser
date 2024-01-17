@@ -8,6 +8,9 @@ namespace WP_Parser\Tests;
 
 /**
  * Test that hooks are exported correctly.
+ *
+ * @group export
+ * @group export-hooks
  */
 class Export_Hooks extends Export_UnitTestCase {
 

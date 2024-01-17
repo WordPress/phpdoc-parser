@@ -8,6 +8,9 @@ namespace WP_Parser\Tests;
 
 /**
  * Test that function use is exported correctly when function declarations are nested.
+ *
+ * @group export-uses
+ * @group export-uses-nested
  */
 class Export_Nested_Function_Use extends Export_UnitTestCase {
 
