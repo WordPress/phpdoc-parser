@@ -10,7 +10,7 @@
     "composer": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer",
     "composer:setup": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer install",
     "test:phpunit:setup": "npm-run-all start composer:setup",
-    "test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress phpunit -c phpunit.xml.dist"
+    "test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
   },
   "repository": {
     "type": "git",
