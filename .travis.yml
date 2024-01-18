@@ -1,35 +1,48 @@
-language: php
+# TravisCI configuration for WordPress/phpdoc-parser
 
-sudo: false
+if: "branch = master"
 
-matrix:
-  include:
-    - php: 7.1
-    - php: 7.0
-    - php: 5.6
-    - php: 5.5
-    - php: 5.4
-    - php: hhvm
+language: "php"
+os:
+  - "linux"
+dist: "trusty"
 
-before_install:
+services:
+  - mysql
+
+env:
+  global:
     # Setup WP_TESTS_DIR (needed to bootstrap WP PHPUnit tests). 
-    - export WP_TESTS_DIR=/tmp/wordpress/tests/phpunit/
-    # Clone the WordPress develop repo.
-    - git clone --depth=1 --branch="4.3" git://develop.git.wordpress.org/ /tmp/wordpress/
-    # Setup DB.
-    - mysql -e "CREATE DATABASE wordpress_test;" -uroot
-    # Setup wp-config.
-    - cp /tmp/wordpress/wp-tests-config-sample.php /tmp/wordpress/wp-tests-config.php
-    - sed -i "s/youremptytestdbnamehere/wordpress_test/" /tmp/wordpress/wp-tests-config.php
-    - sed -i "s/yourusernamehere/root/" /tmp/wordpress/wp-tests-config.php
-    - sed -i "s/yourpasswordhere//" /tmp/wordpress/wp-tests-config.php
+    - WP_TESTS_DIR: "/tmp/wordpress/tests/phpunit/"
 
-install: composer install --no-dev
-
-script:
-  - phpunit
+jobs:
+  include:
+    - php: "7.4"
+    - php: "7.3"
+    - php: "7.2"
+    - php: "7.1"
+    - php: "7.0"
+    - php: "5.6"
+    - php: "5.5"
+    - php: "5.4"
 
 cache:
   directories:
-    - vendor
-    - $HOME/.composer/cache
+    - "${HOME}/.composer/cache"
+
+before_install:
+    # Clone the WordPress develop repo.
+    - git clone --depth=1 --branch=4.3 git://develop.git.wordpress.org/ /tmp/wordpress/
+    # Setup DB.
+    - mysql -e "CREATE DATABASE wordpress_test;" -u root
+    # Setup wp-config.
+    - cp /tmp/wordpress/wp-tests-config-sample.php /tmp/wordpress/wp-tests-config.php
+    - sed -i -e "s/youremptytestdbnamehere/wordpress_test/" /tmp/wordpress/wp-tests-config.php
+    - sed -i -e "s/yourusernamehere/root/" /tmp/wordpress/wp-tests-config.php
+    - sed -i -e "s/yourpasswordhere//" /tmp/wordpress/wp-tests-config.php
+
+install:
+  - composer install --no-interaction --no-dev
+
+script:
+  - phpunit --verbose
