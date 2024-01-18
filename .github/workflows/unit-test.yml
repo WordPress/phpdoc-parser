@@ -14,14 +14,12 @@ jobs:
               php:
                 - '7.4'
 
+      env:
+        WP_ENV_PHP_VERSION: ${{ matrix.php }}
+
       steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set PHP version for wp-env
-        run: |
-          echo '{"phpVersion":"${{ matrix.php }}"}' > .wp-env.override.json
-          jq .wp-env.override.json
 
       - name: Install
         run: npm install
