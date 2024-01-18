@@ -19,10 +19,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set PHP version for wp-env
-        run: echo '{"phpVersion":"${{ matrix.php }}"}' > .wp-env.override.json
+        run: |
+          echo '{"phpVersion":"${{ matrix.php }}"}' > .wp-env.override.json
+          jq .wp-env.override.json
 
       - name: Install
         run: npm install
 
+      - name: Setup Environment
+        run: npm run setup
+
       - name: Test
-        run: npm run test:withsetup
+        run: npm run test

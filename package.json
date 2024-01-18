@@ -5,7 +5,7 @@
   "scripts": {
     "wp-env": "wp-env",
     "test": "npm-run-all test:phpunit",
-    "test:withsetup": "npm-run-all start composer:setup test",
+    "setup": "npm-run-all start composer:setup",
     "start": "wp-env start",
     "composer": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer",
     "composer:setup": "composer install",
