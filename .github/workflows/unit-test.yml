@@ -25,7 +25,9 @@ jobs:
         run: npm install
 
       - name: Setup Environment
-        run: npm run setup
+        run: |
+          rm composer.lock
+          npm run setup
 
       - name: Test
         run: npm run test
