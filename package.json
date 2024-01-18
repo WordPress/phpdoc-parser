@@ -4,9 +4,13 @@
   "description": "WP-Parser is the parser for creating the new code reference at [developer.wordpress.org](https://developer.wordpress.org/reference). It parses the inline documentation and produces custom post type entries in WordPress.",
   "scripts": {
     "wp-env": "wp-env",
-    "test": "npm-run-all test:phpunit:setup test:phpunit",
-	"test:phpunit:setup": "wp-env start",
-	"test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress phpunit -c phpunit.xml.dist"
+    "test": "npm-run-all test:phpunit",
+    "test:withsetup": "npm-run-all start composer:setup test",
+    "start": "wp-env start",
+    "composer": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer",
+    "composer:setup": "composer install",
+    "test:phpunit:setup": "npm-run-all start composer:setup",
+    "test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress phpunit -c phpunit.xml.dist"
   },
   "repository": {
     "type": "git",
