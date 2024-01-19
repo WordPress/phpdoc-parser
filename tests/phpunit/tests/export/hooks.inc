@@ -5,3 +5,4 @@ do_action( "action_with_double_quotes" );
 do_action( $variable . '-action' );
 do_action( "another-{$variable}-action" );
 do_action( 'hook_' . $object->property . '_pre' );
+apply_filters( 'plain_filter', $variable, $filter_context );
