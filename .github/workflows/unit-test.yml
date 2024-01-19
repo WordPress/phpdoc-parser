@@ -1,0 +1,33 @@
+name: Unit Tests
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+jobs:
+    test-php:
+      runs-on: ubuntu-latest
+      strategy:
+          fail-fast: false
+          matrix:
+              php:
+                - '7.4'
+
+      env:
+        WP_ENV_PHP_VERSION: ${{ matrix.php }}
+
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install
+        run: npm install
+
+      - name: Setup Environment
+        run: |
+          rm composer.lock
+          npm run setup
+
+      - name: Test
+        run: npm run test
