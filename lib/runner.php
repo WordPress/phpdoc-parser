@@ -14,15 +14,28 @@ use phpDocumentor\Reflection\ReflectionAbstract;
  *
  * @return array|\WP_Error
  */
-function get_wp_files( $directory ) {
-	$iterableFiles = new \RecursiveIteratorIterator(
-		new \RecursiveDirectoryIterator( $directory )
-	);
-	$files         = array();
+function get_wp_files( $root ) {
+	$dirIterator    = new \RecursiveDirectoryIterator( $root );
+	$filterIterator = filter_wp_directories( $root, $dirIterator );
+
+	if ( $filterIterator instanceof \RecursiveCallbackFilterIterator ) {
+		$iterableFiles = new \RecursiveIteratorIterator( $filterIterator );
+	} else {
+		$iterableFiles = new \RecursiveIteratorIterator( $dirIterator );
+	}
+
+	$files = array();
 
 	try {
 		foreach ( $iterableFiles as $file ) {
 			if ( 'php' !== $file->getExtension() ) {
+				continue;
+			}
+
+			/**
+			 * Whether to exclude a file for parsing.
+			 */
+			if ( ! apply_filters( 'wp_parser_pre_get_wp_file', true, $file->getPathname(), $root ) ) {
 				continue;
 			}
 
@@ -36,6 +49,67 @@ function get_wp_files( $directory ) {
 	}
 
 	return $files;
+}
+
+/**
+ * Fiter the directories to parse.
+ *
+ * @param string $root        Root dir.
+ * @param object $dirIterator RecursiveDirectoryIterator.
+ * @return object|false RecursiveCallbackFilterIterator or false.
+ */
+function filter_wp_directories( $root, $dirIterator ) {
+	$root = trailingslashit( $root );
+
+	/**
+	 * Filter directories found in the root directory.
+	 *
+	 * For example: 'vendor', 'tests', 'specific/directory'.
+	 *
+	 * @param unknown $exclude Array with directories to skip parsing. Default empty array().
+	 * @param unknown $root    Root directory to parse.
+	 */
+	$exclude = apply_filters( 'wp_parser_exclude_directories', array(), $root );
+
+	/**
+	 * Whether to exlude directories if found in a subdirectory.
+	 *
+	 * @param unknown $strict. Exclude subdirectories. Default false.
+	 * @param unknown $root    Root directory to parse.
+	 */
+	$strict = apply_filters( 'wp_parser_exclude_directories_strict', false, $root );
+
+	if ( ! $exclude ) {
+		return false;
+	}
+
+	$filter = new \RecursiveCallbackFilterIterator( $dirIterator, function ( $current ) use ( $root, $exclude, $strict ) {
+		if ( $current->isFile() && ( 'php' !== $current->getExtension() ) ) {
+			return false;
+		}
+
+		if ( ! $current->isDir() ) {
+			return true;
+		}
+
+		// Exclude directories strict.
+		$dir_name = $current->getFilename();
+		if ( $strict && in_array( $dir_name, $exclude ) ) {
+			return false;
+		}
+
+		// Exclude directories in the root directory.
+		$current_path = $current->getPathname();
+		foreach ( $exclude as $dir ) {
+			if ( ( $root . untrailingslashit( $dir ) ) === $current_path ) {
+				return false;
+			}
+		}
+
+		return true;
+	} );
+
+	return $filter;
 }
 
 /**
