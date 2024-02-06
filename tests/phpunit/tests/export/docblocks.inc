@@ -88,3 +88,13 @@ do_action( 'undocumented_hook' );
  * A reference array action.
  */
 do_action_ref_array( 'test_ref_array_action', array( &$var ) );
+
+/**
+ * A filter in a conditional expression.
+ */
+if ( apply_filters( 'in_conditional_expression', true ) ) {
+	/**
+	 * A filter in a conditional.
+	 */
+	$value = apply_filters( 'in_conditional', true );
+}
