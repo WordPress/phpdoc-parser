@@ -659,10 +659,10 @@ class Importer implements LoggerAwareInterface {
 			// Loop through all @since versions.
 			foreach ( $since_versions as $since_version ) {
 
-				if ( ! empty( $since_version['content'] ) ) {
+				if ( ! empty( $since_version['content'] ) && maybe_version( $since_version['content'] ) ) {
 					$since_term = $this->insert_term( $since_version['content'], $this->taxonomy_since_version );
 
-					// Assign the tax item to the post
+					// Assign the tax item to the post.
 					if ( ! is_wp_error( $since_term ) ) {
 						$added_term_relationship = did_action( 'added_term_relationship' );
 						wp_set_object_terms( $post_id, (int) $since_term['term_id'], $this->taxonomy_since_version, true );
@@ -675,6 +675,28 @@ class Importer implements LoggerAwareInterface {
 				}
 			}
 		}
+
+		$deprecated_version = wp_list_filter( $data['doc']['tags'], array( 'name' => 'deprecated' ) );
+		$deprecated_version = array_shift( $deprecated_version );
+
+		$is_deprecated = isset( $deprecated_version['content'] ) && ! empty( $deprecated_version['content'] );
+		if ( $is_deprecated && maybe_version( $deprecated_version['content'] ) ) {
+			$deprecated_term = $this->insert_term( $deprecated_version['content'], $this->taxonomy_since_version );
+
+			// Assign the deprecated tax item to the post.
+			if ( ! is_wp_error( $since_term ) ) {
+				$added_term_relationship = did_action( 'added_term_relationship' );
+				wp_set_object_terms( $post_id, (int) $deprecated_term['term_id'], $this->taxonomy_since_version, true );
+				if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
+					$anything_updated[] = true;
+				}
+			} else {
+				$this->logger->warning( "\tCannot set deprecated @since term: " . $since_term->get_error_message() );
+			}
+		}
+
+		// Assign 'introduced', 'modified' and 'deprecated' meta to the post.
+		$anything_updated[] = $this->_set_since_meta( $post_id, $since_versions, $deprecated_version );
 
 		$packages = array(
 			'main' => wp_list_filter( $data['doc']['tags'], array( 'name' => 'package' ) ),
@@ -835,5 +857,59 @@ class Importer implements LoggerAwareInterface {
 				$this->anything_updated[] = true;
 			}
 		}
+	}
+
+	/**
+	 * Set version meta.
+	 *
+	 * Imports introduced, modified, and deprecated post meta.
+	 *
+	 * @param int   $post_id            Post ID.
+	 * @param array $since_versions     Array with DocBlock data from versions.
+	 * @param array $deprecated_version DocBlock deprecated version data.
+	 * @return bool True if any meta whas updated
+	 */
+	protected function _set_since_meta( $post_id, $since_versions, $deprecated_version ) {
+		$anything_updated   = array();
+		$introduced_version = array_shift( $since_versions );
+
+		$introduced = isset( $introduced_version['content'] ) && $introduced_version['content'];
+		if ( $introduced && maybe_version( $introduced_version['content'] ) ) {
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_introduced', $introduced_version['content'] );
+		} else {
+			delete_post_meta( $post_id, '_wp-parser_introduced' );
+		}
+
+		$deprecated = isset( $deprecated_version['content'] ) && $deprecated_version['content'];
+		if ( $deprecated && maybe_version( $deprecated_version['content']  ) ) {
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_deprecated', $deprecated_version['content'] );
+		} else {
+			delete_post_meta( $post_id, '_wp-parser_deprecated' );
+		}
+
+		$old_meta = get_post_meta( $post_id, '_wp-parser_modified' );
+		$new_meta = array();
+
+		// Delete modified meta and check if anything was updated after adding new meta.
+		delete_post_meta( $post_id, '_wp-parser_modified' );
+
+		if ( ! empty( $since_versions ) ) {
+			foreach ( $since_versions as $since ) {
+				$modified = $since['content'] && $since['content'];
+				if ( ! ( $modified && maybe_version( $since['content'] ) ) ) {
+					continue;
+				}
+
+				$new_meta[] = $since['content'];
+				add_post_meta( $post_id, '_wp-parser_modified', $since['content'] );
+			}
+		}
+
+		$diff_meta          = array_diff( $old_meta, $new_meta );
+		$anything_updated[] = ! empty( $diff_meta );
+		$anything_updated[] = empty( $old_meta ) && ! empty( $new_meta );
+		$anything_updated   = array_filter( $anything_updated );
+
+		return ! empty( $anything_updated );
 	}
 }

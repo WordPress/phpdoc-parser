@@ -328,3 +328,39 @@ function get_source_link() {
 
 	return $trac_url;
 }
+
+/**
+ * Check whether a string resembles a version.
+ *
+ * A version should start with a numeric value.
+ * The only non numeric versions that are allowed start with "mu" and "unknown".
+ *
+ * Note: the version validation is very minimal and doesn't check semantic versioning or
+ * any other type of version specifications.
+ *
+ * @param  string $version The version to check.
+ * @return bool True if it resembles a version.
+ */
+function maybe_version( $version ) {
+
+	$version = strtolower( trim( (string) $version ) );
+
+	/**
+	 * Whether a version should be checked or not.
+	 *
+	 * Return boolean to validate the version yourself.
+	 *
+	 * @param mixed  $check_version. Whether to check the version or not. Default null.
+	 * @param string $version        Version string.
+	 */
+	$check_version = apply_filters( 'wp_parser_check_version', null, $version );
+	if ( is_bool( $check_version ) ) {
+		return $check_version;
+	}
+
+	$mu      = ( 0 === strpos( $version, 'mu' ) );
+	$unknown = ( 0 === strpos( $version, 'unknown' ) );
+	$numeric = preg_match( '/^\d/', $version );
+
+	return $mu || $unknown || $numeric;
+}
