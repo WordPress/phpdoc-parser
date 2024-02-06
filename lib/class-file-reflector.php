@@ -126,7 +126,7 @@ class File_Reflector extends FileReflector {
 		// we don't ignore them, we'll end up picking up docblocks that are already
 		// associated with a named element, and so aren't really from a non-
 		// documentable element after all.
-		if ( ! $this->isNodeDocumentable( $node ) && 'Name' !== $node->getType() && ( $docblock = $node->getDocComment() ) ) {
+		if ( ! $this->isNodeDocumentable( $node ) && ! in_array( $node->getType(), array( 'Name', 'Stmt_Global' ), true ) && ( $docblock = $node->getDocComment() ) ) {
 			$this->last_doc = $docblock;
 		}
 	}
