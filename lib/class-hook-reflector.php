@@ -3,6 +3,7 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
+use PhpParser\Node;
 use PHPParser_PrettyPrinter_Default;
 
 /**
@@ -11,40 +12,70 @@ use PHPParser_PrettyPrinter_Default;
 class Hook_Reflector extends BaseReflector {
 
 	/**
-	 * @return string
-	 */
-	public function getName() {
-		$printer = new PHPParser_PrettyPrinter_Default;
-		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
-	}
-
-	/**
-	 * @param string $name
+	 * Hook names are the first argument to actions and filters.
 	 *
-	 * @return string
+	 * These are expected to be string values or concatenations of strings and variables.
+	 *
+	 * Example:
+	 *
+	 *     from: apply_filters( 'option_' . $option_name, $option_value );
+	 *     name: option_{$option_name}
+	 *
+	 *     from: do_action( 'wp_insert_post', $post_ID, $post, true );
+	 *     name: wp_insert_post
+	 *
+	 *     from: do_action( "{$old_status}_to_{$new_status}", $post );
+	 *     name: {$old_status}_to_{$new_status}
+	 *
+	 *     from: do_action( $filter_name, $args );
+	 *     name: {$filter_name}
+	 *
+	 * @param ?Node $node Which node to examine; defaults to the parser's current node.
+	 * @return string Represents the hook's name, including any interpolations into the hook name.
 	 */
-	private function cleanupName( $name ) {
-		$matches = array();
-
-		// quotes on both ends of a string
-		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $matches ) ) {
-			return $matches[1];
+	public function getName( $node = null ) {
+		if ( null === $node ) {
+			$node = $this->node->args[0]->value;
 		}
+		$printer = new PHPParser_PrettyPrinter_Default;
+		$name    = $printer->prettyPrintExpr( $node );
 
-		// two concatenated things, last one of them a variable
-		if ( preg_match(
-			'/(?:[\'"]([^\'"]*)[\'"]\s*\.\s*)?' . // First filter name string (optional)
-			'(\$[^\s]*)' .                        // Dynamic variable
-			'(?:\s*\.\s*[\'"]([^\'"]*)[\'"])?/',  // Second filter name string (optional)
-			$name, $matches ) ) {
+		if ( $node instanceof \PhpParser\Node\Scalar\String_ ) {
+			// "'action'" -> "action"
+			return $node->value;
+		} elseif ( $node instanceof \PhpParser\Node\Scalar\Encapsed ) {
+			// '"action_{$var}"' -> 'action_{$var}'
+			$name = '';
 
-			if ( isset( $matches[3] ) ) {
-				return $matches[1] . '{' . $matches[2] . '}' . $matches[3];
-			} else {
-				return $matches[1] . '{' . $matches[2] . '}';
+			foreach ( $node->parts as $part ) {
+				if ( is_string( $part ) ) {
+					$name .= $part;
+				} else {
+					$name .= $this->getName( $part );
+				}
 			}
+
+			return $name;
+		} elseif ( $node instanceof \PhpParser\Node\Expr\BinaryOp\Concat ) {
+			// '"action_" . $var' -> 'action_{$var}'
+			return $this->getName( $node->left ) . $this->getName( $node->right );
+		} elseif ( $node instanceof \PhpParser\Node\Expr\PropertyFetch ) {
+			// '$this->action' -> '{$this->action}'
+			return "{{$name}}";
+		} elseif ( $node instanceof \PhpParser\Node\Expr\Variable ) {
+			// '$action' -> '{$action}'
+			return "{\${$node->name}}";
 		}
 
+		/*
+		 * If none of these known constructions match, then
+		 * fallback to the pretty-printed version of the node.
+		 *
+		 * For improving the quality of the hook-name generation,
+		 * replace this return statement by throwing an exception
+		 * to determine which cases aren't handled, and then add
+		 * them above.
+		 */
 		return $name;
 	}
 
