@@ -20,8 +20,11 @@ if ( class_exists( 'WP_Parser\Plugin' ) ) {
 	$wp_parser->on_load();
 }
 
-register_activation_hook( __FILE__, array( 'P2P_Storage', 'init' ) );
-register_activation_hook( __FILE__, array( 'P2P_Storage', 'install' ) );
+// Only register P2P activation hooks if the class exists (WordPress plugin active)
+if ( class_exists( 'P2P_Storage' ) ) {
+	register_activation_hook( __FILE__, array( 'P2P_Storage', 'init' ) );
+	register_activation_hook( __FILE__, array( 'P2P_Storage', 'install' ) );
+}
 
 // TODO safer handling for uninstall
 //register_uninstall_hook( __FILE__, array( 'P2P_Storage', 'uninstall' ) );

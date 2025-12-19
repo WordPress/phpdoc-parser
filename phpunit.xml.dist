@@ -1,8 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
 	bootstrap="tests/phpunit/includes/bootstrap.php"
 	backupGlobals="false"
 	colors="true"
-	>
+	cacheResultFile=".phpunit.result.cache"
+	executionOrder="depends,defects"
+	forceCoversAnnotation="false"
+	beStrictAboutCoversAnnotation="true"
+	beStrictAboutOutputDuringTests="true"
+	beStrictAboutTodoAnnotatedTests="true"
+	failOnRisky="true"
+	failOnWarning="true"
+	verbose="true">
 
 	<testsuites>
 		<testsuite name="tests">
@@ -10,9 +21,9 @@
 		</testsuite>
 	</testsuites>
 
-	<filter>
-		<whitelist>
+	<coverage processUncoveredFiles="true">
+		<include>
 			<directory suffix=".php">lib</directory>
-		</whitelist>
-	</filter>
+		</include>
+	</coverage>
 </phpunit>

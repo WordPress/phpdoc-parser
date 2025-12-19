@@ -115,7 +115,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 
 		$this->assertClassHasDocs(
 			'Test_Class'
-			, array( 'description' => 'This is a class docblock.' )
+			, array( 'description' => 'This is a class docblock, the summary of the class is spread over multiple lines.' )
 		);
 	}
 
@@ -141,5 +141,89 @@ class Export_Docblocks extends Export_UnitTestCase {
 			, '$a_string'
 			, array( 'description' => 'This is a docblock for a class property.' )
 		);
+	}
+
+	/**
+	 * Test that `@see` tags are exported correctly.
+	 */
+	function test_method_see() {
+		$this->assertMethodHasDocs(
+			'Test_Class'
+			, 'test_method_see'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'see',
+						'refers' => 'self::test_method_typed_hash()',
+						'content' => '',
+					),
+					array(
+						'name' => 'see',
+						'refers' => 'https://wordpressfoundation.org/',
+						'content' => 'The WordPress Foundation.',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test the many types of typed parameters we can expect.
+	 */
+	public function test_method_typed_hash() {
+		$this->assertMethodHasDocs(
+			'Test_Class'
+			, 'test_method_typed_hash'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'types' => array( 'array' ),
+						'variable' => '$hashed_array',
+						// @see https://github.com/WordPress/wporg-developer/blob/bcb196110099a2cd898230834022b6237917e793/source/wp-content/themes/wporg-developer-2023/inc/formatting.php#L598-L680
+						'content' => '{ The parameters for this function.<br>@type int $time The current epoch.<br>@type ?string $nullable_string A nullable string.<br>@type string|array List of items: <ul> <li>\'item1\'</li> <li>\'item2\' Default is \'item1\'.<br>}</li> </ul>',
+					),
+					array(
+						'name' => 'param',
+						'types' => array( 'WP_Post', 'WP_User' ),
+						'variable' => '$post_or_user',
+						'content' => 'A Post or User.',
+					),
+					array(
+						'name' => 'param',
+						'types' => array( 'WP_Post', 'null' ),
+						'variable' => '$nullable_post',
+						'content' => 'A Nullable post.',
+					),
+					array(
+						'name' => 'param',
+						'types' => array( '?string' ),
+						'variable' => '$nullable_string',
+						'content' => 'A nullable string.',
+					),
+					array(
+						'name' => 'return',
+						'content' => 'An empty array.',
+						'types' => array( 'array' ),
+					),
+				)
+			)
+		);
+	}
+
+	/**
+	 * Test that markdown in descriptions are marked up.
+	 */
+	function test_markdown_in_description() {
+		$description = $this->export_data['functions'][1]['doc']['long_description'];
+
+		$this->assertStringContainsString( '<code>code</code>', $description );
+		$this->assertStringContainsString( '<em>italics</em>', $description );
+		$this->assertStringContainsString( '<strong>bold</strong>', $description );
+		$this->assertStringContainsString( '<li>Item 1</li>', $description );
+		$this->assertStringContainsString( '<li>Item 2</li>', $description );
+		$this->assertStringContainsString( '<pre><code>foo();', $description );
+		$this->assertStringContainsString( '<blockquote>', $description );
+		$this->assertStringContainsString( '<h2>Inline Formatting includes Headings.</h2>', $description );
 	}
 }

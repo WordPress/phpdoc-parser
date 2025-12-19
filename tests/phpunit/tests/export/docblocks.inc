@@ -29,7 +29,8 @@ function test_func( $var, $num ) {
 }
 
 /**
- * This is a class docblock.
+ * This is a class docblock, the summary of the class is
+ * spread over multiple lines.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,
  * which means that it is a doc comment. Docblock comments are comment blocks used
@@ -61,6 +62,39 @@ class Test_Class {
 	public function test_method( $var, $arr ) {
 		return $var;
 	}
+
+	/**
+	 * A test method that contains various @see.
+	 *
+	 * @see self::test_method_typed_hash()
+	 * @see https://wordpressfoundation.org/ The WordPress Foundation.
+	 */
+	public function test_method_see() {
+	}
+
+	/**
+	 * This is a method that has a param with multiple types within.
+	 *
+	 * @param array $hashed_array {
+	 *    The parameters for this function.
+	 *
+	 *    @type int $time The current epoch.
+	 *    @type ?string $nullable_string A nullable string.
+	 *    @type string|array List of items:
+	 *                       - 'item1'
+	 *                       - 'item2'
+	 *                       Default is 'item1'.
+	 * }
+	 * @param WP_Post|WP_User $post_or_user A Post or User.
+	 * @param ( WP_Post | null ) $nullable_post A Nullable post.
+	 * @param ?string $nullable_string A nullable string.
+	 * 
+	 * @return array An empty array.
+	 */
+	public function test_method_typed_hash( array $hashed_array, $post_or_user, ?WP_Post $nullable_post ): array {
+		return [];
+	}
+
 }
 
 /**
@@ -88,3 +122,28 @@ do_action( 'undocumented_hook' );
  * A reference array action.
  */
 do_action_ref_array( 'test_ref_array_action', array( &$var ) );
+
+/**
+ * This method has all kinds of _"markdown formatting"_, many of which are not supported.
+ *
+ * Example `code`:
+ *
+ *     foo();
+ *     bar();
+ *
+ * Lists:
+ * - Item 1
+ * - Item 2
+ *
+ * This is a quote:
+ *
+ * > Quoted Content.
+ * > On multiple lines.
+ *
+ * ## Inline Formatting includes Headings.
+ *
+ * There's also _italics_ and **bold**.
+ */
+function test_markdown_in_description() {
+
+}

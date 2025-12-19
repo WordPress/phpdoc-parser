@@ -1,0 +1,90 @@
+name: Import Test
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  test-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '8.1'
+          - '8.2'
+          - '8.3'
+          - '8.4'
+
+    env:
+      WP_ENV_PHP_VERSION: ${{ matrix.php }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Setup Environment
+        run: |
+          npm run setup
+
+      - name: Wait for WordPress to be ready
+        run: |
+          timeout 60 bash -c 'until curl -s http://localhost:8888 > /dev/null; do sleep 2; done'
+
+      - name: Activate plugins
+        run: |
+          npm run wp-env run cli -- -- wp plugin activate phpdoc-parser posts-to-posts
+
+      - name: Run sample import (subset of files)
+        run: |
+          # Import a small subset of WordPress core files for testing
+          npm run wp-env run cli -- -- wp parser create /var/www/html/wp-includes/functions.php --user=admin
+
+      - name: Verify import worked
+        run: |
+          # Check that functions were imported
+          FUNCTION_COUNT=$(npm run wp-env run cli -- -- wp post list --post_type=wp-parser-function --format=count | tail -1)
+          echo "Functions imported: $FUNCTION_COUNT"
+
+          if [ "$FUNCTION_COUNT" -lt 50 ]; then
+            echo "ERROR: Expected at least 50 functions, got $FUNCTION_COUNT"
+            exit 1
+          fi
+
+      - name: Verify taxonomy terms
+        run: |
+          # Check that taxonomy terms are properly assigned
+          FILE_TERMS=$(npm run wp-env run cli -- -- wp term list wp-parser-source-file --format=count | tail -1)
+          echo "File taxonomy terms: $FILE_TERMS"
+
+          if [ "$FILE_TERMS" -eq 0 ]; then
+            echo "ERROR: No file taxonomy terms found"
+            exit 1
+          fi
+
+      - name: Test parser command with error detection
+        run: |
+          # Run parser and capture both stdout and stderr
+          if ! npm run wp-env run cli -- -- wp parser create /var/www/html/wp-includes/class-wp.php --user=admin 2>&1 | tee import_output.log; then
+            echo "ERROR: Parser command failed"
+            exit 1
+          fi
+
+          # Check for PHP warnings or errors in output
+          if grep -i "warning\|error\|fatal" import_output.log | grep -v "WP_CLI"; then
+            echo "ERROR: PHP warnings or errors detected in parser output"
+            cat import_output.log
+            exit 1
+          fi

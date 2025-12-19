@@ -1,3 +1,5 @@
 vendor
 coverage
 node_modules
+.phpunit.result.cache
+composer.lock

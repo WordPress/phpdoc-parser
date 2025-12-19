@@ -1,5 +1,9 @@
 {
-  "phpVersion": "7.4",
+  "phpVersion": "8.3",
+  "config": {
+    "WP_DEBUG": false,
+    "WP_DEBUG_DISPLAY": false
+  },
   "plugins": [
     ".",
     "https://downloads.wordpress.org/plugin/posts-to-posts.latest-stable.zip"

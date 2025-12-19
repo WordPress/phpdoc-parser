@@ -20,6 +20,12 @@ class Command extends WP_CLI_Command {
 	public function export( $args ) {
 		$directory   = realpath( $args[0] );
 		$output_file = empty( $args[1] ) ? 'phpdoc.json' : $args[1];
+
+		if ( empty( $directory ) ) {
+			WP_CLI::error( sprintf( "Can't read %s. Does the file exist?", $args[0] ) );
+			exit;
+		}
+
 		$json        = $this->_get_phpdoc_data( $directory );
 		$result      = file_put_contents( $output_file, $json );
 		WP_CLI::line();

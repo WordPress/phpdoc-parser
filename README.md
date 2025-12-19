@@ -7,26 +7,29 @@ We are currently looking for contributors to help us complete the work on the pa
 There is a guide to developing for developer.wordpress.org in the [WordPress documentation handbook](https://make.wordpress.org/docs/handbook/projects/devhub/)
 
 ## Requirements
-* PHP 5.4+
-* [Composer](https://getcomposer.org/)
-* [WP CLI](https://wp-cli.org/)
+
+* **PHP 8.1+**
+* **Node.js 20+** and **npm 9+** (for development environment)
+* **Docker** (for wp-env testing environment)
+* **Composer**
+
+## Quick Start
 
 Clone the repository into your WordPress plugins directory:
 
 ```bash
 git clone https://github.com/WordPress/phpdoc-parser.git
+cd phpdoc-parser
 ```
 
-After that install the dependencies using composer in the parser directory:
+After that install the dependencies:
 
 ```bash
-composer install
+npm install
+npm run setup
 ```
 
 ## Running
-Activate the plugin first:
-
-    wp plugin activate phpdoc-parser
 
 In your site's directory:
 

@@ -303,7 +303,7 @@ class Importer implements LoggerAwareInterface {
 			if ( '_deprecated_file' === $first_function['name'] ) {
 
 				// Set the deprecated flag to the version number
-				$deprecated_file = $first_function['deprecation_version'];
+				$deprecated_file = $first_function['deprecation_version'] ?? '';
 			}
 		}
 
@@ -431,10 +431,10 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		// Set class-specific meta
-		update_post_meta( $class_id, '_wp-parser_final', (string) $data['final'] );
-		update_post_meta( $class_id, '_wp-parser_abstract', (string) $data['abstract'] );
-		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] );
-		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] );
+		update_post_meta( $class_id, '_wp-parser_final', (string) ( $data['final'] ?? false ) );
+		update_post_meta( $class_id, '_wp-parser_abstract', (string) ( $data['abstract'] ?? false ) );
+		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] ?? '' );
+		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] ?? array() );
 		update_post_meta( $class_id, '_wp-parser_properties', $data['properties'] );
 
 		// Now add the methods
@@ -758,7 +758,7 @@ class Importer implements LoggerAwareInterface {
 		}
 
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) ( $data['end_line'] ?? $data['line'] ) );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_last_parsed_wp_version', $this->version );
 
