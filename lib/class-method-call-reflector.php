@@ -39,7 +39,7 @@ class Method_Call_Reflector extends BaseReflector {
 			$caller = '\\' . $caller->toString();
 		} elseif ( $caller instanceof \PHPParser_Node_Name ) {
 			$caller = $caller->toString();
-		} else {
+		} elseif ( $caller instanceof \PhpParser\Node\Stmt\Class_ && $caller->isAnonymous() ) {
 			$caller = '(anonymous class)';
 		}
 
@@ -54,7 +54,7 @@ class Method_Call_Reflector extends BaseReflector {
 		}
 
 		$class_mapping = $this->_getClassMapping();
-		if ( array_key_exists( (string) $caller, $class_mapping ) ) {
+		if ( array_key_exists( $caller, $class_mapping ) ) {
 			$caller = $class_mapping[ $caller ];
 		}
 
@@ -148,7 +148,7 @@ class Method_Call_Reflector extends BaseReflector {
 			case 'self':
 				$namespace = (string) $this->called_in_class->getNamespace();
 				$namespace = ( 'global' !== $namespace ) ? $namespace . '\\' : '';
-				$class = '\\' . $namespace . $this->called_in_class->getShortName();
+				$class = '\\' . $namespace . ( $this->called_in_class->getNode()->isAnonymous() ? '(anonymous)' : $this->called_in_class->getShortName() );
 				break;
 			case 'parent':
 				$class = '\\' . $this->called_in_class->getNode()->extends->toString();
