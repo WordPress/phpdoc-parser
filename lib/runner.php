@@ -48,6 +48,7 @@ function parse_files( $files, $root ) {
 	$output = array();
 
 	foreach ( $files as $filename ) {
+		echo "\n\e[90mWorking on '\e[34m{$filename}\e[90m'\e[m\n";
 		$file = new File_Reflector( $filename );
 
 		$path = ltrim( substr( $filename, strlen( $root ) ), DIRECTORY_SEPARATOR );
@@ -110,6 +111,7 @@ function parse_files( $files, $root ) {
 		}
 
 		foreach ( $file->getClasses() as $class ) {
+			try { $class->getShortName(); } catch ( \Throwable $e ) { continue; }
 			$class_data = array(
 				'name'       => $class->getShortName(),
 				'namespace'  => $class->getNamespace(),

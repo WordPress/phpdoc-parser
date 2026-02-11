@@ -39,6 +39,8 @@ class Method_Call_Reflector extends BaseReflector {
 			$caller = '\\' . $caller->toString();
 		} elseif ( $caller instanceof \PHPParser_Node_Name ) {
 			$caller = $caller->toString();
+		} else {
+			$caller = '(anonymous class)';
 		}
 
 		$caller = $this->_resolveName( $caller );
@@ -52,7 +54,7 @@ class Method_Call_Reflector extends BaseReflector {
 		}
 
 		$class_mapping = $this->_getClassMapping();
-		if ( array_key_exists( $caller, $class_mapping ) ) {
+		if ( array_key_exists( (string) $caller, $class_mapping ) ) {
 			$caller = $class_mapping[ $caller ];
 		}
 
