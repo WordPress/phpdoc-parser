@@ -19,17 +19,26 @@
 	"support"    : {
 		"issues": "https://github.com/WordPress/phpdoc-parser/issues"
 	},
+	"repositories": [
+		{
+			"type": "path",
+			"url": "/Users/dmsnell/code/os/Reflection",
+			"options": {
+				"symlink": true
+			}
+		}
+	],
 	"require"    : {
-		"php"                      : ">=5.4",
+		"php"                      : ">=7.4",
 		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection" : "~3.0",
+		"phpdocumentor/reflection" : "*",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
 		"psr/log"                  : "~1.0"
 	},
 	"require-dev" : {
-		"phpunit/phpunit": "^7",
+		"phpunit/phpunit": "^9",
 		"spatie/phpunit-watcher": "^1.23",
 		"yoast/phpunit-polyfills": "^1.0"
 	},
