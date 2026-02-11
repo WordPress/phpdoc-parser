@@ -25,24 +25,24 @@ class Function_Call_Reflector extends BaseReflector {
 
 		$shortName = $this->getShortName();
 
-		if ( is_a( $shortName, 'PHPParser_Node_Name_FullyQualified' ) ) {
+		if ( is_a( $shortName, 'PHPParser\Node\Name\FullyQualified' ) ) {
 			return '\\' . (string) $shortName;
 		}
 
-		if ( is_a( $shortName, 'PHPParser_Node_Name' ) ) {
+		if ( is_a( $shortName, 'PHPParser\Node\Name' ) ) {
 			return (string) $shortName;
 		}
 
-		/** @var \PHPParser_Node_Expr_ArrayDimFetch $shortName */
-		if ( is_a( $shortName, 'PHPParser_Node_Expr_ArrayDimFetch' ) ) {
+		/** @var \PHPParser\Node\Expr\ArrayDimFetch $shortName */
+		if ( is_a( $shortName, 'PHPParser\Node\Expr\ArrayDimFetch' ) ) {
 			$var = $shortName->var->name;
 			$dim = $shortName->dim->name->parts[0];
 
 			return "\${$var}[{$dim}]";
 		}
 
-		/** @var \PHPParser_Node_Expr_Variable $shortName */
-		if ( is_a( $shortName, 'PHPParser_Node_Expr_Variable' ) ) {
+		/** @var \PHPParser\Node\Expr\Variable $shortName */
+		if ( is_a( $shortName, 'PHPParser\Node\Expr\Variable' ) ) {
 			return $shortName->name;
 		}
 
