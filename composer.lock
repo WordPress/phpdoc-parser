@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "38bcd31469f6c7f9c6e1b2ce9dac8468",
+    "content-hash": "d9df235d3f89050aff5fa4e49f645452",
     "packages": [
         {
             "name": "composer/installers",
@@ -264,11 +264,17 @@
         },
         {
             "name": "phpdocumentor/reflection",
-            "version": "3.0.1",
+            "version": "dev-fix/update-parser",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dmsnell/Reflection.git",
+                "reference": "7c9a1c104cb342f3ee42e69634ee10290b0a6c86"
+            },
             "dist": {
-                "type": "path",
-                "url": "/Users/dmsnell/code/os/Reflection",
-                "reference": "793bfd92d9a0fc96ae9608fb3e947c3f59fb3a0d"
+                "type": "zip",
+                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/7c9a1c104cb342f3ee42e69634ee10290b0a6c86",
+                "reference": "7c9a1c104cb342f3ee42e69634ee10290b0a6c86",
+                "shasum": ""
             },
             "require": {
                 "nikic/php-parser": "^3.0",
@@ -284,7 +290,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0.x-dev"
+                    "dev-master": "1.0.x-dev",
+                    "dev-wp": "v3.0.2-dmsnell"
                 }
             },
             "autoload": {
@@ -307,10 +314,10 @@
                 "reflection",
                 "static analysis"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": false
-            }
+            "support": {
+                "source": "https://github.com/dmsnell/Reflection/tree/v3.0.2-dmsnell"
+            },
+            "time": "2026-02-12T17:36:58+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
@@ -502,6 +509,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "phpdocumentor/reflection": 20,
         "scribu/lib-posts-to-posts": 20,
         "scribu/scb-framework": 20
     },
