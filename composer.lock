@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "28d761e19af05657567346679fe7f6d7",
+    "content-hash": "0efbff7966e4b95531cc7b76abe48b03",
     "packages": [
         {
             "name": "composer/installers",
@@ -264,17 +264,11 @@
         },
         {
             "name": "phpdocumentor/reflection",
-            "version": "dev-fix/update-parser",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dmsnell/Reflection.git",
-                "reference": "7c9a1c104cb342f3ee42e69634ee10290b0a6c86"
-            },
+            "version": "dev-master",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/7c9a1c104cb342f3ee42e69634ee10290b0a6c86",
-                "reference": "7c9a1c104cb342f3ee42e69634ee10290b0a6c86",
-                "shasum": ""
+                "type": "path",
+                "url": "./vendor-packages/phpdocumentor-reflection",
+                "reference": "8afce995548887021832810cf966f131eab3501e"
             },
             "require": {
                 "nikic/php-parser": "^3.0",
@@ -314,10 +308,9 @@
                 "reflection",
                 "static analysis"
             ],
-            "support": {
-                "source": "https://github.com/dmsnell/Reflection/tree/v3.0.2-dmsnell"
-            },
-            "time": "2026-02-12T17:36:58+00:00"
+            "transport-options": {
+                "relative": true
+            }
         },
         {
             "name": "phpdocumentor/reflection-docblock",

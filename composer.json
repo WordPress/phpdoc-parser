@@ -21,14 +21,14 @@
 	},
 	"repositories": [
 		{
-			"type": "github",
-			"url": "https://github.com/dmsnell/Reflection"
+			"type": "path",
+			"url": "./vendor-packages/phpdocumentor-reflection"
 		}
 	],
 	"require"    : {
 		"php"                      : ">=7.4",
 		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection" : "dev-fix/update-parser",
+		"phpdocumentor/reflection" : "dev-master",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
