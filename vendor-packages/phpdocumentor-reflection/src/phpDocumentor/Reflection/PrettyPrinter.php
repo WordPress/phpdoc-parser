@@ -27,7 +27,7 @@ use PhpParser\Node\Scalar\String_;
  * @license http://www.opensource.org/licenses/mit-license.php MIT
  * @link    http://phpdoc.org
  */
-class PrettyPrinter extends \PHPParser\PrettyPrinter\Standard
+class PrettyPrinter extends \PhpParser\PrettyPrinter\Standard
 {
     /**
      * Converts the string into it's original representation without converting
