@@ -1,5 +1,6 @@
 <?php
 
+/*
 $global_error = false;
 set_error_handler( function ( $errno, $errstr, $errfile, $errline ) use ( &$global_error ) {
 	$global_error = true;
@@ -17,6 +18,7 @@ set_error_handler( function ( $errno, $errstr, $errfile, $errline ) use ( &$glob
 
 	return true;
 }, E_ALL );
+*/
 
 require __DIR__ . '/vendor/autoload.php';
 
