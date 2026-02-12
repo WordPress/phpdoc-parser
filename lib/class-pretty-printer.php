@@ -2,17 +2,16 @@
 
 namespace WP_Parser;
 
-use PHPParser\Node\Arg;
-use PHPParser\PrettyPrinter\Standard;
+use PhpParser\Node\Arg;
 
 /**
  * Extends default printer for arguments.
  */
-class Pretty_Printer extends Standard {
+class Pretty_Printer extends \PhpParser\PrettyPrinter\Standard {
 	/**
 	 * Pretty prints an argument.
 	 *
-	 * @param PHPParser\Node\Arg $node Expression argument
+	 * @param PhpParser\Node\Arg $node Expression argument
 	 *
 	 * @return string Pretty printed argument
 	 */
