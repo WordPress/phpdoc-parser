@@ -21,17 +21,14 @@
 	},
 	"repositories": [
 		{
-			"type": "path",
-			"url": "/Users/dmsnell/code/os/Reflection",
-			"options": {
-				"symlink": true
-			}
+			"type": "vcs",
+			"url": "https://github.com/dmsnell/Reflection"
 		}
 	],
 	"require"    : {
 		"php"                      : ">=7.4",
 		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection" : "*",
+		"dmsnell/reflection"       : "dev-wp",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",
