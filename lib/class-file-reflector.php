@@ -197,8 +197,10 @@ class File_Reflector extends FileReflector {
 	 * @return bool
 	 */
 	protected function isFilter( \PhpParser\Node $node ) {
-		// Ignore variable functions
-		if ( 'Name' !== $node->name->getType() ) {
+		if (
+			'Name' !== $node->name->getType() &&
+			'Name_FullyQualified' !== $node->name->getType()
+		) {
 			return false;
 		}
 
