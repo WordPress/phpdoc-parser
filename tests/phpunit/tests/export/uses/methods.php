@@ -95,7 +95,7 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'call_method',
 				'line'     => 10,
 				'end_line' => 10,
-				'class'    => 'get_class()',
+				'class'    => '\get_class()',
 				'static'   => false,
 			)
 		);

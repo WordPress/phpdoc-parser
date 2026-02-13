@@ -19,7 +19,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesFunction(
 			'test'
 			, array(
-				'name'     => 'a_function',
+				'name'     => '\a_function',
 				'line'     => 5,
 				'end_line' => 5,
 			)
@@ -28,7 +28,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesFunction(
 			'test'
 			, array(
-				'name'     => 'sub_test',
+				'name'     => '\sub_test',
 				'line'     => 14,
 				'end_line' => 14,
 			)
@@ -74,7 +74,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesFunction(
 			'sub_test'
 			, array(
-				'name'     => 'b_function',
+				'name'     => '\b_function',
 				'line'     => 9,
 				'end_line' => 9,
 			)
@@ -141,7 +141,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 			'My_Class'
 			, 'a_method'
 			, array(
-				'name'     => 'do_things',
+				'name'     => '\do_things',
 				'line'     => 32,
 				'end_line' => 32,
 			)
@@ -178,7 +178,7 @@ class Export_Nested_Function_Use extends Export_UnitTestCase {
 		$this->assertFunctionUsesFunction(
 			'sub_method_test'
 			, array(
-				'name'     => 'b_function',
+				'name'     => '\b_function',
 				'line'     => 27,
 				'end_line' => 27,
 			)
