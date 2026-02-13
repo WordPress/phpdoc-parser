@@ -39,6 +39,10 @@ class Method_Call_Reflector extends BaseReflector {
 			$caller = '\\' . $caller->toString();
 		} elseif ( $caller instanceof \PhpParser\Node\Name ) {
 			$caller = $caller->toString();
+		} elseif ( $caller instanceof \PhpParser\Node\Stmt\Class_ ) {
+			$caller = $caller->isAnonymous()
+				? 'class@anonymous'
+				: $caller->name;
 		}
 
 		$caller = $this->_resolveName( $caller );
@@ -49,10 +53,6 @@ class Method_Call_Reflector extends BaseReflector {
 			// Add parentheses to signify this is a function call
 			/** @var \PhpParser\Node\Expr\FuncCall $caller */
 			$caller = implode( '\\', $caller->name->parts ) . '()';
-		}
-
-		if ( is_a( $caller, 'PhpParser\Node\Stmt\Class_' ) && $caller->isAnonymous() ) {
-			$caller = 'class@anonymous';
 		}
 
 		$class_mapping = $this->_getClassMapping();
@@ -138,12 +138,11 @@ class Method_Call_Reflector extends BaseReflector {
 	 *
 	 * @return string The resolved class name.
 	 */
-	protected function _resolveName( $class ) {
+	protected function _resolveName( string $class ): string {
 
 		if ( ! $this->called_in_class ) {
 			return $class;
 		}
-
 
 		switch ( $class ) {
 			case '$this':
