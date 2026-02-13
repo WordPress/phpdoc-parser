@@ -51,6 +51,10 @@ class Method_Call_Reflector extends BaseReflector {
 			$caller = implode( '\\', $caller->name->parts ) . '()';
 		}
 
+		if ( is_a( $caller, 'PhpParser\Node\Stmt\Class_' ) && $caller->isAnonymous() ) {
+			$caller = 'class@anonymous';
+		}
+
 		$class_mapping = $this->_getClassMapping();
 		if ( array_key_exists( $caller, $class_mapping ) ) {
 			$caller = $class_mapping[ $caller ];
