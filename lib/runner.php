@@ -130,7 +130,7 @@ function parse_files( $files, $root ) {
 
 			$output[] = $out;
 		}
-	} catch ( \Exception $e ) {
+	} catch ( \Exception | \Error $e ) {
 		error_log( \sprintf( 'Error processing file [%s]: %s', $filename, $e->getMessage() ) );
 		throw $e;
 	}
