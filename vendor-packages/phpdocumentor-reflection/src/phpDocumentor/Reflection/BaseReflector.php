@@ -167,9 +167,15 @@ abstract class BaseReflector extends ReflectionAbstract
      */
     public function getShortName()
     {
-        return isset($this->node->name)
-            ? $this->node->name
-            : '(anonymous)';
+		if ( isset($this->node->name) ) {
+            return $this->node->name;
+		}
+		if ( $this->node instanceof \Stringable ){
+            return (string) $this->node;
+		}
+		if ( $this->node instanceof \PhpParser\Node\Stmt\Class_ && $this->node->isAnonymous() ) {
+			return 'class@anonymous';
+		}
     }
 
     /**

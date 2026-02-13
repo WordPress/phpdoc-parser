@@ -12,12 +12,15 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 	 *
 	 * @return string[] Index 0 is the class name, 1 is the method name.
 	 */
-	public function getName() {
+	public function getName(): array {
 		$class = $this->node->class;
 		$prefix = ( is_a( $class, 'PhpParser\Node\Name\FullyQualified' ) ) ? '\\' : '';
 
 		if ( $class instanceof \PhpParser\Node\Stmt\Class_ && $class->isAnonymous() ) {
 			$class = 'class@anonymous';
+		} elseif ( $class instanceof \PhpParser\Node\Expr\Variable ) {
+			// Static calls like `$foo::bar()`
+			$class = "\${$class->name}";
 		} else {
 			$class = $prefix . $this->_resolveName( implode( '\\', $class->parts ) );
 		}
