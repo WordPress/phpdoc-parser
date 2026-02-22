@@ -138,12 +138,11 @@ class Method_Call_Reflector extends BaseReflector {
 	 *
 	 * @return string The resolved class name.
 	 */
-	protected function _resolveName( $class ) {
+	protected function _resolveName( string $class ): string {
 
 		if ( ! $this->called_in_class ) {
 			return $class;
 		}
-
 
 		switch ( $class ) {
 			case '$this':
