@@ -22,11 +22,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Setup Environment
         run: |
-          rm composer.lock
+          composer install --no-interaction --no-security-blocking
           npm run setup
 
       - name: Test

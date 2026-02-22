@@ -7,8 +7,8 @@
     "test": "npm-run-all test:phpunit",
     "setup": "npm-run-all start composer:setup",
     "start": "wp-env start",
-    "composer": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer",
-    "composer:setup": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer install",
+    "composer": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer --no-interaction --no-security-blocking",
+    "composer:setup": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress composer install --no-interaction --no-security-blocking",
     "test:phpunit:setup": "npm-run-all start composer:setup",
     "test:phpunit": "wp-env run --env-cwd='wp-content/plugins/phpdoc-parser' tests-wordpress vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
   },
