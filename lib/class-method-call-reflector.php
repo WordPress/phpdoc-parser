@@ -39,6 +39,10 @@ class Method_Call_Reflector extends BaseReflector {
 			$caller = '\\' . $caller->toString();
 		} elseif ( $caller instanceof \PhpParser\Node\Name ) {
 			$caller = $caller->toString();
+		} elseif ( $caller instanceof \PhpParser\Node\Stmt\Class_ ) {
+			$caller = $caller->isAnonymous()
+				? 'class@anonymous'
+				: $caller->name;
 		}
 
 		$caller = $this->_resolveName( $caller );
