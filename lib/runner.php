@@ -130,6 +130,32 @@ function parse_files( $files, $root ) {
 		$output[] = $out;
 	}
 
+	/*
+	 * nikic/php-parser in version 3 started adding a namespace prefix
+	 * at the start of global names, but this is different than how the
+	 * documentation was previously generated. this removes those prefixes
+	 * by removing a leading reverse solidus (\) when no other reverse
+	 * solidus appears before the end of a sequence of PHP identifier
+	 * characters.
+	 */
+	array_walk_recursive(
+		$output,
+		static function( &$value ) {
+			if ( is_string( $value ) ) {
+				// "\wp_kses()" -> "wp_kses()"
+				$without_global_namespace = preg_replace(
+					'~(^|\p{Z})\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
+					'$1$2$3',
+					$value,
+				);
+
+				if ( $value !== $without_global_namespace ) {
+					$value = $without_global_namespace;
+				}
+			}
+		}
+	);
+
 	return $output;
 }
 
