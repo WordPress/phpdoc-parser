@@ -73,7 +73,7 @@ class Hook_Reflector extends BaseReflector {
 			case 'apply_filters_ref_array':
 				$type = 'filter_reference';
 				break;
-			case 'apply_filters_deprecated';
+			case 'apply_filters_deprecated':
 				$type = 'filter_deprecated';
 				break;
 		}
