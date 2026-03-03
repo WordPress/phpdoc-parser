@@ -48,7 +48,7 @@ class Function_Call_Reflector extends BaseReflector {
 
 		/** @var \PhpParser\Node\Expr\PropertyFetch $shortName */
 		if ( is_a( $shortName, 'PhpParser\Node\Expr\PropertyFetch' ) ) {
-			return $shortName->var->name;
+			return "(\${$shortName->var->name}->{$shortName->name})";
 		}
 
 		return (string) $shortName;
