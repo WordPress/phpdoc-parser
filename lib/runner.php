@@ -35,8 +35,6 @@ function get_wp_files( $directory ) {
 		);
 	}
 
-	sort( $files );
-
 	return $files;
 }
 
