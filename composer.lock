@@ -215,24 +215,27 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v3.1.5",
+            "version": "v5.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "bb87e28e7d7b8d9a7fda231d37457c9210faf6ce"
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/bb87e28e7d7b8d9a7fda231d37457c9210faf6ce",
-                "reference": "bb87e28e7d7b8d9a7fda231d37457c9210faf6ce",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82",
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
                 "shasum": ""
             },
             "require": {
+                "ext-ctype": "*",
+                "ext-json": "*",
                 "ext-tokenizer": "*",
-                "php": ">=5.5"
+                "php": ">=7.4"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4.0|~5.0"
+                "ircmaxell/php-yacc": "^0.0.7",
+                "phpunit/phpunit": "^9.0"
             },
             "bin": [
                 "bin/php-parse"
@@ -240,7 +243,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0-dev"
+                    "dev-master": "5.x-dev"
                 }
             },
             "autoload": {
@@ -264,9 +267,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v3.1.5"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.7.0"
             },
-            "time": "2018-02-28T20:30:58+00:00"
+            "time": "2025-12-06T11:56:16+00:00"
         },
         {
             "name": "phpdocumentor/reflection",
@@ -274,17 +277,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dmsnell/Reflection.git",
-                "reference": "49d4a9440aa730ca27dadf53fe783c6a062f3cc3"
+                "reference": "7eca36974584dd185f0d826791faafbb5ef049fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/49d4a9440aa730ca27dadf53fe783c6a062f3cc3",
-                "reference": "49d4a9440aa730ca27dadf53fe783c6a062f3cc3",
+                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/7eca36974584dd185f0d826791faafbb5ef049fb",
+                "reference": "7eca36974584dd185f0d826791faafbb5ef049fb",
                 "shasum": ""
             },
             "require": {
-                "nikic/php-parser": "^3.0",
-                "php": ">=5.3.3",
+                "nikic/php-parser": "^5.7",
+                "php": ">=7.4",
                 "phpdocumentor/reflection-docblock": "~2.0",
                 "psr/log": "~1.0"
             },
@@ -319,10 +322,7 @@
                 "reflection",
                 "static analysis"
             ],
-            "support": {
-                "source": "https://github.com/dmsnell/Reflection/tree/fix/update-parser"
-            },
-            "time": "2026-02-18T23:32:50+00:00"
+            "time": "2026-05-13T09:27:56+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",

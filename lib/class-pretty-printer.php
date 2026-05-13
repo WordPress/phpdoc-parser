@@ -14,11 +14,21 @@ class Pretty_Printer extends \PhpParser\PrettyPrinter\Standard {
 	 * @return string Pretty printed argument
 	 */
 	public function prettyPrintArg( \PhpParser\Node\Arg $node ) {
-		$printed = $this->p( $node );
+		$printed = '';
 
-		if ( property_exists( $this, 'noIndentToken' ) ) {
-			return str_replace( "\n" . $this->noIndentToken, "\n", $printed );
+		if ( null !== $node->name ) {
+			$printed .= $node->name->toString() . ': ';
 		}
+
+		if ( $node->byRef ) {
+			$printed .= '&';
+		}
+
+		if ( $node->unpack ) {
+			$printed .= '...';
+		}
+
+		$printed .= $this->prettyPrintExpr( $node->value );
 
 		return $printed;
 	}
