@@ -23,12 +23,18 @@
 		{
 			"type": "vcs",
 			"url": "https://github.com/dmsnell/Reflection.git"
+		},
+		{
+			"type": "vcs",
+			"url": "git@github.com:dmsnell/ReflectionDocBlock.git",
+			"no-api": true
 		}
 	],
 	"require"    : {
 		"php"                      : ">=7.4",
 		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection" : "dev-fix/update-parser",
+		"phpdocumentor/reflection"          : "dev-fix/update-parser",
+		"phpdocumentor/reflection-docblock" : "dev-fix/php85-nullable-types as 2.0.5",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
 		"scribu/scb-framework"     : "dev-master@dev",

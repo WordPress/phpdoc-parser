@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0137ddf468fd576b3910c9210c682946",
+    "content-hash": "69f292856e9ab803391c7c86c3519794",
     "packages": [
         {
             "name": "composer/installers",
@@ -277,18 +277,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dmsnell/Reflection.git",
-                "reference": "58ea3d5e446e95a75c1b61a45a8364fc2372d1b3"
+                "reference": "8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/58ea3d5e446e95a75c1b61a45a8364fc2372d1b3",
-                "reference": "58ea3d5e446e95a75c1b61a45a8364fc2372d1b3",
+                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc",
+                "reference": "8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc",
                 "shasum": ""
             },
             "require": {
                 "nikic/php-parser": "^5.7",
                 "php": ">=7.4",
-                "phpdocumentor/reflection-docblock": "~2.0",
+                "phpdocumentor/reflection-docblock": "dev-fix/php85-nullable-types as 2.0.5",
                 "psr/log": "~1.0"
             },
             "require-dev": {
@@ -322,24 +322,27 @@
                 "reflection",
                 "static analysis"
             ],
-            "time": "2026-05-13T17:22:03+00:00"
+            "support": {
+                "source": "https://github.com/dmsnell/Reflection/tree/fix/update-parser"
+            },
+            "time": "2026-05-13T17:49:17+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "2.0.5",
+            "version": "dev-fix/php85-nullable-types",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "e6a969a640b00d8daa3c66518b0405fb41ae0c4b"
+                "url": "git@github.com:dmsnell/ReflectionDocBlock.git",
+                "reference": "66542f768ac6b7be46f2f862f69d34cf13712ef9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/e6a969a640b00d8daa3c66518b0405fb41ae0c4b",
-                "reference": "e6a969a640b00d8daa3c66518b0405fb41ae0c4b",
+                "url": "https://api.github.com/repos/dmsnell/ReflectionDocBlock/zipball/66542f768ac6b7be46f2f862f69d34cf13712ef9",
+                "reference": "66542f768ac6b7be46f2f862f69d34cf13712ef9",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.3"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "phpunit/phpunit": "~4.0"
@@ -351,6 +354,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
+                    "dev-fix/php85-nullable-types": "2.0.x-dev",
                     "dev-master": "2.0.x-dev"
                 }
             },
@@ -361,7 +365,6 @@
                     ]
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -371,11 +374,7 @@
                     "email": "mike.vanriel@naenius.com"
                 }
             ],
-            "support": {
-                "issues": "https://github.com/phpDocumentor/ReflectionDocBlock/issues",
-                "source": "https://github.com/phpDocumentor/ReflectionDocBlock/tree/release/2.x"
-            },
-            "time": "2016-01-25T08:17:30+00:00"
+            "time": "2026-05-13T17:48:39+00:00"
         },
         {
             "name": "psr/log",
@@ -3730,10 +3729,18 @@
             "time": "2020-06-10T14:58:36+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "phpdocumentor/reflection-docblock",
+            "version": "dev-fix/php85-nullable-types",
+            "alias": "2.0.5",
+            "alias_normalized": "2.0.5.0"
+        }
+    ],
     "minimum-stability": "stable",
     "stability-flags": {
         "phpdocumentor/reflection": 20,
+        "phpdocumentor/reflection-docblock": 20,
         "scribu/lib-posts-to-posts": 20,
         "scribu/scb-framework": 20
     },
