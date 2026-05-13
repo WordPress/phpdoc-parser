@@ -42,7 +42,7 @@ class Method_Call_Reflector extends BaseReflector {
 		} elseif ( $caller instanceof \PhpParser\Node\Stmt\Class_ ) {
 			$caller = $caller->isAnonymous()
 				? 'class@anonymous'
-				: $caller->name;
+				: $this->nameToString( $caller->name );
 		}
 
 		$caller = $this->_resolveName( $caller );
@@ -52,7 +52,7 @@ class Method_Call_Reflector extends BaseReflector {
 
 			// Add parentheses to signify this is a function call
 			/** @var \PhpParser\Node\Expr\FuncCall $caller */
-			$caller = implode( '\\', $caller->name->parts ) . '()';
+			$caller = $this->nameToString( $caller->name ) . '()';
 		}
 
 		$class_mapping = $this->_getClassMapping();

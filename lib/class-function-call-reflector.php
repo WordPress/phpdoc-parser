@@ -20,7 +20,7 @@ class Function_Call_Reflector extends BaseReflector {
 	 */
 	public function getName() {
 		if ( isset( $this->node->namespacedName ) ) {
-			return '\\' . implode( '\\', $this->node->namespacedName->parts );
+			return '\\' . $this->nameToString( $this->node->namespacedName );
 		}
 
 		$shortName = $this->getShortName();
@@ -35,20 +35,26 @@ class Function_Call_Reflector extends BaseReflector {
 
 		/** @var \PhpParser\Node\Expr\ArrayDimFetch $shortName */
 		if ( is_a( $shortName, 'PhpParser\Node\Expr\ArrayDimFetch' ) ) {
-			$var = $shortName->var->name;
-			$dim = $shortName->dim->name->parts[0];
+			$var = $this->nameToString( $shortName->var->name );
+			$dim = isset( $shortName->dim->name )
+				? $this->nameToString( $shortName->dim->name )
+				: ( isset( $shortName->dim->value ) ? $shortName->dim->value : (string) $shortName->dim );
 
 			return "\${$var}[{$dim}]";
 		}
 
 		/** @var \PhpParser\Node\Expr\Variable $shortName */
 		if ( is_a( $shortName, 'PhpParser\Node\Expr\Variable' ) ) {
-			return $shortName->name;
+			return $this->nameToString( $shortName->name );
 		}
 
 		/** @var \PhpParser\Node\Expr\PropertyFetch $shortName */
 		if ( is_a( $shortName, 'PhpParser\Node\Expr\PropertyFetch' ) ) {
-			return "(\${$shortName->var->name}->{$shortName->name})";
+			return sprintf(
+				'($%s->%s)',
+				$this->nameToString( $shortName->var->name ),
+				$this->nameToString( $shortName->name )
+			);
 		}
 
 		return (string) $shortName;

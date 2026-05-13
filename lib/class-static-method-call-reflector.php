@@ -20,9 +20,9 @@ class Static_Method_Call_Reflector extends Method_Call_Reflector {
 			$class = 'class@anonymous';
 		} elseif ( $class instanceof \PhpParser\Node\Expr\Variable ) {
 			// Static calls like `$foo::bar()`
-			$class = "\${$class->name}";
+			$class = '$' . $this->nameToString( $class->name );
 		} else {
-			$class = $prefix . $this->_resolveName( implode( '\\', $class->parts ) );
+			$class = $prefix . $this->_resolveName( $this->nameToString( $class ) );
 		}
 
 		return array( $class, $this->getShortName() );

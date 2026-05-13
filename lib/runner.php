@@ -429,8 +429,13 @@ function export_uses( array $uses ) {
 						|| '_deprecated_hook' === $name
 					) {
 						$arguments = $element->getNode()->args;
+						$version   = null;
 
-						$out[ $type ][0]['deprecation_version'] = $arguments[1]->value->value;
+						if ( isset( $arguments[1]->value->value ) && is_scalar( $arguments[1]->value->value ) ) {
+							$version = (string) $arguments[1]->value->value;
+						}
+
+						$out[ $type ][0]['deprecation_version'] = $version;
 					}
 
 					break;

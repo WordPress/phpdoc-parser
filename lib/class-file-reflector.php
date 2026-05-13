@@ -153,19 +153,20 @@ class File_Reflector extends FileReflector {
 				if ( ! empty( $this->method_uses_queue ) ) {
 					/** @var Reflection\ClassReflector\MethodReflector $method */
 					foreach ( $class->getMethods() as $method ) {
-						if ( isset( $this->method_uses_queue[ $method->getName() ] ) ) {
-							if ( isset( $this->method_uses_queue[ $method->getName() ]['methods'] ) ) {
+						$method_name = $method->getName();
+						if ( isset( $this->method_uses_queue[ $method_name ] ) ) {
+							if ( isset( $this->method_uses_queue[ $method_name ]['methods'] ) ) {
 								/*
 								 * For methods used in a class, set the class on the method call.
 								 * That allows us to later get the correct class name for $this, self, parent.
 								 */
-								foreach ( $this->method_uses_queue[ $method->getName() ]['methods'] as $method_call ) {
+								foreach ( $this->method_uses_queue[ $method_name ]['methods'] as $method_call ) {
 									/** @var Method_Call_Reflector $method_call */
 									$method_call->set_class( $class );
 								}
 							}
 
-							$method->uses = $this->method_uses_queue[ $method->getName() ];
+							$method->uses = $this->method_uses_queue[ $method_name ];
 						}
 					}
 				}
@@ -189,7 +190,7 @@ class File_Reflector extends FileReflector {
 				 * assign them to the method upon leaving the class (see above).
 				 */
 				if ( ! empty( $method->uses ) ) {
-					$this->method_uses_queue[ $method->name ] = $method->uses;
+					$this->method_uses_queue[ (string) $method->name ] = $method->uses;
 				}
 				break;
 		}
