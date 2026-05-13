@@ -277,12 +277,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dmsnell/Reflection.git",
-                "reference": "7eca36974584dd185f0d826791faafbb5ef049fb"
+                "reference": "58ea3d5e446e95a75c1b61a45a8364fc2372d1b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/7eca36974584dd185f0d826791faafbb5ef049fb",
-                "reference": "7eca36974584dd185f0d826791faafbb5ef049fb",
+                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/58ea3d5e446e95a75c1b61a45a8364fc2372d1b3",
+                "reference": "58ea3d5e446e95a75c1b61a45a8364fc2372d1b3",
                 "shasum": ""
             },
             "require": {
@@ -322,7 +322,7 @@
                 "reflection",
                 "static analysis"
             ],
-            "time": "2026-05-13T09:27:56+00:00"
+            "time": "2026-05-13T17:22:03+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
