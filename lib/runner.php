@@ -368,6 +368,14 @@ function export_methods( array $methods ) {
 			'doc'        => export_docblock( $method ),
 		);
 
+		$docblock = $method->getDocBlock();
+		if ( $docblock ) {
+			$code_snippets = export_docblock_code_snippets( $docblock->getLongDescription()->getContents() );
+			if ( ! empty( $code_snippets ) ) {
+				$method_data['doc']['code_snippets'] = $code_snippets;
+			}
+		}
+
 		if ( ! empty( $method->uses ) ) {
 			$method_data['uses'] = export_uses( $method->uses );
 
@@ -380,6 +388,164 @@ function export_methods( array $methods ) {
 	}
 
 	return $output;
+}
+
+/**
+ * Extract runnable PHP snippets from a DocBlock's raw long description.
+ *
+ * Backtick fences may be indented in DocBlocks or nested Markdown lists. The
+ * closing fence must use the same number of backticks as the opener so
+ * different-length fences can appear inside a fenced snippet. Blueprint fences
+ * before a PHP fence apply to that fence, while immediately following metadata
+ * fences apply to the preceding PHP fence.
+ *
+ * @param string $text
+ *
+ * @return array
+ */
+function export_docblock_code_snippets( $text ) {
+	$lines    = explode( "\n", preg_replace( "/\r\n?/", "\n", $text ) );
+	$fences   = array();
+	$snippets = array();
+
+	for ( $i = 0, $line_count = count( $lines ); $i < $line_count; $i++ ) {
+		if ( ! preg_match( '/^([ \t]*)(`{3,})([^`]*)$/', $lines[ $i ], $opening ) ) {
+			continue;
+		}
+
+		$indent     = $opening[1];
+		$fence      = $opening[2];
+		$language   = trim( $opening[3] );
+		$code_lines = array();
+
+		for ( $j = $i + 1; $j < $line_count; $j++ ) {
+			// Match the exact opening fence so different-length fences stay in the snippet.
+			if ( preg_match( '/^[ \t]*' . preg_quote( $fence, '/' ) . '[ \t]*$/', $lines[ $j ] ) ) {
+				$i = $j;
+				break;
+			}
+
+			if ( '' !== $indent && 0 === strpos( $lines[ $j ], $indent ) ) {
+				$code_lines[] = substr( $lines[ $j ], strlen( $indent ) );
+			} else {
+				$code_lines[] = $lines[ $j ];
+			}
+		}
+
+		if ( $j === $line_count ) {
+			break;
+		}
+
+		if ( preg_match( '/^\S+/', $language, $language_matches ) ) {
+			$language = $language_matches[0];
+		}
+
+		$fences[] = array(
+			'language' => strtolower( $language ),
+			'info'     => strtolower( trim( $opening[3] ) ),
+			'code'     => rtrim( implode( "\n", $code_lines ), "\n" ),
+		);
+	}
+
+	$pending_blueprint = null;
+	$consumed_fences   = array();
+	$fence_count       = count( $fences );
+
+	for ( $i = 0; $i < $fence_count; $i++ ) {
+		if ( isset( $consumed_fences[ $i ] ) ) {
+			continue;
+		}
+
+		if ( is_docblock_blueprint_fence( $fences[ $i ] ) ) {
+			$pending_blueprint = decode_docblock_blueprint( $fences[ $i ]['code'] );
+			continue;
+		}
+
+		if ( 'php' !== $fences[ $i ]['language'] ) {
+			$pending_blueprint = null;
+			continue;
+		}
+
+		$snippet = array(
+			'type'            => 'php-code-snippet',
+			'code'            => $fences[ $i ]['code'],
+			'expected_output' => '',
+		);
+		$has_expected_output = false;
+
+		if ( null !== $pending_blueprint ) {
+			$snippet['blueprint'] = $pending_blueprint;
+			$pending_blueprint    = null;
+		}
+
+		for ( $j = $i + 1; $j < $fence_count; $j++ ) {
+			if ( 'php' === $fences[ $j ]['language'] ) {
+				break;
+			}
+
+			if ( is_docblock_expected_output_fence( $fences[ $j ] ) ) {
+				if ( ! $has_expected_output ) {
+					$snippet['expected_output'] = $fences[ $j ]['code'];
+					$has_expected_output        = true;
+					$consumed_fences[ $j ]      = true;
+				}
+
+				break;
+			}
+
+			if ( is_docblock_blueprint_fence( $fences[ $j ] ) && ! array_key_exists( 'blueprint', $snippet ) ) {
+				$snippet['blueprint']  = decode_docblock_blueprint( $fences[ $j ]['code'] );
+				$consumed_fences[ $j ] = true;
+				continue;
+			}
+
+			break;
+		}
+
+		$snippets[] = $snippet;
+	}
+
+	return $snippets;
+}
+
+/**
+ * Checks whether a parsed DocBlock fence contains snippet expected output.
+ *
+ * @param array $fence
+ *
+ * @return bool
+ */
+function is_docblock_expected_output_fence( $fence ) {
+	return in_array( $fence['language'], array( 'expected-output', 'expected_output', 'output', 'text/expected-output' ), true );
+}
+
+/**
+ * Checks whether a parsed DocBlock fence contains a WordPress Playground Blueprint.
+ *
+ * @param array $fence
+ *
+ * @return bool
+ */
+function is_docblock_blueprint_fence( $fence ) {
+	return in_array( $fence['language'], array( 'blueprint', 'setup-blueprint' ), true )
+		|| ( 'json' === $fence['language'] && false !== strpos( ' ' . $fence['info'] . ' ', ' blueprint ' ) );
+}
+
+/**
+ * Decodes a Blueprint fence into the structure exported to JSON.
+ *
+ * @param string $blueprint
+ *
+ * @return array|string
+ */
+function decode_docblock_blueprint( $blueprint ) {
+	$decoded = json_decode( $blueprint, true );
+
+	if ( is_array( $decoded ) ) {
+		return $decoded;
+	}
+
+	return $blueprint;
 }
 
 /**
