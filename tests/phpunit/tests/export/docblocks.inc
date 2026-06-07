@@ -61,6 +61,38 @@ class Test_Class {
 	public function test_method( $var, $arr ) {
 		return $var;
 	}
+
+	/**
+	 * This is a method docblock with a code snippet.
+	 *
+	 * Use this example:
+	 *
+	 * ```blueprint
+	 * {
+	 *   "steps": [
+	 *     {
+	 *       "step": "writeFile",
+	 *       "path": "/wordpress/wp-content/mu-plugins/docs-fixture.php",
+	 *       "data": "<?php\nfunction docs_fixture_greeting() {\n\treturn 'Hello from a method';\n}\n"
+	 *     }
+	 *   ]
+	 * }
+	 * ```
+	 *
+	 * ```php
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_fixture_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from a method
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_code_snippet() {
+	}
 }
 
 /**
