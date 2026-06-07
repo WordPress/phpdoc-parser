@@ -58,9 +58,12 @@ function parse_files( $files, $root ) {
 
 			$file->process();
 
+			$file_doc = export_docblock( $file );
+			$file_setup_blueprints = $file_doc['setup_blueprints'] ?? array();
+
 			// TODO proper exporter
 			$out = array(
-				'file' => export_docblock( $file ),
+				'file' => $file_doc,
 				'path' => str_replace( DIRECTORY_SEPARATOR, '/', $file->getFilename() ),
 				'root' => $root,
 			);
@@ -97,7 +100,7 @@ function parse_files( $files, $root ) {
 					'line'      => $function->getLineNumber(),
 					'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 					'arguments' => export_arguments( $function->getArguments() ),
-					'doc'       => export_docblock( $function ),
+					'doc'       => export_docblock( $function, $file_setup_blueprints ),
 					'hooks'     => array(),
 				);
 
@@ -113,6 +116,9 @@ function parse_files( $files, $root ) {
 			}
 
 			foreach ( $file->getClasses() as $class ) {
+				$class_doc = export_docblock( $class, $file_setup_blueprints );
+				$class_setup_blueprints = array_merge( $file_setup_blueprints, $class_doc['setup_blueprints'] ?? array() );
+
 				$class_data = array(
 					'name'       => $class->getShortName(),
 					'namespace'  => $class->getNamespace(),
@@ -123,8 +129,8 @@ function parse_files( $files, $root ) {
 					'extends'    => $class->getParentClass(),
 					'implements' => $class->getInterfaces(),
 					'properties' => export_properties( $class->getProperties() ),
-					'methods'    => export_methods( $class->getMethods() ),
-					'doc'        => export_docblock( $class ),
+					'methods'    => export_methods( $class->getMethods(), $class_setup_blueprints ),
+					'doc'        => $class_doc,
 				);
 
 				$out['classes'][] = $class_data;

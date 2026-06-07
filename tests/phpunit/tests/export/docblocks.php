@@ -67,7 +67,20 @@ class Export_Docblocks extends Export_UnitTestCase {
 	public function test_file_docblocks() {
 
 		$this->assertFileHasDocs(
-			array( 'description' => 'This is the file-level docblock summary.' )
+			array(
+				'description' => 'This is the file-level docblock summary.',
+				'setup_blueprints' => array(
+					'file-greeting' => array(
+						'steps' => array(
+							array(
+								'step' => 'writeFile',
+								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
+								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
+							),
+						),
+					),
+				),
+			)
 		);
 	}
 
@@ -156,6 +169,78 @@ class Export_Docblocks extends Export_UnitTestCase {
 						),
 					),
 				),
+				'long_description' => '<p>Use this example:</p>',
+			)
+		);
+	}
+
+	/**
+	 * Test that reusable setup Blueprints are exported once and referenced by snippets.
+	 */
+	public function test_method_reused_setup_blueprint() {
+
+		$this->assertMethodHasDocs(
+			'Test_Class'
+			, 'test_method_with_reused_setup_blueprint'
+			, array(
+				'setup_blueprints' => array(
+					'shared-greeting' => array(
+						'steps' => array(
+							array(
+								'step' => 'writeFile',
+								'path' => '/wordpress/wp-content/mu-plugins/shared-greeting.php',
+								'data' => "<?php\nfunction docs_shared_greeting( \$name ) {\n\treturn \"Hello, \$name\";\n}\n",
+							),
+						),
+					),
+				),
+				'code_snippets' => array(
+					array(
+						'type' => 'php-code-snippet',
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_shared_greeting( 'first' );",
+						'expected_output' => 'Hello, first',
+						'blueprint' => 'shared-greeting',
+					),
+					array(
+						'type' => 'php-code-snippet',
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_shared_greeting( 'second' );",
+						'expected_output' => 'Hello, second',
+						'blueprint' => 'shared-greeting',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that methods can reference setup Blueprints from the file DocBlock.
+	 */
+	public function test_method_file_setup_blueprint() {
+
+		$this->assertMethodHasDocs(
+			'Test_Class'
+			, 'test_method_with_file_setup_blueprint'
+			, array(
+				'setup_blueprints' => array(
+					'file-greeting' => array(
+						'steps' => array(
+							array(
+								'step' => 'writeFile',
+								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
+								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
+							),
+						),
+					),
+				),
+				'code_snippets' => array(
+					array(
+						'type' => 'php-code-snippet',
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
+						'expected_output' => 'Hello from the file setup',
+						'blueprint' => 'file-greeting',
+					),
+				),
+				'long_description' => '',
 			)
 		);
 	}
@@ -330,7 +415,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that PHP snippets export the renderer fields even without metadata.
+	 * Test that PHP snippets can omit optional metadata.
 	 */
 	public function test_code_snippet_without_metadata() {
 
@@ -339,7 +424,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				array(
 					'type' => 'php-code-snippet',
 					'code' => "<?php\necho 'No metadata';",
-					'expected_output' => '',
 				),
 			),
 			\WP_Parser\export_docblock_code_snippets(
@@ -412,7 +496,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				array(
 					'type' => 'php-code-snippet',
 					'code' => "<?php\necho 'String blueprint';",
-					'expected_output' => '',
 					'blueprint' => 'not-json',
 				),
 			),
@@ -448,7 +531,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				array(
 					'type' => 'php-code-snippet',
 					'code' => "<?php\necho 'Second';",
-					'expected_output' => '',
 					'blueprint' => array(
 						'steps' => array(
 							array(
@@ -481,6 +563,108 @@ class Export_Docblocks extends Export_UnitTestCase {
 					)
 				)
 			)
+		);
+	}
+
+	/**
+	 * Test named setup Blueprint definitions and references.
+	 */
+	public function test_code_snippet_named_setup_blueprints() {
+
+		$setup_blueprints = array();
+		$snippets         = \WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```setup-blueprint shared',
+					'{"steps":[{"step":"writeFile","path":"/tmp/shared.php","data":"<?php echo \"shared\";"}]}',
+					'```',
+					'```json setupblueprint json-shared',
+					'{"steps":[{"step":"writeFile","path":"/tmp/json-shared.php","data":"<?php echo \"json shared\";"}]}',
+					'```',
+					'```blueprint',
+					'{"steps":[{"step":"writeFile","path":"/tmp/ignored-inline.php","data":"ignored"}]}',
+					'```',
+					'```php blueprint=shared',
+					'<?php',
+					'echo "first";',
+					'```',
+					'```expected-output',
+					'first',
+					'```',
+					'```php',
+					'<?php',
+					'echo "no leaked inline blueprint";',
+					'```',
+					'```expected-output',
+					'no leaked inline blueprint',
+					'```',
+					'```php setupblueprint=json-shared',
+					'<?php',
+					'echo "second";',
+					'```',
+					'```expected-output',
+					'second',
+					'```',
+					'```php setup-blueprint=shared',
+					'<?php',
+					'echo "third";',
+					'```',
+				)
+			),
+			$setup_blueprints
+		);
+
+		$this->assertEquals(
+			array(
+				'shared' => array(
+					'steps' => array(
+						array(
+							'step' => 'writeFile',
+							'path' => '/tmp/shared.php',
+							'data' => '<?php echo "shared";',
+						),
+					),
+				),
+				'json-shared' => array(
+					'steps' => array(
+						array(
+							'step' => 'writeFile',
+							'path' => '/tmp/json-shared.php',
+							'data' => '<?php echo "json shared";',
+						),
+					),
+				),
+			),
+			$setup_blueprints
+		);
+
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\necho \"first\";",
+					'expected_output' => 'first',
+					'blueprint' => 'shared',
+				),
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\necho \"no leaked inline blueprint\";",
+					'expected_output' => 'no leaked inline blueprint',
+				),
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\necho \"second\";",
+					'expected_output' => 'second',
+					'blueprint' => 'json-shared',
+				),
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\necho \"third\";",
+					'blueprint' => 'shared',
+				),
+			),
+			$snippets
 		);
 	}
 
