@@ -7,6 +7,18 @@
  * fact, this one does. It spans more than two full lines, continuing on to the
  * third line.
  *
+ * ```setupblueprint file-greeting
+ * {
+ *   "steps": [
+ *     {
+ *       "step": "writeFile",
+ *       "path": "/wordpress/wp-content/mu-plugins/file-greeting.php",
+ *       "data": "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n"
+ *     }
+ *   ]
+ * }
+ * ```
+ *
  * @since 1.5.0
  */
 
@@ -92,6 +104,64 @@ class Test_Class {
 	 * @since 6.9.0
 	 */
 	public function test_method_with_code_snippet() {
+	}
+
+	/**
+	 * This is a method docblock with a reused setup Blueprint.
+	 *
+	 * ```setupblueprint shared-greeting
+	 * {
+	 *   "steps": [
+	 *     {
+	 *       "step": "writeFile",
+	 *       "path": "/wordpress/wp-content/mu-plugins/shared-greeting.php",
+	 *       "data": "<?php\nfunction docs_shared_greeting( $name ) {\n\treturn \"Hello, $name\";\n}\n"
+	 *     }
+	 *   ]
+	 * }
+	 * ```
+	 *
+	 * ```php blueprint=shared-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_shared_greeting( 'first' );
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello, first
+	 * ```
+	 *
+	 * ```php setup-blueprint=shared-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_shared_greeting( 'second' );
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello, second
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_reused_setup_blueprint() {
+	}
+
+	/**
+	 * This is a method docblock with a file-level setup Blueprint.
+	 *
+	 * ```php blueprint=file-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_file_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from the file setup
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_file_setup_blueprint() {
 	}
 }
 
