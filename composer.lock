@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "69f292856e9ab803391c7c86c3519794",
+    "content-hash": "62e9a6370d3a091d1a104fa1706b2b2d",
     "packages": [
         {
             "name": "composer/installers",
@@ -273,22 +273,22 @@
         },
         {
             "name": "phpdocumentor/reflection",
-            "version": "dev-fix/update-parser",
+            "version": "3.0.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dmsnell/Reflection.git",
-                "reference": "8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc"
+                "reference": "5a70d28ca62c0fd1911c96e721494e8821313f7b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc",
-                "reference": "8ec058b8b96ddaebc0f21a12f9adc685b8a14cbc",
+                "url": "https://api.github.com/repos/dmsnell/Reflection/zipball/5a70d28ca62c0fd1911c96e721494e8821313f7b",
+                "reference": "5a70d28ca62c0fd1911c96e721494e8821313f7b",
                 "shasum": ""
             },
             "require": {
                 "nikic/php-parser": "^5.7",
                 "php": ">=7.4",
-                "phpdocumentor/reflection-docblock": "dev-fix/php85-nullable-types as 2.0.5",
+                "phpdocumentor/reflection-docblock": "~2.0",
                 "psr/log": "~1.0"
             },
             "require-dev": {
@@ -296,10 +296,11 @@
                 "mockery/mockery": "~0.8",
                 "phpunit/phpunit": "~4.0"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0.x-dev"
+                    "dev-master": "3.0.x-dev"
                 }
             },
             "autoload": {
@@ -322,23 +323,20 @@
                 "reflection",
                 "static analysis"
             ],
-            "support": {
-                "source": "https://github.com/dmsnell/Reflection/tree/fix/update-parser"
-            },
-            "time": "2026-05-13T17:49:17+00:00"
+            "time": "2026-06-13T19:59:53+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "dev-fix/php85-nullable-types",
+            "version": "dev-release/2.x",
             "source": {
                 "type": "git",
-                "url": "git@github.com:dmsnell/ReflectionDocBlock.git",
-                "reference": "66542f768ac6b7be46f2f862f69d34cf13712ef9"
+                "url": "https://github.com/dmsnell/ReflectionDocBlock.git",
+                "reference": "11656bd537e1ed66f8d0201783809e0a124b11e1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dmsnell/ReflectionDocBlock/zipball/66542f768ac6b7be46f2f862f69d34cf13712ef9",
-                "reference": "66542f768ac6b7be46f2f862f69d34cf13712ef9",
+                "url": "https://api.github.com/repos/dmsnell/ReflectionDocBlock/zipball/11656bd537e1ed66f8d0201783809e0a124b11e1",
+                "reference": "11656bd537e1ed66f8d0201783809e0a124b11e1",
                 "shasum": ""
             },
             "require": {
@@ -348,8 +346,8 @@
                 "phpunit/phpunit": "~4.0"
             },
             "suggest": {
-                "dflydev/markdown": "~1.0",
-                "erusev/parsedown": "~1.0"
+                "erusev/parsedown": "~1.0",
+                "michelf/php-markdown": "~1.0"
             },
             "type": "library",
             "extra": {
@@ -374,7 +372,7 @@
                     "email": "mike.vanriel@naenius.com"
                 }
             ],
-            "time": "2026-05-13T17:48:39+00:00"
+            "time": "2026-06-13T20:02:50+00:00"
         },
         {
             "name": "psr/log",
@@ -3732,7 +3730,7 @@
     "aliases": [
         {
             "package": "phpdocumentor/reflection-docblock",
-            "version": "dev-fix/php85-nullable-types",
+            "version": "dev-release/2.x",
             "alias": "2.0.5",
             "alias_normalized": "2.0.5.0"
         }
