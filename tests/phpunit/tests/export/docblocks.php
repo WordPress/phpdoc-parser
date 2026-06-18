@@ -169,7 +169,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 						),
 					),
 				),
-				'long_description' => '<p>Use this example:</p>',
+				'long_description' => '<p>Use this example:</p> <!-- wp-parser-code-snippet:0 -->',
 			)
 		);
 	}
@@ -240,7 +240,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'blueprint' => 'file-greeting',
 					),
 				),
-				'long_description' => '',
+				'long_description' => '<!-- wp-parser-code-snippet:0 -->',
 			)
 		);
 	}
@@ -259,7 +259,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'Two backticks are too short.',
 				'``',
 				'',
-				'````php title="outer.php"',
+				'````php interactive',
 				'<?php',
 				'echo "outer";',
 				'```',
@@ -274,7 +274,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'This expected output appears before PHP and is ignored.',
 				'```',
 				'',
-				'```php',
+				'```php interactive',
 				'<?php',
 				'echo "a different-length fence does not close";',
 				'````',
@@ -282,11 +282,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'``` not a closer',
 				'echo "still inside after text on the would-be closer";',
 				'```',
-				'```output',
+				'```expected-output',
 				'different-length',
 				'```',
 				'',
-				'    ```php',
+				'    ```php interactive',
 				'    <?php',
 				'      echo "indented fences strip the fence indentation";',
 				'    ```',
@@ -294,11 +294,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'    indented',
 				'    ```',
 				'',
-				'   ```php',
+				'   ```php interactive',
 				'<?php',
 				'echo "three leading spaces are still a fence";',
 				'   ```',
-				'   ```text/expected-output',
+				'   ```expected-output',
 				'three leading spaces',
 				'   ```',
 				'',
@@ -309,13 +309,13 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'This belongs to no PHP snippet because the JS fence breaks the metadata run.',
 				'```',
 				'',
-				'```blueprint',
+				'```setup-blueprint',
 				'{"steps":[{"step":"writeFile","path":"/tmp/ignored.php","data":"ignored"}]}',
 				'```',
 				'```js',
 				'console.log("this fence breaks the pending blueprint");',
 				'```',
-				'```php',
+				'```php interactive',
 				'<?php',
 				'echo "no blueprint from before JS";',
 				'```',
@@ -323,29 +323,29 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'no blueprint from before JS',
 				'```',
 				'',
-				'```json blueprint',
+				'```setup-blueprint',
 				'{"steps":[{"step":"writeFile","path":"/tmp/one.php","data":"<?php echo 1;"}]}',
 				'```',
-				'```php',
+				'```php interactive',
 				'<?php',
 				'echo "blueprint before";',
 				'```',
-				'```expected_output',
+				'```expected-output',
 				'blueprint before',
 				'```',
 				'',
-				'```php',
+				'```php interactive',
 				'<?php',
 				'echo "blueprint after";',
 				'```',
-				'```blueprint',
+				'```setup-blueprint',
 				'{"steps":[{"step":"writeFile","path":"/tmp/two.php","data":"<?php echo 2;"}]}',
 				'```',
 				'```expected-output',
 				'blueprint after',
 				'```',
 				'',
-				'````php',
+				'````php interactive',
 				'<?php',
 				'echo "unterminated snippets are ignored";',
 				'```js',
@@ -430,7 +430,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				implode(
 					"\n",
 					array(
-						'```php',
+						'```php interactive',
 						'<?php',
 						'echo \'No metadata\';',
 						'```',
@@ -445,35 +445,115 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that fence names are matched case-insensitively and ignore extra info.
+	 * Test that PHP fences are ordinary documentation unless marked interactive.
 	 */
-	public function test_code_snippet_fence_info_strings() {
+	public function test_plain_php_fences_are_not_code_snippets() {
+
+		$description = implode(
+			"\n",
+			array(
+				'```php',
+				'<?php echo "plain";',
+				'```',
+				'```php title="interactive-is-not-the-first-argument"',
+				'<?php echo "also plain";',
+				'```',
+				'```php-interactive',
+				'<?php echo "still plain";',
+				'```',
+			)
+		);
+
+		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
+		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	/**
+	 * Test that each PHP fence is replaced with an inline placeholder, in order,
+	 * so the theme can render each snippet between the surrounding prose instead
+	 * of collapsing every snippet to the end of the description. Snippet-metadata
+	 * fences (expected-output, Blueprints) are removed.
+	 */
+	public function test_code_snippet_inline_placeholders() {
+
+		$description = implode(
+			"\n",
+			array(
+				'First prose.',
+				'',
+				'```php interactive',
+				'<?php',
+				'echo step_one();',
+				'```',
+				'',
+				'Middle prose.',
+				'',
+				'```php interactive',
+				'<?php',
+				'echo step_two();',
+				'```',
+				'',
+				'```expected-output',
+				'done',
+				'```',
+				'',
+				'Closing prose.',
+			)
+		);
+
+		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
+
+		// One placeholder per PHP fence, in document order, with the prose around them.
+		$first  = strpos( $stripped, '<!-- wp-parser-code-snippet:0 -->' );
+		$second = strpos( $stripped, '<!-- wp-parser-code-snippet:1 -->' );
+		$this->assertNotFalse( $first );
+		$this->assertNotFalse( $second );
+		$this->assertLessThan( $second, $first );
+		$this->assertLessThan( $first, strpos( $stripped, 'First prose.' ) );
+		$this->assertGreaterThan( $first, strpos( $stripped, 'Middle prose.' ) );
+		$this->assertGreaterThan( $second, strpos( $stripped, 'Closing prose.' ) );
+
+		// No raw PHP fence or metadata fence is left behind in the description.
+		$this->assertStringNotContainsString( '```', $stripped );
+		$this->assertStringNotContainsString( '<?php', $stripped );
+
+		// Placeholder indices align with the exported snippets.
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\necho step_one();",
+				),
+				array(
+					'type'            => 'php-code-snippet',
+					'code'            => "<?php\necho step_two();",
+					'expected_output' => 'done',
+				),
+			),
+			\WP_Parser\export_docblock_code_snippets( $description )
+		);
+	}
+
+	/**
+	 * Test that snippet metadata fences do not accept extra arguments.
+	 */
+	public function test_code_snippet_metadata_rejects_extra_arguments() {
 
 		$this->assertEquals(
 			array(
 				array(
 					'type' => 'php-code-snippet',
 					'code' => "<?php\necho docs_case_fixture();",
-					'expected_output' => 'case fixture',
-					'blueprint' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/tmp/case.php',
-								'data' => '<?php function docs_case_fixture() { return "case fixture"; }',
-							),
-						),
-					),
 				),
 			),
 			\WP_Parser\export_docblock_code_snippets(
 				implode(
 					"\n",
 					array(
-						'```JSON blueprint',
-						'{"steps":[{"step":"writeFile","path":"/tmp/case.php","data":"<?php function docs_case_fixture() { return \"case fixture\"; }"}]}',
+						'```setup-blueprint copied-from-another-example extra-argument',
+						'{"steps":[]}',
 						'```',
-						'```PHP editable=false',
+						'```PHP interactive',
 						'<?php',
 						'echo docs_case_fixture();',
 						'```',
@@ -487,32 +567,85 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that non-JSON Blueprint fences are preserved as strings.
+	 * Test that obsolete snippet syntax is treated as ordinary documentation.
 	 */
-	public function test_code_snippet_string_blueprint() {
+	public function test_code_snippet_syntax_aliases_are_not_recognized() {
 
-		$this->assertEquals(
+		$description = implode(
+			"\n",
 			array(
+				'```blueprint',
+				'{"steps":[]}',
+				'```',
+				'```setupblueprint shared',
+				'{"steps":[]}',
+				'```',
+				'```json setup-blueprint shared',
+				'{"steps":[]}',
+				'```',
+				'```php interactive blueprint=shared',
+				'<?php echo "blueprint alias";',
+				'```',
+				'```php interactive setupblueprint=shared',
+				'<?php echo "setupblueprint alias";',
+				'```',
+				'```php interactive editable=false',
+				'<?php echo "unsupported extra argument";',
+				'```',
+				'```output',
+				'output alias',
+				'```',
+				'```expected_output',
+				'expected output alias',
+				'```',
+				'```text/expected-output',
+				'text expected output alias',
+				'```',
+			)
+		);
+
+		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
+		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	/**
+	 * Test that invalid setup Blueprint JSON stops snippet export.
+	 *
+	 * @dataProvider invalid_setup_blueprints
+	 */
+	public function test_invalid_setup_blueprint_json_fails( $fence_info, $blueprint ) {
+
+		$this->expectException( \InvalidArgumentException::class );
+
+		\WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
 				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'String blueprint';",
-					'blueprint' => 'not-json',
-				),
-			),
-			\WP_Parser\export_docblock_code_snippets(
-				implode(
-					"\n",
-					array(
-						'```blueprint',
-						'not-json',
-						'```',
-						'```php',
-						'<?php',
-						'echo \'String blueprint\';',
-						'```',
-					)
+					'```' . $fence_info,
+					$blueprint,
+					'```',
+					'```php interactive',
+					'<?php echo "unreachable";',
+					'```',
 				)
 			)
+		);
+	}
+
+	/**
+	 * Returns malformed JSON and valid JSON values that are not Blueprint objects.
+	 */
+	public function invalid_setup_blueprints() {
+
+		return array(
+			'malformed inline Blueprint' => array( 'setup-blueprint', '{"steps":' ),
+			'malformed named Blueprint' => array( 'setup-blueprint shared', '{"steps":' ),
+			'plain text' => array( 'setup-blueprint', 'not-json' ),
+			'JSON null' => array( 'setup-blueprint', 'null' ),
+			'JSON string' => array( 'setup-blueprint', '"string"' ),
+			'JSON number' => array( 'setup-blueprint', '42' ),
+			'JSON list' => array( 'setup-blueprint', '[]' ),
+			'trailing content' => array( 'setup-blueprint', '{"steps":[]} trailing' ),
 		);
 	}
 
@@ -546,17 +679,17 @@ class Export_Docblocks extends Export_UnitTestCase {
 				implode(
 					"\n",
 					array(
-						'```php',
+						'```php interactive',
 						'<?php',
 						'echo \'First\';',
 						'```',
 						'```expected-output',
 						'First',
 						'```',
-						'```blueprint',
+						'```setup-blueprint',
 						'{"steps":[{"step":"writeFile","path":"/tmp/second.php","data":"<?php echo \"second setup\";"}]}',
 						'```',
-						'```php',
+						'```php interactive',
 						'<?php',
 						'echo \'Second\';',
 						'```',
@@ -579,34 +712,24 @@ class Export_Docblocks extends Export_UnitTestCase {
 					'```setup-blueprint shared',
 					'{"steps":[{"step":"writeFile","path":"/tmp/shared.php","data":"<?php echo \"shared\";"}]}',
 					'```',
-					'```json setupblueprint json-shared',
-					'{"steps":[{"step":"writeFile","path":"/tmp/json-shared.php","data":"<?php echo \"json shared\";"}]}',
-					'```',
-					'```blueprint',
+					'```setup-blueprint',
 					'{"steps":[{"step":"writeFile","path":"/tmp/ignored-inline.php","data":"ignored"}]}',
 					'```',
-					'```php blueprint=shared',
+					'```php interactive setup-blueprint=shared',
 					'<?php',
 					'echo "first";',
 					'```',
 					'```expected-output',
 					'first',
 					'```',
-					'```php',
+					'```php interactive',
 					'<?php',
 					'echo "no leaked inline blueprint";',
 					'```',
 					'```expected-output',
 					'no leaked inline blueprint',
 					'```',
-					'```php setupblueprint=json-shared',
-					'<?php',
-					'echo "second";',
-					'```',
-					'```expected-output',
-					'second',
-					'```',
-					'```php setup-blueprint=shared',
+					'```php interactive setup-blueprint=shared',
 					'<?php',
 					'echo "third";',
 					'```',
@@ -626,15 +749,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 						),
 					),
 				),
-				'json-shared' => array(
-					'steps' => array(
-						array(
-							'step' => 'writeFile',
-							'path' => '/tmp/json-shared.php',
-							'data' => '<?php echo "json shared";',
-						),
-					),
-				),
 			),
 			$setup_blueprints
 		);
@@ -651,12 +765,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 					'type' => 'php-code-snippet',
 					'code' => "<?php\necho \"no leaked inline blueprint\";",
 					'expected_output' => 'no leaked inline blueprint',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"second\";",
-					'expected_output' => 'second',
-					'blueprint' => 'json-shared',
 				),
 				array(
 					'type' => 'php-code-snippet',

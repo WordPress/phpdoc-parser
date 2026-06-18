@@ -7,7 +7,7 @@
  * fact, this one does. It spans more than two full lines, continuing on to the
  * third line.
  *
- * ```setupblueprint file-greeting
+ * ```setup-blueprint file-greeting
  * {
  *   "steps": [
  *     {
@@ -79,7 +79,7 @@ class Test_Class {
 	 *
 	 * Use this example:
 	 *
-	 * ```blueprint
+	 * ```setup-blueprint
 	 * {
 	 *   "steps": [
 	 *     {
@@ -91,7 +91,7 @@ class Test_Class {
 	 * }
 	 * ```
 	 *
-	 * ```php
+	 * ```php interactive
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_fixture_greeting();
@@ -109,7 +109,7 @@ class Test_Class {
 	/**
 	 * This is a method docblock with a reused setup Blueprint.
 	 *
-	 * ```setupblueprint shared-greeting
+	 * ```setup-blueprint shared-greeting
 	 * {
 	 *   "steps": [
 	 *     {
@@ -121,7 +121,7 @@ class Test_Class {
 	 * }
 	 * ```
 	 *
-	 * ```php blueprint=shared-greeting
+	 * ```php interactive setup-blueprint=shared-greeting
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'first' );
@@ -131,7 +131,7 @@ class Test_Class {
 	 * Hello, first
 	 * ```
 	 *
-	 * ```php setup-blueprint=shared-greeting
+	 * ```php interactive setup-blueprint=shared-greeting
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'second' );
@@ -149,7 +149,7 @@ class Test_Class {
 	/**
 	 * This is a method docblock with a file-level setup Blueprint.
 	 *
-	 * ```php blueprint=file-greeting
+	 * ```php interactive setup-blueprint=file-greeting
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
