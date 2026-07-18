@@ -760,8 +760,8 @@ class Importer implements LoggerAwareInterface {
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_code_snippets', $data['doc']['code_snippets'] ?? array() );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_setup_blueprints', $data['doc']['setup_blueprints'] ?? array() );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_code_snippets', isset( $data['doc']['code_snippets'] ) ? $data['doc']['code_snippets'] : array() );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_setup_blueprints', isset( $data['doc']['setup_blueprints'] ) ? $data['doc']['setup_blueprints'] : array() );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_last_parsed_wp_version', $this->version );
 
 		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.

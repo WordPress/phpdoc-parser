@@ -57,11 +57,16 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		$phpdoc = json_decode( $phpdoc, true );
-		if ( is_null( $phpdoc ) ) {
+		$phpdoc = json_decode( $phpdoc );
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			WP_CLI::error( sprintf( "JSON in %1\$s can't be decoded :(", $file ) );
 			exit;
 		}
+		if ( ! is_array( $phpdoc ) ) {
+			WP_CLI::error( sprintf( 'JSON in %1$s must contain a top-level list of parsed files.', $file ) );
+			exit;
+		}
+		preserve_json_object_shapes( $phpdoc );
 
 		// Import data
 		$this->_do_import( $phpdoc, isset( $assoc_args['quick'] ), isset( $assoc_args['import-internal'] ) );

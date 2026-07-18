@@ -60,7 +60,7 @@ function parse_files( $files, $root ) {
 			$file->process();
 
 			$file_doc = export_docblock( $file, array(), $path );
-			$file_setup_blueprints = $file_doc['setup_blueprints'] ?? array();
+			$file_setup_blueprints = isset( $file_doc['setup_blueprints'] ) ? $file_doc['setup_blueprints'] : array();
 
 			// TODO proper exporter
 			$out = array(
@@ -118,7 +118,7 @@ function parse_files( $files, $root ) {
 
 			foreach ( $file->getClasses() as $class ) {
 				$class_doc = export_docblock( $class, $file_setup_blueprints, $path );
-				$class_setup_blueprints = array_merge( $file_setup_blueprints, $class_doc['setup_blueprints'] ?? array() );
+				$class_setup_blueprints = array_merge( $file_setup_blueprints, isset( $class_doc['setup_blueprints'] ) ? $class_doc['setup_blueprints'] : array() );
 
 				$class_data = array(
 					'name'       => $class->getShortName(),
@@ -248,13 +248,14 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	try {
 		$raw_long_description = $docblock->getLongDescription()->getContents();
 		$fences               = get_docblock_code_fences( $raw_long_description );
+		validate_docblock_setup_blueprint_scope( $fences, $inherited_setup_blueprints );
 		$setup_blueprints     = array();
 		$code_snippets        = export_docblock_code_snippets( $raw_long_description, $setup_blueprints, $fences );
 		$setup_blueprints     = array_merge(
 			get_referenced_setup_blueprints( $code_snippets, $inherited_setup_blueprints ),
 			$setup_blueprints
 		);
-		validate_docblock_setup_blueprint_references( $code_snippets, $setup_blueprints );
+		validate_docblock_setup_blueprint_references( $code_snippets, $setup_blueprints, $fences );
 	} catch ( \InvalidArgumentException $exception ) {
 		throw new \InvalidArgumentException(
 			describe_docblock_source( $element, $docblock, $source_file ) . ': ' . $exception->getMessage(),
@@ -552,6 +553,7 @@ function get_docblock_code_fences( $text ) {
  * fences apply to the preceding PHP fence. Named setup Blueprint fences are
  * exported once and snippets refer to them by name. Fence info words are
  * case-sensitive so the documented lowercase forms are the only accepted syntax.
+ * Reusable setup Blueprint names use lowercase kebab-case starting with a letter.
  *
  * @param string $text             Raw DocBlock long description.
  * @param array  $setup_blueprints Optional. Named setup Blueprints keyed by reference name.
@@ -572,10 +574,20 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	$consumed_fences         = array();
 	$fence_count             = count( $fences );
 	$setup_blueprints        = array();
+	$setup_blueprint_lines   = array();
 
 	foreach ( $fences as $fence ) {
 		if ( null !== $fence['setup_name'] ) {
+			if ( array_key_exists( $fence['setup_name'], $setup_blueprints ) ) {
+				throw new \InvalidArgumentException(
+					'Setup Blueprint "' . $fence['setup_name'] . '" is defined more than once on lines ' .
+					$setup_blueprint_lines[ $fence['setup_name'] ] . ' and ' . ( $fence['start'] + 1 ) .
+					' of the long description.'
+				);
+			}
+
 			$setup_blueprints[ $fence['setup_name'] ] = decode_docblock_blueprint( $fence['code'], $fence );
+			$setup_blueprint_lines[ $fence['setup_name'] ] = $fence['start'] + 1;
 		}
 	}
 
@@ -589,6 +601,17 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 		}
 
 		if ( $fences[ $i ]['is_blueprint'] ) {
+			if (
+				null !== $pending_blueprint &&
+				docblock_fences_have_only_whitespace_between( $fences[ $pending_blueprint_fence ], $fences[ $i ], $lines )
+			) {
+				throw new \InvalidArgumentException(
+					'Interactive snippet has more than one setup Blueprint: fences on lines ' .
+					( $fences[ $pending_blueprint_fence ]['start'] + 1 ) . ' and ' . ( $fences[ $i ]['start'] + 1 ) .
+					' of the long description cannot both precede one snippet.'
+				);
+			}
+
 			$pending_blueprint       = decode_docblock_blueprint( $fences[ $i ]['code'], $fences[ $i ] );
 			$pending_blueprint_fence = $i;
 			continue;
@@ -613,9 +636,16 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 			null !== $pending_blueprint &&
 			docblock_fences_have_only_whitespace_between( $fences[ $pending_blueprint_fence ], $fences[ $i ], $lines )
 		) {
-			if ( ! array_key_exists( 'blueprint', $snippet ) ) {
-				$snippet['blueprint'] = $pending_blueprint;
+			// A snippet accepts one setup source. Failing here prevents a named
+			// reference from silently overriding an adjacent inline Blueprint.
+			if ( array_key_exists( 'blueprint', $snippet ) ) {
+				throw new \InvalidArgumentException(
+					'Interactive PHP fence on line ' . ( $fences[ $i ]['start'] + 1 ) .
+					' of the long description has more than one setup Blueprint.'
+				);
 			}
+			$snippet['blueprint'] = $pending_blueprint;
+			$consumed_fences[ $pending_blueprint_fence ] = true;
 		}
 		$pending_blueprint       = null;
 		$pending_blueprint_fence = null;
@@ -641,7 +671,14 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 				break;
 			}
 
-			if ( $fences[ $j ]['is_blueprint'] && ! array_key_exists( 'blueprint', $snippet ) ) {
+			if ( $fences[ $j ]['is_blueprint'] ) {
+				if ( array_key_exists( 'blueprint', $snippet ) ) {
+					throw new \InvalidArgumentException(
+						'Interactive PHP fence on line ' . ( $fences[ $i ]['start'] + 1 ) .
+						' of the long description has more than one setup Blueprint.'
+					);
+				}
+
 				$snippet['blueprint']  = decode_docblock_blueprint( $fences[ $j ]['code'], $fences[ $j ] );
 				$consumed_fences[ $j ] = true;
 				$previous_fence        = $j;
@@ -652,6 +689,28 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 		}
 
 		$snippets[] = $snippet;
+	}
+
+	// Recognized metadata is reserved for runnable snippets. Rejecting orphaned
+	// fences avoids removing author-written content without exporting it anywhere.
+	foreach ( $fences as $index => $fence ) {
+		if ( isset( $consumed_fences[ $index ] ) ) {
+			continue;
+		}
+
+		if ( $fence['is_expected_output'] ) {
+			throw new \InvalidArgumentException(
+				'Expected-output fence on line ' . ( $fence['start'] + 1 ) .
+				' of the long description is not attached to an interactive PHP fence.'
+			);
+		}
+
+		if ( $fence['is_blueprint'] ) {
+			throw new \InvalidArgumentException(
+				'Inline setup Blueprint on line ' . ( $fence['start'] + 1 ) .
+				' of the long description is not attached to an interactive PHP fence.'
+			);
+		}
 	}
 
 	return $snippets;
@@ -754,7 +813,7 @@ function get_referenced_setup_blueprints( $snippets, $setup_blueprints ) {
 	$referenced_setup_blueprints = array();
 
 	foreach ( $snippets as $snippet ) {
-		if ( ! is_string( $snippet['blueprint'] ?? null ) ) {
+		if ( ! isset( $snippet['blueprint'] ) || ! is_string( $snippet['blueprint'] ) ) {
 			continue;
 		}
 
@@ -771,16 +830,50 @@ function get_referenced_setup_blueprints( $snippets, $setup_blueprints ) {
  *
  * @param array $snippets         Exported code snippets.
  * @param array $setup_blueprints Setup Blueprints available to the DocBlock.
+ * @param array $fences           Optional parsed fences used to identify unresolved references.
  *
  * @throws \InvalidArgumentException When a snippet references an undefined setup Blueprint.
  */
-function validate_docblock_setup_blueprint_references( $snippets, $setup_blueprints ) {
-	foreach ( $snippets as $snippet ) {
+function validate_docblock_setup_blueprint_references( $snippets, $setup_blueprints, $fences = array() ) {
+	$snippet_lines = array();
+	foreach ( $fences as $fence ) {
+		if ( $fence['is_interactive_php'] ) {
+			$snippet_lines[ $fence['snippet_index'] ] = $fence['start'] + 1;
+		}
+	}
+
+	foreach ( $snippets as $index => $snippet ) {
 		if (
-			is_string( $snippet['blueprint'] ?? null ) &&
+			isset( $snippet['blueprint'] ) &&
+			is_string( $snippet['blueprint'] ) &&
 			! array_key_exists( $snippet['blueprint'], $setup_blueprints )
 		) {
-			throw new \InvalidArgumentException( 'Setup Blueprint "' . $snippet['blueprint'] . '" is not defined.' );
+			$location = isset( $snippet_lines[ $index ] )
+				? ' referenced on line ' . $snippet_lines[ $index ] . ' of the long description'
+				: '';
+			throw new \InvalidArgumentException( 'Setup Blueprint "' . $snippet['blueprint'] . '"' . $location . ' is not defined.' );
+		}
+	}
+}
+
+/**
+ * Rejects local setup Blueprint definitions that shadow an enclosing DocBlock.
+ *
+ * @param array $fences                     Parsed DocBlock fences.
+ * @param array $inherited_setup_blueprints Setup Blueprints inherited from enclosing DocBlocks.
+ *
+ * @throws \InvalidArgumentException When a local definition reuses an inherited name.
+ */
+function validate_docblock_setup_blueprint_scope( $fences, $inherited_setup_blueprints ) {
+	foreach ( $fences as $fence ) {
+		if (
+			null !== $fence['setup_name'] &&
+			array_key_exists( $fence['setup_name'], $inherited_setup_blueprints )
+		) {
+			throw new \InvalidArgumentException(
+				'Setup Blueprint "' . $fence['setup_name'] . '" on line ' . ( $fence['start'] + 1 ) .
+				' of the long description is already defined in an enclosing DocBlock.'
+			);
 		}
 	}
 }
@@ -815,10 +908,10 @@ function is_docblock_blueprint_fence( $fence ) {
  *
  * @throws \InvalidArgumentException When the Blueprint is not a valid JSON object.
  *
- * @return array
+ * @return array|\stdClass
  */
 function decode_docblock_blueprint( $blueprint, $fence = null ) {
-	$decoded = json_decode( $blueprint, true );
+	$decoded = json_decode( $blueprint );
 	$label   = 'Setup Blueprint';
 
 	if ( is_array( $fence ) ) {
@@ -829,14 +922,57 @@ function decode_docblock_blueprint( $blueprint, $fence = null ) {
 	}
 
 	if ( JSON_ERROR_NONE !== json_last_error() ) {
-		throw new \InvalidArgumentException( $label . ' must contain valid JSON: ' . json_last_error_msg() );
+		$error = function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'error code ' . json_last_error();
+		throw new \InvalidArgumentException( $label . ' must contain valid JSON: ' . $error );
 	}
 
-	if ( '{' !== substr( ltrim( $blueprint ), 0, 1 ) || ! is_array( $decoded ) ) {
+	if ( ! is_object( $decoded ) ) {
 		throw new \InvalidArgumentException( $label . ' must be a JSON object.' );
 	}
 
+	preserve_json_object_shapes( $decoded );
 	return $decoded;
+}
+
+/**
+ * Preserves JSON objects that associative decoding would turn into lists.
+ *
+ * Most JSON objects naturally become associative PHP arrays and serialize back
+ * as objects. Empty objects and objects with sequential numeric keys instead
+ * serialize as JSON lists unless they remain objects. Decoding as objects first
+ * supplies that distinction. This function converts ordinary named objects to
+ * the associative arrays expected by the importer while retaining objects that
+ * would change type when encoded again.
+ *
+ * @param mixed $value JSON value decoded as objects.
+ *
+ * @return mixed
+ */
+function preserve_json_object_shapes( &$value ) {
+	if ( is_object( $value ) ) {
+		$decoded = get_object_vars( $value );
+		foreach ( $decoded as &$child ) {
+			preserve_json_object_shapes( $child );
+		}
+		unset( $child );
+
+		if ( empty( $decoded ) || array_keys( $decoded ) === range( 0, count( $decoded ) - 1 ) ) {
+			$value = (object) $decoded;
+		} else {
+			$value = $decoded;
+		}
+
+		return $value;
+	}
+
+	if ( is_array( $value ) ) {
+		foreach ( $value as &$child ) {
+			preserve_json_object_shapes( $child );
+		}
+		unset( $child );
+	}
+
+	return $value;
 }
 
 /**
@@ -850,6 +986,7 @@ function get_docblock_setup_blueprint_name( $fence ) {
 	$info_parts = get_docblock_fence_info_parts( $fence );
 
 	if ( 'setup-blueprint' === $fence['language'] && 2 === count( $info_parts ) ) {
+		validate_docblock_setup_blueprint_name( $info_parts[1], $fence );
 		return $info_parts[1];
 	}
 
@@ -866,11 +1003,40 @@ function get_docblock_setup_blueprint_name( $fence ) {
 function get_docblock_referenced_blueprint_name( $fence ) {
 	$info_parts = get_docblock_fence_info_parts( $fence );
 
-	if ( 'php' === $fence['language'] && 3 === count( $info_parts ) && preg_match( '/^setup-blueprint=(.+)$/', $info_parts[2], $matches ) ) {
-		return $matches[1];
+	if (
+		'php' === $fence['language'] &&
+		3 === count( $info_parts ) &&
+		'interactive' === $info_parts[1] &&
+		0 === strpos( $info_parts[2], 'setup-blueprint=' )
+	) {
+		$name = substr( $info_parts[2], strlen( 'setup-blueprint=' ) );
+		validate_docblock_setup_blueprint_name( $name, $fence );
+		return $name;
 	}
 
 	return null;
+}
+
+/**
+ * Rejects reusable setup Blueprint names outside the documented kebab-case form.
+ *
+ * Requiring a leading letter prevents PHP from coercing a numeric name into an
+ * integer array key and changing the setup Blueprint map into a JSON list.
+ *
+ * @param string $name  Setup Blueprint name.
+ * @param array  $fence Parsed fence used to identify invalid input.
+ *
+ * @throws \InvalidArgumentException When the name is not lowercase kebab-case.
+ */
+function validate_docblock_setup_blueprint_name( $name, $fence ) {
+	if ( preg_match( '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D', $name ) ) {
+		return;
+	}
+
+	throw new \InvalidArgumentException(
+		'Setup Blueprint name "' . $name . '" on line ' . ( $fence['start'] + 1 ) .
+		' of the long description must be lowercase kebab-case starting with a letter.'
+	);
 }
 
 /**
