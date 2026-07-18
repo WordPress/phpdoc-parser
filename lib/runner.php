@@ -3,6 +3,7 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
+use phpDocumentor\Reflection\ClassReflector;
 use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
 use phpDocumentor\Reflection\FunctionReflector;
@@ -55,7 +56,7 @@ function parse_files( $files, $root ) {
 
 		$file->process();
 
-		$file_doc = export_docblock( $file );
+		$file_doc = export_docblock( $file, array(), $path );
 		$file_setup_blueprints = $file_doc['setup_blueprints'] ?? array();
 
 		// TODO proper exporter
@@ -86,7 +87,7 @@ function parse_files( $files, $root ) {
 		}
 
 		if ( ! empty( $file->uses['hooks'] ) ) {
-			$out['hooks'] = export_hooks( $file->uses['hooks'] );
+			$out['hooks'] = export_hooks( $file->uses['hooks'], $file_setup_blueprints, $path );
 		}
 
 		foreach ( $file->getFunctions() as $function ) {
@@ -97,7 +98,7 @@ function parse_files( $files, $root ) {
 				'line'      => $function->getLineNumber(),
 				'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 				'arguments' => export_arguments( $function->getArguments() ),
-				'doc'       => export_docblock( $function, $file_setup_blueprints ),
+				'doc'       => export_docblock( $function, $file_setup_blueprints, $path ),
 				'hooks'     => array(),
 			);
 
@@ -105,7 +106,7 @@ function parse_files( $files, $root ) {
 				$func['uses'] = export_uses( $function->uses );
 
 				if ( ! empty( $function->uses['hooks'] ) ) {
-					$func['hooks'] = export_hooks( $function->uses['hooks'] );
+					$func['hooks'] = export_hooks( $function->uses['hooks'], $file_setup_blueprints, $path );
 				}
 			}
 
@@ -113,7 +114,7 @@ function parse_files( $files, $root ) {
 		}
 
 		foreach ( $file->getClasses() as $class ) {
-			$class_doc = export_docblock( $class, $file_setup_blueprints );
+			$class_doc = export_docblock( $class, $file_setup_blueprints, $path );
 			$class_setup_blueprints = array_merge( $file_setup_blueprints, $class_doc['setup_blueprints'] ?? array() );
 
 			$class_data = array(
@@ -125,8 +126,8 @@ function parse_files( $files, $root ) {
 				'abstract'   => $class->isAbstract(),
 				'extends'    => $class->getParentClass(),
 				'implements' => $class->getInterfaces(),
-				'properties' => export_properties( $class->getProperties() ),
-				'methods'    => export_methods( $class->getMethods(), $class_setup_blueprints ),
+				'properties' => export_properties( $class->getProperties(), $class_setup_blueprints, $path ),
+				'methods'    => export_methods( $class->getMethods(), $class_setup_blueprints, $path ),
 				'doc'        => $class_doc,
 			);
 
@@ -197,10 +198,11 @@ function fix_newlines( $text ) {
 /**
  * @param BaseReflector|ReflectionAbstract $element
  * @param array                            $inherited_setup_blueprints Optional. Setup Blueprints inherited from the file or class DocBlock.
+ * @param string                           $source_file                Optional. Source path used in invalid snippet metadata errors.
  *
  * @return array
  */
-function export_docblock( $element, array $inherited_setup_blueprints = array() ) {
+function export_docblock( $element, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$docblock = $element->getDocBlock();
 	if ( ! $docblock ) {
 		return array(
@@ -210,14 +212,23 @@ function export_docblock( $element, array $inherited_setup_blueprints = array() 
 		);
 	}
 
-	$raw_long_description = $docblock->getLongDescription()->getContents();
-	$fences               = get_docblock_code_fences( $raw_long_description );
-	$setup_blueprints     = array();
-	$code_snippets        = export_docblock_code_snippets( $raw_long_description, $setup_blueprints, $fences );
-	$setup_blueprints     = array_merge(
-		get_referenced_setup_blueprints( $code_snippets, $inherited_setup_blueprints ),
-		$setup_blueprints
-	);
+	try {
+		$raw_long_description = $docblock->getLongDescription()->getContents();
+		$fences               = get_docblock_code_fences( $raw_long_description );
+		$setup_blueprints     = array();
+		$code_snippets        = export_docblock_code_snippets( $raw_long_description, $setup_blueprints, $fences );
+		$setup_blueprints     = array_merge(
+			get_referenced_setup_blueprints( $code_snippets, $inherited_setup_blueprints ),
+			$setup_blueprints
+		);
+		validate_docblock_setup_blueprint_references( $code_snippets, $setup_blueprints );
+	} catch ( \InvalidArgumentException $exception ) {
+		throw new \InvalidArgumentException(
+			describe_docblock_source( $element, $docblock, $source_file ) . ': ' . $exception->getMessage(),
+			0,
+			$exception
+		);
+	}
 
 	$output = array(
 		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
@@ -270,11 +281,47 @@ function export_docblock( $element, array $inherited_setup_blueprints = array() 
 }
 
 /**
+ * Describes the source DocBlock that contains invalid snippet metadata.
+ *
+ * @param BaseReflector|ReflectionAbstract  $element
+ * @param \phpDocumentor\Reflection\DocBlock $docblock
+ * @param string                            $source_file Optional source path.
+ *
+ * @return string
+ */
+function describe_docblock_source( $element, $docblock, $source_file = '' ) {
+	if ( $element instanceof File_Reflector ) {
+		$entity = 'file';
+	} elseif ( $element instanceof Hook_Reflector ) {
+		$entity = 'hook "' . $element->getName() . '"';
+	} elseif ( $element instanceof PropertyReflector ) {
+		$entity = 'property "' . $element->getName() . '"';
+	} elseif ( $element instanceof MethodReflector ) {
+		$entity = 'method "' . $element->getShortName() . '"';
+	} elseif ( $element instanceof FunctionReflector ) {
+		$entity = 'function "' . $element->getShortName() . '"';
+	} elseif ( $element instanceof ClassReflector ) {
+		$entity = 'class "' . $element->getShortName() . '"';
+	} else {
+		$entity = 'element';
+	}
+
+	$source = '' !== $source_file ? ' in ' . $source_file : '';
+	if ( $docblock->getLocation() && $docblock->getLocation()->getLineNumber() ) {
+		$source .= ' starting on source line ' . $docblock->getLocation()->getLineNumber();
+	}
+
+	return 'DocBlock for ' . $entity . $source;
+}
+
+/**
  * @param Hook_Reflector[] $hooks
+ * @param array            $inherited_setup_blueprints Optional. Setup Blueprints inherited from the enclosing file or class.
+ * @param string           $source_file                Optional. Source path used in invalid snippet metadata errors.
  *
  * @return array
  */
-function export_hooks( array $hooks ) {
+function export_hooks( array $hooks, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$out = array();
 
 	foreach ( $hooks as $hook ) {
@@ -284,7 +331,7 @@ function export_hooks( array $hooks ) {
 			'end_line'  => $hook->getNode()->getAttribute( 'endLine' ),
 			'type'      => $hook->getType(),
 			'arguments' => $hook->getArgs(),
-			'doc'       => export_docblock( $hook ),
+			'doc'       => export_docblock( $hook, $inherited_setup_blueprints, $source_file ),
 		);
 	}
 
@@ -312,10 +359,12 @@ function export_arguments( array $arguments ) {
 
 /**
  * @param PropertyReflector[] $properties
+ * @param array               $inherited_setup_blueprints Optional. Setup Blueprints inherited from the file or class DocBlock.
+ * @param string              $source_file                Optional. Source path used in invalid snippet metadata errors.
  *
  * @return array
  */
-function export_properties( array $properties ) {
+function export_properties( array $properties, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$out = array();
 
 	foreach ( $properties as $property ) {
@@ -327,7 +376,7 @@ function export_properties( array $properties ) {
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
 			'visibility'  => $property->getVisibility(),
-			'doc'         => export_docblock( $property ),
+			'doc'         => export_docblock( $property, $inherited_setup_blueprints, $source_file ),
 		);
 	}
 
@@ -337,10 +386,11 @@ function export_properties( array $properties ) {
 /**
  * @param MethodReflector[] $methods
  * @param array             $inherited_setup_blueprints Optional. Setup Blueprints inherited from the file or class DocBlock.
+ * @param string            $source_file                Optional. Source path used in invalid snippet metadata errors.
  *
  * @return array
  */
-function export_methods( array $methods, array $inherited_setup_blueprints = array() ) {
+function export_methods( array $methods, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$output = array();
 
 	foreach ( $methods as $method ) {
@@ -356,14 +406,14 @@ function export_methods( array $methods, array $inherited_setup_blueprints = arr
 			'static'     => $method->isStatic(),
 			'visibility' => $method->getVisibility(),
 			'arguments'  => export_arguments( $method->getArguments() ),
-			'doc'        => export_docblock( $method, $inherited_setup_blueprints ),
+			'doc'        => export_docblock( $method, $inherited_setup_blueprints, $source_file ),
 		);
 
 		if ( ! empty( $method->uses ) ) {
 			$method_data['uses'] = export_uses( $method->uses );
 
 			if ( ! empty( $method->uses['hooks'] ) ) {
-				$method_data['hooks'] = export_hooks( $method->uses['hooks'] );
+				$method_data['hooks'] = export_hooks( $method->uses['hooks'], $inherited_setup_blueprints, $source_file );
 			}
 		}
 
@@ -381,51 +431,54 @@ function export_methods( array $methods, array $inherited_setup_blueprints = arr
  * @return array
  */
 function get_docblock_code_fences( $text ) {
-	$text    = preg_replace( "/\r\n?/", "\n", $text );
-	$fences  = array();
-	$offset  = 0;
-	$line_no = 0;
-	$length  = strlen( $text );
+	$text       = preg_replace( "/\r\n?/", "\n", $text );
+	$lines      = explode( "\n", $text );
+	$line_count = count( $lines );
+	$fences     = array();
 
-	// Walk the text one fenced block at a time. A single regex captures each
-	// block: the `\2` backreference forces the closing fence to repeat the
-	// opener's backtick run (so longer or shorter fences stay inside the body),
-	// and the non-greedy `(?:.*\n)*?` stops at the first matching closer. `\G`
-	// anchors each attempt at the next opener, so an opener with no matching
-	// closer stops parsing, exactly like the original line-by-line scanner.
-	$opener_pattern = '/^[ \t]*`{3,}[^`\n]*$/m';
-	$block_pattern  = '/\G([ \t]*)(`{3,})([^`\n]*)\n((?:.*\n)*?)[ \t]*\2[ \t]*$/m';
+	// Advance the outer cursor to each matching closer. Every line is examined
+	// at most once, and matching does not depend on PCRE recursion or JIT stack
+	// size. An opener without a matching closer stops parsing so later fence-like
+	// lines remain part of that unterminated block.
+	for ( $line_no = 0; $line_no < $line_count; $line_no++ ) {
+		if ( ! preg_match( '/^([ \t]*)(`{3,})([^`]*)$/', $lines[ $line_no ], $opening ) ) {
+			continue;
+		}
 
-	while ( $offset < $length && preg_match( $opener_pattern, $text, $opening, PREG_OFFSET_CAPTURE, $offset ) ) {
-		$fence_start = $opening[0][1];
+		$indent         = $opening[1];
+		$backticks       = $opening[2];
+		$closing_pattern = '/^[ \t]*' . preg_quote( $backticks, '/' ) . '[ \t]*$/';
+		$end             = $line_no + 1;
 
-		if ( ! preg_match( $block_pattern, $text, $block, PREG_OFFSET_CAPTURE, $fence_start ) ) {
+		while ( $end < $line_count && ! preg_match( $closing_pattern, $lines[ $end ] ) ) {
+			$end++;
+		}
+
+		if ( $end === $line_count ) {
 			break;
 		}
 
-		$indent = $block[1][0];
-		$code   = $block[4][0];
+		$code_lines = array_slice( $lines, $line_no + 1, $end - $line_no - 1 );
 		if ( '' !== $indent ) {
 			// Strip the opening fence's indentation from each content line.
-			$code = preg_replace( '/^' . preg_quote( $indent, '/' ) . '/m', '', $code );
+			foreach ( $code_lines as $key => $code_line ) {
+				if ( 0 === strpos( $code_line, $indent ) ) {
+					$code_lines[ $key ] = substr( $code_line, strlen( $indent ) );
+				}
+			}
 		}
 
-		$language = trim( $block[3][0] );
+		$language = trim( $opening[3] );
 		if ( preg_match( '/^\S+/', $language, $language_matches ) ) {
 			$language = $language_matches[0];
 		}
 
-		// Count only the gap since the previous block, never the whole prefix,
-		// so line numbering stays O(n) across the whole description.
-		$line_no += substr_count( substr( $text, $offset, $fence_start - $offset ), "\n" );
-		$start    = $line_no;
-
 		$fence = array(
-			'language' => strtolower( $language ),
-			'info'     => trim( $block[3][0] ),
-			'code'     => rtrim( $code, "\n" ),
-			'start'    => $start,
-			'end'      => $start + substr_count( $block[0][0], "\n" ),
+			'language' => $language,
+			'info'     => trim( $opening[3] ),
+			'code'     => rtrim( implode( "\n", $code_lines ), "\n" ),
+			'start'    => $line_no,
+			'end'      => $end,
 		);
 
 		// Classify each fence once here so the snippet exporter and the
@@ -443,10 +496,7 @@ function get_docblock_code_fences( $text ) {
 
 		$fences[] = $fence;
 
-		// Continue scanning after this block's closing fence, keeping the line
-		// counter in sync with the new offset.
-		$line_no = $fence['end'];
-		$offset  = $block[0][1] + strlen( $block[0][0] );
+		$line_no = $end;
 	}
 
 	// Number the interactive PHP fences so the exporter and the stripper agree on each
@@ -467,7 +517,8 @@ function get_docblock_code_fences( $text ) {
  * different-length fences can appear inside a fenced snippet. Blueprint fences
  * before a PHP fence apply to that fence, while immediately following metadata
  * fences apply to the preceding PHP fence. Named setup Blueprint fences are
- * exported once and snippets refer to them by name.
+ * exported once and snippets refer to them by name. Fence info words are
+ * case-sensitive so the documented lowercase forms are the only accepted syntax.
  *
  * @param string $text             Raw DocBlock long description.
  * @param array  $setup_blueprints Optional. Named setup Blueprints keyed by reference name.
@@ -480,16 +531,18 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	if ( null === $fences ) {
 		$fences = get_docblock_code_fences( $text );
 	}
+	$lines    = explode( "\n", preg_replace( "/\r\n?/", "\n", $text ) );
 	$snippets = array();
 
-	$pending_blueprint = null;
-	$consumed_fences   = array();
-	$fence_count       = count( $fences );
-	$setup_blueprints  = array();
+	$pending_blueprint       = null;
+	$pending_blueprint_fence = null;
+	$consumed_fences         = array();
+	$fence_count             = count( $fences );
+	$setup_blueprints        = array();
 
 	foreach ( $fences as $fence ) {
 		if ( null !== $fence['setup_name'] ) {
-			$setup_blueprints[ $fence['setup_name'] ] = decode_docblock_blueprint( $fence['code'] );
+			$setup_blueprints[ $fence['setup_name'] ] = decode_docblock_blueprint( $fence['code'], $fence );
 		}
 	}
 
@@ -503,12 +556,14 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 		}
 
 		if ( $fences[ $i ]['is_blueprint'] ) {
-			$pending_blueprint = decode_docblock_blueprint( $fences[ $i ]['code'] );
+			$pending_blueprint       = decode_docblock_blueprint( $fences[ $i ]['code'], $fences[ $i ] );
+			$pending_blueprint_fence = $i;
 			continue;
 		}
 
 		if ( ! $fences[ $i ]['is_interactive_php'] ) {
-			$pending_blueprint = null;
+			$pending_blueprint       = null;
+			$pending_blueprint_fence = null;
 			continue;
 		}
 
@@ -521,14 +576,23 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 			$snippet['blueprint'] = $fences[ $i ]['referenced_setup'];
 		}
 
-		if ( null !== $pending_blueprint ) {
+		if (
+			null !== $pending_blueprint &&
+			docblock_fences_have_only_whitespace_between( $fences[ $pending_blueprint_fence ], $fences[ $i ], $lines )
+		) {
 			if ( ! array_key_exists( 'blueprint', $snippet ) ) {
 				$snippet['blueprint'] = $pending_blueprint;
 			}
-			$pending_blueprint    = null;
 		}
+		$pending_blueprint       = null;
+		$pending_blueprint_fence = null;
 
+		$previous_fence = $i;
 		for ( $j = $i + 1; $j < $fence_count; $j++ ) {
+			if ( ! docblock_fences_have_only_whitespace_between( $fences[ $previous_fence ], $fences[ $j ], $lines ) ) {
+				break;
+			}
+
 			if ( $fences[ $j ]['is_interactive_php'] ) {
 				break;
 			}
@@ -545,8 +609,9 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 			}
 
 			if ( $fences[ $j ]['is_blueprint'] && ! array_key_exists( 'blueprint', $snippet ) ) {
-				$snippet['blueprint']  = decode_docblock_blueprint( $fences[ $j ]['code'] );
+				$snippet['blueprint']  = decode_docblock_blueprint( $fences[ $j ]['code'], $fences[ $j ] );
 				$consumed_fences[ $j ] = true;
+				$previous_fence        = $j;
 				continue;
 			}
 
@@ -557,6 +622,28 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	}
 
 	return $snippets;
+}
+
+/**
+ * Checks whether two fences are separated only by blank DocBlock lines.
+ *
+ * Metadata may be visually separated from its snippet by blank lines, but
+ * prose between them starts a new documentation section and ends the pairing.
+ *
+ * @param array $first  Earlier parsed fence.
+ * @param array $second Later parsed fence.
+ * @param array $lines  Normalized DocBlock long-description lines.
+ *
+ * @return bool
+ */
+function docblock_fences_have_only_whitespace_between( $first, $second, $lines ) {
+	for ( $line = $first['end'] + 1; $line < $second['start']; $line++ ) {
+		if ( '' !== trim( $lines[ $line ] ) ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
@@ -647,6 +734,25 @@ function get_referenced_setup_blueprints( $snippets, $setup_blueprints ) {
 }
 
 /**
+ * Rejects snippet references that do not resolve to an available setup Blueprint.
+ *
+ * @param array $snippets         Exported code snippets.
+ * @param array $setup_blueprints Setup Blueprints available to the DocBlock.
+ *
+ * @throws \InvalidArgumentException When a snippet references an undefined setup Blueprint.
+ */
+function validate_docblock_setup_blueprint_references( $snippets, $setup_blueprints ) {
+	foreach ( $snippets as $snippet ) {
+		if (
+			is_string( $snippet['blueprint'] ?? null ) &&
+			! array_key_exists( $snippet['blueprint'], $setup_blueprints )
+		) {
+			throw new \InvalidArgumentException( 'Setup Blueprint "' . $snippet['blueprint'] . '" is not defined.' );
+		}
+	}
+}
+
+/**
  * Checks whether a parsed DocBlock fence contains snippet expected output.
  *
  * @param array $fence
@@ -671,21 +777,30 @@ function is_docblock_blueprint_fence( $fence ) {
 /**
  * Decodes a Blueprint fence into the structure exported to JSON.
  *
- * @param string $blueprint
+ * @param string $blueprint Blueprint JSON.
+ * @param array  $fence     Optional. Parsed fence used to identify invalid input.
  *
  * @throws \InvalidArgumentException When the Blueprint is not a valid JSON object.
  *
  * @return array
  */
-function decode_docblock_blueprint( $blueprint ) {
+function decode_docblock_blueprint( $blueprint, $fence = null ) {
 	$decoded = json_decode( $blueprint, true );
+	$label   = 'Setup Blueprint';
+
+	if ( is_array( $fence ) ) {
+		if ( null !== $fence['setup_name'] ) {
+			$label .= ' "' . $fence['setup_name'] . '"';
+		}
+		$label .= ' on line ' . ( $fence['start'] + 1 ) . ' of the long description';
+	}
 
 	if ( JSON_ERROR_NONE !== json_last_error() ) {
-		throw new \InvalidArgumentException( 'Blueprint must contain valid JSON: ' . json_last_error_msg() );
+		throw new \InvalidArgumentException( $label . ' must contain valid JSON: ' . json_last_error_msg() );
 	}
 
 	if ( '{' !== substr( ltrim( $blueprint ), 0, 1 ) || ! is_array( $decoded ) ) {
-		throw new \InvalidArgumentException( 'Blueprint must be a JSON object.' );
+		throw new \InvalidArgumentException( $label . ' must be a JSON object.' );
 	}
 
 	return $decoded;
@@ -809,6 +924,17 @@ function export_uses( array $uses ) {
  *                the given description text.
  */
 function format_long_description( $description ) {
+	// Preserve phpDocumentor's established handling of plain HTML code blocks.
+	// The snippet parser works from raw contents because it must remove selected
+	// fences before Markdown rendering, bypassing getFormattedContents().
+	if ( false !== strpos( $description, '<code>' ) ) {
+		$description = str_replace(
+			array( '<code>', "<code>\r\n", "<code>\n", "<code>\r", '</code>' ),
+			array( '<pre><code>', '<code>', '<code>', '<code>', '</code></pre>' ),
+			$description
+		);
+	}
+
 	if ( class_exists( 'Parsedown' ) ) {
 		$parsedown   = \Parsedown::instance();
 		$description = $parsedown->text( $description );

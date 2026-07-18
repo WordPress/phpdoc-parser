@@ -23,6 +23,17 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that raw HTML code retains phpDocumentor's block formatting.
+	 */
+	public function test_plain_html_code_formatting() {
+
+		$this->assertEquals(
+			"<pre><code>first\nsecond\n</code></pre>",
+			\WP_Parser\format_long_description( "<code>\nfirst\nsecond\n</code>" )
+		);
+	}
+
+	/**
 	 * Test that hooks which aren't documented don't receive docs from another node.
 	 */
 	public function test_undocumented_hook() {
@@ -42,7 +53,29 @@ class Export_Docblocks extends Export_UnitTestCase {
 
 		$this->assertHookHasDocs(
 			'test_action'
-			, array( 'description' => 'A test action.' )
+			, array(
+				'description' => 'A test action.',
+				'long_description' => '<!-- wp-parser-code-snippet:0 -->',
+				'code_snippets' => array(
+					array(
+						'type' => 'php-code-snippet',
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
+						'expected_output' => 'Hello from the file setup',
+						'blueprint' => 'file-greeting',
+					),
+				),
+				'setup_blueprints' => array(
+					'file-greeting' => array(
+						'steps' => array(
+							array(
+								'step' => 'writeFile',
+								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
+								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
+							),
+						),
+					),
+				),
+			)
 		);
 
 		$this->assertHookHasDocs(
@@ -415,6 +448,32 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that large valid fences do not depend on the PCRE JIT stack size.
+	 */
+	public function test_large_code_snippet_fence() {
+
+		$line_count  = 12000;
+		$description = "```php interactive\n" . str_repeat( "echo 'line';\n", $line_count ) . '```';
+		$fences      = \WP_Parser\get_docblock_code_fences( $description );
+
+		$this->assertCount( 1, $fences );
+		$this->assertEquals( $line_count, substr_count( $fences[0]['code'], "echo 'line';" ) );
+		$this->assertTrue( $fences[0]['is_interactive_php'] );
+	}
+
+	/**
+	 * Test that trailing blank lines are not included in exported code.
+	 */
+	public function test_code_snippet_trims_trailing_blank_lines() {
+
+		$fences = \WP_Parser\get_docblock_code_fences(
+			"```php interactive\n<?php echo 'trimmed';\n\n\n```"
+		);
+
+		$this->assertEquals( "<?php echo 'trimmed';", $fences[0]['code'] );
+	}
+
+	/**
 	 * Test that PHP snippets can omit optional metadata.
 	 */
 	public function test_code_snippet_without_metadata() {
@@ -553,11 +612,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'```setup-blueprint copied-from-another-example extra-argument',
 						'{"steps":[]}',
 						'```',
-						'```PHP interactive',
+						'```php interactive',
 						'<?php',
 						'echo docs_case_fixture();',
 						'```',
-						'```Expected-Output copied from a run',
+						'```expected-output copied from a run',
 						'case fixture',
 						'```',
 					)
@@ -609,6 +668,48 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that capitalization variants are treated as ordinary documentation.
+	 */
+	public function test_code_snippet_syntax_is_case_sensitive() {
+
+		$description = implode(
+			"\n",
+			array(
+				'```PHP interactive',
+				'<?php echo "uppercase language";',
+				'```',
+				'```Php interactive',
+				'<?php echo "mixed-case language";',
+				'```',
+				'```php INTERACTIVE',
+				'<?php echo "uppercase marker";',
+				'```',
+				'```php Interactive',
+				'<?php echo "mixed-case marker";',
+				'```',
+				'```php interactive SETUP-BLUEPRINT=shared',
+				'<?php echo "uppercase option";',
+				'```',
+				'```SETUP-BLUEPRINT shared',
+				'{"steps":[]}',
+				'```',
+				'```Setup-Blueprint shared',
+				'{"steps":[]}',
+				'```',
+				'```EXPECTED-OUTPUT',
+				'uppercase output',
+				'```',
+				'```Expected-Output',
+				'mixed-case output',
+				'```',
+			)
+		);
+
+		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
+		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	/**
 	 * Test that invalid setup Blueprint JSON stops snippet export.
 	 *
 	 * @dataProvider invalid_setup_blueprints
@@ -646,6 +747,107 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'JSON number' => array( 'setup-blueprint', '42' ),
 			'JSON list' => array( 'setup-blueprint', '[]' ),
 			'trailing content' => array( 'setup-blueprint', '{"steps":[]} trailing' ),
+		);
+	}
+
+	/**
+	 * Test that invalid Blueprint failures identify the definition location.
+	 */
+	public function test_invalid_setup_blueprint_error_identifies_fence() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Setup Blueprint "shared" on line 2 of the long description must contain valid JSON' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'Introductory prose.',
+					'```setup-blueprint shared',
+					'{"steps":',
+					'```',
+				)
+			)
+		);
+	}
+
+	/**
+	 * Test that named setup Blueprint references must resolve in the DocBlock scope.
+	 */
+	public function test_undefined_setup_blueprint_reference_fails() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Setup Blueprint "missing" is not defined.' );
+
+		\WP_Parser\validate_docblock_setup_blueprint_references(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => '<?php echo "unreachable";',
+					'blueprint' => 'missing',
+				),
+			),
+			array()
+		);
+	}
+
+	/**
+	 * Test that inline and inherited setup Blueprints satisfy validation.
+	 */
+	public function test_setup_blueprint_reference_validation_accepts_available_blueprints() {
+
+		\WP_Parser\validate_docblock_setup_blueprint_references(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => '<?php echo "inline";',
+					'blueprint' => array( 'steps' => array() ),
+				),
+				array(
+					'type' => 'php-code-snippet',
+					'code' => '<?php echo "inherited";',
+					'blueprint' => 'inherited',
+				),
+			),
+			array(
+				'inherited' => array( 'steps' => array() ),
+			)
+		);
+
+		$this->assertTrue( true );
+	}
+
+	/**
+	 * Test that Blueprint failures identify their source file and entity.
+	 *
+	 * @dataProvider invalid_blueprint_source_files
+	 */
+	public function test_blueprint_error_identifies_source( $fixture, $entity, $error ) {
+
+		$file = __DIR__ . '/' . $fixture;
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'DocBlock for function "' . $entity . '" in ' . $fixture . ' starting on source line 3: ' . $error );
+
+		\WP_Parser\parse_files( array( $file ), __DIR__ );
+	}
+
+	/**
+	 * Returns malformed and unresolved Blueprint fixture errors.
+	 */
+	public function invalid_blueprint_source_files() {
+
+		return array(
+			'invalid JSON' => array(
+				'invalid-blueprint.inc',
+				'invalid_blueprint_example',
+				'Setup Blueprint "broken" on line 1 of the long description must contain valid JSON',
+			),
+			'undefined reference' => array(
+				'undefined-blueprint.inc',
+				'undefined_blueprint_example',
+				'Setup Blueprint "missing" is not defined.',
+			),
 		);
 	}
 
@@ -696,6 +898,56 @@ class Export_Docblocks extends Export_UnitTestCase {
 					)
 				)
 			)
+		);
+	}
+
+	/**
+	 * Test that snippet metadata does not cross intervening prose.
+	 */
+	public function test_code_snippet_metadata_does_not_cross_prose() {
+
+		$blueprint_before_prose = implode(
+			"\n",
+			array(
+				'```setup-blueprint',
+				'{"steps":[]}',
+				'```',
+				'This setup belongs to another example.',
+				'```php interactive',
+				'<?php echo "without setup";',
+				'```',
+			)
+		);
+		$output_after_prose = implode(
+			"\n",
+			array(
+				'```php interactive',
+				'<?php echo "without output";',
+				'```',
+				'This paragraph ends the example.',
+				'```expected-output',
+				'not attached',
+				'```',
+			)
+		);
+
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => '<?php echo "without setup";',
+				),
+			),
+			\WP_Parser\export_docblock_code_snippets( $blueprint_before_prose )
+		);
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => '<?php echo "without output";',
+				),
+			),
+			\WP_Parser\export_docblock_code_snippets( $output_after_prose )
 		);
 	}
 
@@ -784,7 +1036,29 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$this->assertPropertyHasDocs(
 			'Test_Class'
 			, '$a_string'
-			, array( 'description' => 'This is a docblock for a class property.' )
+			, array(
+				'description' => 'This is a docblock for a class property.',
+				'long_description' => '<!-- wp-parser-code-snippet:0 -->',
+				'code_snippets' => array(
+					array(
+						'type' => 'php-code-snippet',
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
+						'expected_output' => 'Hello from the file setup',
+						'blueprint' => 'file-greeting',
+					),
+				),
+				'setup_blueprints' => array(
+					'file-greeting' => array(
+						'steps' => array(
+							array(
+								'step' => 'writeFile',
+								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
+								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
+							),
+						),
+					),
+				),
+			)
 		);
 	}
 }

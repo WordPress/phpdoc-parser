@@ -54,6 +54,16 @@ class Test_Class {
 	/**
 	 * This is a docblock for a class property.
 	 *
+	 * ```php interactive setup-blueprint=file-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_file_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from the file setup
+	 * ```
+	 *
 	 * @since 3.0.0
 	 *
 	 * @var string
@@ -177,6 +187,16 @@ $var = apply_filters_ref_array( 'test_ref_array_filter', array( &$var ) );
 
 /**
  * A test action.
+ *
+ * ```php interactive setup-blueprint=file-greeting
+ * <?php
+ * require '/wordpress/wp-load.php';
+ * echo docs_file_greeting();
+ * ```
+ *
+ * ```expected-output
+ * Hello from the file setup
+ * ```
  *
  * @since 3.7.0
  *
