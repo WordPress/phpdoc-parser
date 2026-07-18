@@ -303,10 +303,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'outer',
 				'````',
 				'',
-				'```expected-output',
-				'This expected output appears before PHP and is ignored.',
-				'```',
-				'',
 				'```php interactive',
 				'<?php',
 				'echo "a different-length fence does not close";',
@@ -337,13 +333,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'',
 				'```js',
 				'console.log("another snippet");',
-				'```',
-				'```expected-output',
-				'This belongs to no PHP snippet because the JS fence breaks the metadata run.',
-				'```',
-				'',
-				'```setup-blueprint',
-				'{"steps":[{"step":"writeFile","path":"/tmp/ignored.php","data":"ignored"}]}',
 				'```',
 				'```js',
 				'console.log("this fence breaks the pending blueprint");',
@@ -519,6 +508,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'```',
 				'```php-interactive',
 				'<?php echo "still plain";',
+				'```',
+				'```php example setup-blueprint=NOT-VALID',
+				'<?php echo "setup-looking metadata on a plain fence";',
+				'```',
+				'```php INTERACTIVE setup-blueprint=ALSO-INVALID',
+				'<?php echo "the interactive marker is case-sensitive";',
 				'```',
 			)
 		);
@@ -751,6 +746,140 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that Blueprint objects retain their JSON type through export and import decoding.
+	 *
+	 * @dataProvider blueprint_object_shapes
+	 */
+	public function test_blueprint_json_object_shapes_are_preserved( $blueprint ) {
+
+		$decoded  = \WP_Parser\decode_docblock_blueprint( $blueprint );
+		$exported = json_encode( $decoded );
+		$imported = json_decode( $exported );
+		\WP_Parser\preserve_json_object_shapes( $imported );
+
+		$this->assertSame( $blueprint, $exported );
+		$this->assertSame( $blueprint, json_encode( $imported ) );
+	}
+
+	/**
+	 * Returns Blueprint objects whose shape associative decoding would otherwise lose.
+	 */
+	public function blueprint_object_shapes() {
+
+		return array(
+			'empty Blueprint' => array( '{}' ),
+			'nested empty object' => array( '{"constants":{},"steps":[]}' ),
+			'numeric object keys' => array( '{"siteOptions":{"0":"zero","1":"one"},"steps":[]}' ),
+		);
+	}
+
+	/**
+	 * Test that reusable setup Blueprint names use one unambiguous form.
+	 *
+	 * @dataProvider invalid_setup_blueprint_names
+	 */
+	public function test_invalid_setup_blueprint_name_fails( $fence_info, $contents ) {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'must be lowercase kebab-case starting with a letter' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```" . $fence_info . "\n" . $contents . "\n```"
+		);
+	}
+
+	/**
+	 * Returns malformed reusable setup Blueprint definitions and references.
+	 */
+	public function invalid_setup_blueprint_names() {
+
+		return array(
+			'numeric definition' => array( 'setup-blueprint 0', '{}' ),
+			'uppercase definition' => array( 'setup-blueprint Shared', '{}' ),
+			'underscore definition' => array( 'setup-blueprint shared_name', '{}' ),
+			'leading hyphen definition' => array( 'setup-blueprint -shared', '{}' ),
+			'trailing hyphen definition' => array( 'setup-blueprint shared-', '{}' ),
+			'repeated hyphen definition' => array( 'setup-blueprint shared--name', '{}' ),
+			'dotted definition' => array( 'setup-blueprint shared.name', '{}' ),
+			'numeric reference' => array( 'php interactive setup-blueprint=0', '<?php echo 1;' ),
+			'uppercase reference' => array( 'php interactive setup-blueprint=Shared', '<?php echo 1;' ),
+			'underscore reference' => array( 'php interactive setup-blueprint=shared_name', '<?php echo 1;' ),
+			'empty reference' => array( 'php interactive setup-blueprint=', '<?php echo 1;' ),
+		);
+	}
+
+	/**
+	 * Test valid reusable setup Blueprint names at the grammar boundaries.
+	 *
+	 * @dataProvider valid_setup_blueprint_names
+	 */
+	public function test_valid_setup_blueprint_name( $name ) {
+
+		$setup_blueprints = array();
+		$snippets         = \WP_Parser\export_docblock_code_snippets(
+			"```setup-blueprint " . $name . "\n{}\n```\n" .
+			"```php interactive setup-blueprint=" . $name . "\n<?php echo 1;\n```",
+			$setup_blueprints
+		);
+
+		$this->assertArrayHasKey( $name, $setup_blueprints );
+		$this->assertSame( $name, $snippets[0]['blueprint'] );
+	}
+
+	/**
+	 * Returns valid reusable setup Blueprint names.
+	 */
+	public function valid_setup_blueprint_names() {
+
+		return array(
+			'single letter' => array( 'a' ),
+			'trailing number' => array( 'shared0' ),
+			'hyphenated number' => array( 'shared-0' ),
+		);
+	}
+
+	/**
+	 * Test that duplicate reusable setup Blueprint definitions fail instead of overwriting.
+	 */
+	public function test_duplicate_setup_blueprint_name_fails() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Setup Blueprint "shared" is defined more than once on lines 1 and 4 of the long description.' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```setup-blueprint shared',
+					'{"steps":[]}',
+					'```',
+					'```setup-blueprint shared',
+					'{"constants":{}}',
+					'```',
+				)
+			)
+		);
+	}
+
+	/**
+	 * Test that a local setup Blueprint cannot silently replace an inherited definition.
+	 */
+	public function test_setup_blueprint_name_cannot_shadow_inherited_definition() {
+
+		$fences = \WP_Parser\get_docblock_code_fences(
+			"Introductory prose.\n```setup-blueprint shared\n{}\n```"
+		);
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Setup Blueprint "shared" on line 2 of the long description is already defined in an enclosing DocBlock.' );
+
+		\WP_Parser\validate_docblock_setup_blueprint_scope(
+			$fences,
+			array( 'shared' => array( 'steps' => array() ) )
+		);
+	}
+
+	/**
 	 * Test that invalid Blueprint failures identify the definition location.
 	 */
 	public function test_invalid_setup_blueprint_error_identifies_fence() {
@@ -818,6 +947,33 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that one snippet cannot silently choose between multiple setup Blueprints.
+	 *
+	 * @dataProvider ambiguous_setup_blueprints
+	 */
+	public function test_ambiguous_setup_blueprints_fail( $description ) {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'more than one setup Blueprint' );
+
+		\WP_Parser\export_docblock_code_snippets( $description );
+	}
+
+	public function ambiguous_setup_blueprints() {
+
+		$inline = "```setup-blueprint\n{}\n```";
+		$named  = "```php interactive setup-blueprint=shared\n<?php echo 1;\n```";
+		$plain  = "```php interactive\n<?php echo 1;\n```";
+
+		return array(
+			'inline before named reference' => array( $inline . "\n" . $named ),
+			'inline after named reference' => array( $named . "\n" . $inline ),
+			'two inline Blueprints before PHP' => array( $inline . "\n" . $inline . "\n" . $plain ),
+			'two inline Blueprints after PHP' => array( $plain . "\n" . $inline . "\n" . $inline ),
+		);
+	}
+
+	/**
 	 * Test that Blueprint failures identify their source file and entity.
 	 *
 	 * @dataProvider invalid_blueprint_source_files
@@ -846,7 +1002,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'undefined reference' => array(
 				'undefined-blueprint.inc',
 				'undefined_blueprint_example',
-				'Setup Blueprint "missing" is not defined.',
+				'Setup Blueprint "missing" referenced on line 1 of the long description is not defined.',
 			),
 		);
 	}
@@ -902,52 +1058,28 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that snippet metadata does not cross intervening prose.
+	 * Test that recognized snippet metadata must belong to an interactive fence.
+	 *
+	 * @dataProvider unattached_snippet_metadata
 	 */
-	public function test_code_snippet_metadata_does_not_cross_prose() {
+	public function test_unattached_snippet_metadata_fails( $description ) {
 
-		$blueprint_before_prose = implode(
-			"\n",
-			array(
-				'```setup-blueprint',
-				'{"steps":[]}',
-				'```',
-				'This setup belongs to another example.',
-				'```php interactive',
-				'<?php echo "without setup";',
-				'```',
-			)
-		);
-		$output_after_prose = implode(
-			"\n",
-			array(
-				'```php interactive',
-				'<?php echo "without output";',
-				'```',
-				'This paragraph ends the example.',
-				'```expected-output',
-				'not attached',
-				'```',
-			)
-		);
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'is not attached to an interactive PHP fence' );
 
-		$this->assertEquals(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => '<?php echo "without setup";',
-				),
-			),
-			\WP_Parser\export_docblock_code_snippets( $blueprint_before_prose )
-		);
-		$this->assertEquals(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => '<?php echo "without output";',
-				),
-			),
-			\WP_Parser\export_docblock_code_snippets( $output_after_prose )
+		\WP_Parser\export_docblock_code_snippets( $description );
+	}
+
+	public function unattached_snippet_metadata() {
+
+		$php = "```php interactive\n<?php echo 1;\n```";
+
+		return array(
+			'expected output before PHP' => array( "```expected-output\n1\n```\n" . $php ),
+			'expected output after prose' => array( $php . "\nProse.\n```expected-output\n1\n```" ),
+			'inline Blueprint before prose' => array( "```setup-blueprint\n{}\n```\nProse.\n" . $php ),
+			'inline Blueprint after prose' => array( $php . "\nProse.\n```setup-blueprint\n{}\n```" ),
+			'duplicate expected output' => array( $php . "\n```expected-output\n1\n```\n```expected-output\n2\n```" ),
 		);
 	}
 
@@ -963,9 +1095,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				array(
 					'```setup-blueprint shared',
 					'{"steps":[{"step":"writeFile","path":"/tmp/shared.php","data":"<?php echo \"shared\";"}]}',
-					'```',
-					'```setup-blueprint',
-					'{"steps":[{"step":"writeFile","path":"/tmp/ignored-inline.php","data":"ignored"}]}',
 					'```',
 					'```php interactive setup-blueprint=shared',
 					'<?php',
