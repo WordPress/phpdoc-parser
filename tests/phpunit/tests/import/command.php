@@ -76,6 +76,7 @@ class Command_Import_Test extends WP_UnitTestCase {
 			'non-string path' => array( '[{"path":42,"file":{"description":"","long_description":"","tags":[]}}]' ),
 			'empty path' => array( '[{"path":"","file":{"description":"","long_description":"","tags":[]}}]' ),
 			'non-object file metadata' => array( '[{"path":"example.php","file":[]}]' ),
+			'empty object file metadata' => array( '[{"path":"example.php","file":{}}]' ),
 			'missing description' => array( '[{"path":"example.php","file":{"long_description":"","tags":[]}}]' ),
 			'non-string description' => array( '[{"path":"example.php","file":{"description":42,"long_description":"","tags":[]}}]' ),
 			'missing long description' => array( '[{"path":"example.php","file":{"description":"","tags":[]}}]' ),

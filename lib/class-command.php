@@ -77,16 +77,17 @@ class Command extends WP_CLI_Command {
 		foreach ( $phpdoc as $index => $parsed_file ) {
 			if (
 				! is_array( $parsed_file ) ||
-				! isset( $parsed_file['path'] ) ||
+				! isset( $parsed_file['path'], $parsed_file['file'] ) ||
 				! is_string( $parsed_file['path'] ) ||
 				'' === $parsed_file['path'] ||
-				! isset( $parsed_file['file'] ) ||
 				! is_array( $parsed_file['file'] ) ||
-				! isset( $parsed_file['file']['description'] ) ||
+				! isset(
+					$parsed_file['file']['description'],
+					$parsed_file['file']['long_description'],
+					$parsed_file['file']['tags']
+				) ||
 				! is_string( $parsed_file['file']['description'] ) ||
-				! isset( $parsed_file['file']['long_description'] ) ||
 				! is_string( $parsed_file['file']['long_description'] ) ||
-				! isset( $parsed_file['file']['tags'] ) ||
 				! is_array( $parsed_file['file']['tags'] ) ||
 				array_values( $parsed_file['file']['tags'] ) !== $parsed_file['file']['tags']
 			) {
