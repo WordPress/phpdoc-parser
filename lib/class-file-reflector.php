@@ -45,27 +45,28 @@ class File_Reflector extends FileReflector {
 	protected $last_doc = null;
 
 	/**
-	 * Whether the file DocBlock was parsed with its complete fence bodies blanked.
+	 * Whether complete fence bodies were blanked before parsing the file DocBlock.
 	 *
 	 * @var bool
 	 */
 	protected $docblock_was_sanitized = false;
 
 	/**
-	 * Reports whether false in-fence tags were absent from the parsed DocBlock.
+	 * Indicates whether complete file-DocBlock fence bodies were blanked.
 	 *
-	 * @return bool
+	 * @return bool Whether phpDocumentor parsed a sanitized comment.
 	 */
 	public function wasDocBlockSanitized() {
 		return $this->docblock_was_sanitized;
 	}
 
 	/**
-	 * Let phpDocumentor identify a file DocBlock without parsing fenced PHP as tags.
+	 * Lets phpDocumentor identify a file DocBlock without parsing fenced PHP as tags.
 	 *
-	 * FileReflector parses and removes the file comment before visiting individual
-	 * nodes. Temporarily blanking complete fence bodies preserves that lifecycle;
-	 * export_docblock() later recovers the untouched source from the file contents.
+	 * `FileReflector` consumes the file comment before visiting its nodes, so
+	 * `export_docblock()` cannot sanitize it later. Complete fence bodies are
+	 * temporarily blanked for the parent traversal and restored afterward; the
+	 * untouched file contents remain available for snippet extraction.
 	 *
 	 * @param PHPParser_Node[] $nodes
 	 *

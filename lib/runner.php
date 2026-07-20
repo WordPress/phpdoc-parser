@@ -40,10 +40,15 @@ function get_wp_files( $directory ) {
 }
 
 /**
- * @param array  $files
- * @param string $root
+ * Parses PHP files into records consumed by the importer.
  *
- * @return array
+ * Setup Blueprints flow from file and class DocBlocks to descendants. A
+ * descendant copies only definitions referenced by one of its snippets.
+ *
+ * @param string[] $files PHP source files to parse.
+ * @param string   $root  Root path removed from exported file paths.
+ *
+ * @return array Parsed file records in input order.
  */
 function parse_files( $files, $root ) {
 	$output = array();
@@ -196,11 +201,19 @@ function fix_newlines( $text ) {
 }
 
 /**
- * @param BaseReflector|ReflectionAbstract $element
- * @param array                            $inherited_setup_blueprints Optional. Setup Blueprints inherited from the file or class DocBlock.
- * @param string                           $source_file                Optional. Source path used in invalid snippet metadata errors.
+ * Exports one reflected DocBlock and its runnable snippet metadata.
  *
- * @return array
+ * Fenced descriptions are recovered from source because phpDocumentor may
+ * interpret PHP lines beginning with `@` as tags. Named setup references may
+ * resolve against definitions inherited from the enclosing file or class.
+ *
+ * @param BaseReflector|ReflectionAbstract $element                    Reflected DocBlock owner.
+ * @param array                            $inherited_setup_blueprints Setup Blueprints visible from enclosing scopes.
+ * @param string                           $source_file                Source path used in metadata errors.
+ *
+ * @throws \InvalidArgumentException When snippet metadata is invalid or ambiguous.
+ *
+ * @return array Exported descriptions, tags, snippets, and referenced setup Blueprints.
  */
 function export_docblock( $element, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$node_docblock          = null;
@@ -291,52 +304,37 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 				$source_lines[ $key ] = preg_replace( '/^[ \t]*\*[ \t]?/', '', $source_line );
 			}
 
-			$description_lines         = array();
-			$closing_pattern           = null;
-			$open_fence_tag_count      = null;
-			$first_open_fence_tag_line = null;
+			// Reuse tokenizer boundaries so source recovery and snippet export agree
+			// on which exact backtick runs delimit complete fences.
+			$source_fences        = tokenize_docblock_code_fences( implode( "\n", $source_lines ) );
+			$source_fence_index   = 0;
+			$description_lines    = array();
 			// phpDocumentor starts its tag block at an optionally indented @ followed
 			// by a letter. Once started, only a column-zero @ with any valid tag name
 			// opens another tag; indented lines extend the preceding tag instead.
-			$parsed_tag_block_started  = false;
-			foreach ( $source_lines as $source_line ) {
-				if ( null === $closing_pattern ) {
-					if ( preg_match( '/^[ \t]*(`{3,})[^`]*$/', $source_line, $opening ) ) {
-						$closing_pattern           = '/^[ \t]*' . preg_quote( $opening[1], '/' ) . '[ \t]*$/';
-						$open_fence_tag_count      = count( $fenced_docblock_tag_names );
-						$first_open_fence_tag_line = null;
-					} elseif (
-						( ! $parsed_tag_block_started && preg_match( '/^[ \t]*@\pL/u', $source_line ) ) ||
-						( $parsed_tag_block_started && preg_match( '/^@[\w\-_\\\\]+/u', $source_line ) )
-					) {
+			$parsed_tag_block_started = false;
+			foreach ( $source_lines as $source_line_number => $source_line ) {
+				while (
+					isset( $source_fences[ $source_fence_index ] ) &&
+					$source_line_number >= $source_fences[ $source_fence_index ]['end']
+				) {
+					$source_fence_index++;
+				}
+				$is_in_fence = isset( $source_fences[ $source_fence_index ] ) &&
+					$source_line_number > $source_fences[ $source_fence_index ]['start'];
+
+				$tag_pattern = $parsed_tag_block_started
+					? '/^@([\w\-_\\\\]+)/u'
+					: '/^[ \t]*@([\pL][\w\-_\\\\]*)/u';
+				if ( preg_match( $tag_pattern, $source_line, $tag_match ) ) {
+					if ( ! $is_in_fence ) {
 						break;
 					}
-				} elseif ( preg_match( $closing_pattern, $source_line ) ) {
-					$closing_pattern           = null;
-					$open_fence_tag_count      = null;
-					$first_open_fence_tag_line = null;
-				} else {
-					$tag_name = null;
-					if ( ! $parsed_tag_block_started && preg_match( '/^[ \t]*@([\pL][\w\-_\\\\]*)/u', $source_line, $tag_match ) ) {
-						$parsed_tag_block_started = true;
-						$tag_name                 = $tag_match[1];
-					} elseif ( $parsed_tag_block_started && preg_match( '/^@([\w\-_\\\\]+)/u', $source_line, $tag_match ) ) {
-						$tag_name = $tag_match[1];
-					}
-
-					if ( null !== $tag_name ) {
-						if ( null === $first_open_fence_tag_line ) {
-							$first_open_fence_tag_line = count( $description_lines );
-						}
-						$fenced_docblock_tag_names[] = $tag_name;
-					}
+					$parsed_tag_block_started    = true;
+					$fenced_docblock_tag_names[] = $tag_match[1];
 				}
 
 				$description_lines[] = $source_line;
-			}
-			if ( null !== $closing_pattern && null !== $first_open_fence_tag_line ) {
-				$description_lines         = array_slice( $description_lines, 0, $first_open_fence_tag_line );
-				$fenced_docblock_tag_names = array_slice( $fenced_docblock_tag_names, 0, $open_fence_tag_count );
 			}
 			// Remove blank wrapper lines without stripping indentation from a fence
 			// that begins or ends the description. That indentation controls both
@@ -496,11 +494,18 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
  */
 function sanitize_docblock_fenced_contents( $source_docblock ) {
 	$original_source_docblock = $source_docblock;
+
+	// Normalize line endings so tokenizer indexes map to physical source lines.
 	$source_docblock          = preg_replace( "/\r\n?/", "\n", $source_docblock );
+
+	// Remove the opener and at most one decorative whitespace byte.
 	$contents                 = preg_replace( '/\A[ \t]*\/\*\*[ \t]?/', '', $source_docblock );
+
+	// Remove only the end-anchored closing delimiter and its indentation.
 	$contents                 = preg_replace( '/[ \t]*\*\/[ \t]*\z/', '', $contents );
 	$content_lines            = explode( "\n", $contents );
 	foreach ( $content_lines as $key => $line ) {
+		// Remove the decorative star and at most one following whitespace byte.
 		$content_lines[ $key ] = preg_replace( '/^[ \t]*\*[ \t]?/', '', $line );
 	}
 
@@ -512,8 +517,7 @@ function sanitize_docblock_fenced_contents( $source_docblock ) {
 	$source_lines = explode( "\n", $source_docblock );
 	foreach ( $fences as $fence ) {
 		for ( $line = $fence['start'] + 1; $line < $fence['end']; $line++ ) {
-			// Retain the DocBlock's decorative `*`, but no text that phpDocumentor
-			// could reinterpret as a tag or part of the surrounding description.
+			// Retain indentation and the decorative star while blanking body text.
 			$source_lines[ $line ] = preg_match( '/^([ \t]*\*)/', $source_lines[ $line ], $prefix ) ? $prefix[1] : '';
 		}
 	}
@@ -1246,17 +1250,8 @@ function format_long_description( $description ) {
 	$description = preg_replace_callback(
 		'#<pre><code>((?:[ \t\n]*+&lt;!-- wp-parser-code-snippet-placeholder:[0-9]+ --&gt;)+[ \t\n]*+)</code></pre>#',
 		function ( $matches ) {
-			preg_match_all(
-				'/&lt;!-- wp-parser-code-snippet-placeholder:([0-9]+) --&gt;/',
-				$matches[1],
-				$placeholder_matches
-			);
-			$placeholders = array();
-			foreach ( $placeholder_matches[1] as $index ) {
-				$placeholders[] = '<!-- wp-parser-code-snippet-placeholder:' . $index . ' -->';
-			}
-
-			return implode( "\n", $placeholders );
+			$placeholders = str_replace( array( '&lt;', '&gt;' ), array( '<', '>' ), trim( $matches[1] ) );
+			return preg_replace( '/[ \t\n]++(?=<!-- wp-parser-code-snippet-placeholder:)/', "\n", $placeholders );
 		},
 		$description
 	);
