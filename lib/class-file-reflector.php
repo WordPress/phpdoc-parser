@@ -226,11 +226,12 @@ class File_Reflector extends FileReflector {
 		switch ( $node->getType() ) {
 			case 'Stmt_Property':
 				/*
-				 * phpDocumentor reads a property's DocBlock from the enclosing Property
-				 * node, but PropertyReflector::getNode() exposes one PropertyProperty
-				 * child. Copy the raw comment after traversal so export_docblock() can
-				 * recover fenced source through the same node API as other reflectors,
-				 * without making the child look documented while hooks are discovered.
+				 * PropertyReflector::getDocBlock() reads the declaration node, while
+				 * getNode() returns one PropertyProperty child. Copy the declaration's
+				 * comment to each child after it has been visited so export_docblock() can
+				 * recover the raw fenced text through getNode(). Copying it earlier would
+				 * make enterNode() queue the non-documentable child's comment for the next
+				 * hook.
 				 */
 				$docblock = $node->getDocComment();
 				if ( $docblock ) {

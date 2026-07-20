@@ -265,12 +265,15 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	$docblock = $element->getDocBlock();
 	if ( ! $docblock && null !== $node_source_docblock && false !== strpos( $node_source_docblock, '```' ) ) {
 		/*
-		 * phpDocumentor parses fenced lines beginning with `@` as tags. Once one
-		 * such line starts its tag block, a later valid PHP expression such as
-		 * `@! file_exists()` is an invalid tag and makes getDocBlock() return null.
-		 * Retry with only complete fence bodies blanked, then restore the AST
-		 * comment. The parsed object supplies tags and namespace context; the raw
-		 * source below still supplies the complete description and snippet code.
+		 * phpDocumentor does not recognize fences. A fenced line beginning with `@`
+		 * starts its tag block, and a later PHP expression such as `@! file_exists()`
+		 * can make the whole DocBlock fail to parse.
+		 *
+		 * Blank only the bodies of complete fences and retry, leaving the fence
+		 * markers and line structure intact. Restore the original AST comment
+		 * immediately afterward. The parsed object supplies tags and namespace
+		 * context; the untouched $node_source_docblock supplies descriptions and
+		 * snippet code below.
 		 */
 		$sanitized_docblock = sanitize_docblock_fenced_contents( $node_source_docblock );
 		if ( $sanitized_docblock !== $node_source_docblock ) {
