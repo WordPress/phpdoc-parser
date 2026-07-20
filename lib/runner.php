@@ -672,6 +672,12 @@ function export_methods( array $methods, array $inherited_setup_blueprints = arr
  * @return array
  */
 function get_docblock_code_fences( $text ) {
+	if ( preg_match( '/<!--[ \t]wp-parser-code-snippet(?:-placeholder)?:[0-9]+[ \t]-->/', $text ) ) {
+		throw new \InvalidArgumentException(
+			'The DocBlock placeholder comment syntax is reserved for generated snippet placement.'
+		);
+	}
+
 	$fences = tokenize_docblock_code_fences( $text );
 
 	foreach ( $fences as $key => $fence ) {
@@ -1029,7 +1035,7 @@ function strip_docblock_code_snippet_fences( $text, $fences = null ) {
 				// Keep a nested fence's indentation so Markdown leaves the replacement
 				// inside its list item instead of closing the list around the snippet.
 				$indent = substr( $lines[ $i ], 0, strspn( $lines[ $i ], " \t" ) );
-				$replace_lines[ $i ] = $indent . '<!-- wp-parser-code-snippet:' . (int) $fence['snippet_index'] . ' -->';
+				$replace_lines[ $i ] = $indent . '<!-- wp-parser-code-snippet-placeholder:' . (int) $fence['snippet_index'] . ' -->';
 			} else {
 				$remove_lines[ $i ] = true;
 			}
@@ -1227,11 +1233,35 @@ function format_long_description( $description ) {
 		$description = $parsedown->text( $description );
 	}
 
-	// Fences may use more than three leading spaces. Outside a list, Parsedown
-	// treats their generated placeholder as indented code. Restore only the exact
-	// internal marker so the theme can still replace it with the runnable snippet.
+	/*
+	 * Fences may use more than three leading spaces. Parsedown puts adjacent
+	 * indented placeholders into one code block, including the blank lines left
+	 * by removed metadata fences. Unwrap only a code block made entirely of our
+	 * intermediate markers, then publish the final comments consumed by the theme.
+	 * Keeping the intermediate name distinct also prevents author-written final
+	 * comments from being mistaken for generated placement markers here. The
+	 * whitespace runs are possessive because a marker begins with `&`, so a long
+	 * indented near-match never needs whitespace backtracking.
+	 */
+	$description = preg_replace_callback(
+		'#<pre><code>((?:[ \t\n]*+&lt;!-- wp-parser-code-snippet-placeholder:[0-9]+ --&gt;)+[ \t\n]*+)</code></pre>#',
+		function ( $matches ) {
+			preg_match_all(
+				'/&lt;!-- wp-parser-code-snippet-placeholder:([0-9]+) --&gt;/',
+				$matches[1],
+				$placeholder_matches
+			);
+			$placeholders = array();
+			foreach ( $placeholder_matches[1] as $index ) {
+				$placeholders[] = '<!-- wp-parser-code-snippet-placeholder:' . $index . ' -->';
+			}
+
+			return implode( "\n", $placeholders );
+		},
+		$description
+	);
 	$description = preg_replace(
-		'#<pre><code>[ \t]*&lt;!-- wp-parser-code-snippet:([0-9]+) --&gt;</code></pre>#',
+		'/<!-- wp-parser-code-snippet-placeholder:([0-9]+) -->/',
 		'<!-- wp-parser-code-snippet:$1 -->',
 		$description
 	);

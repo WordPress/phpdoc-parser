@@ -674,8 +674,8 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
 
 		// One placeholder per PHP fence, in document order, with the prose around them.
-		$first  = strpos( $stripped, '<!-- wp-parser-code-snippet:0 -->' );
-		$second = strpos( $stripped, '<!-- wp-parser-code-snippet:1 -->' );
+		$first  = strpos( $stripped, '<!-- wp-parser-code-snippet-placeholder:0 -->' );
+		$second = strpos( $stripped, '<!-- wp-parser-code-snippet-placeholder:1 -->' );
 		$this->assertNotFalse( $first );
 		$this->assertNotFalse( $second );
 		$this->assertLessThan( $second, $first );
@@ -725,7 +725,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		);
 		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
 
-		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet:0 -->', $stripped );
+		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet-placeholder:0 -->', $stripped );
 		$this->assertSame(
 			$expected,
 			\WP_Parser\format_long_description( $stripped )
@@ -768,9 +768,47 @@ class Export_Docblocks extends Export_UnitTestCase {
 			$indent . "```\n\nAfter";
 		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
 
-		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet:0 -->', $stripped );
+		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet-placeholder:0 -->', $stripped );
 		$this->assertSame(
 			'<p>Before</p> <!-- wp-parser-code-snippet:0 --> <p>After</p>',
+			\WP_Parser\format_long_description( $stripped )
+		);
+	}
+
+	/**
+	 * Test adjacent, deeply indented placeholders do not merge into visible code.
+	 */
+	public function test_adjacent_indented_code_snippet_placeholders_remain_html() {
+
+		$description = implode(
+			"\n",
+			array(
+				'Before',
+				'',
+				'    ```php interactive',
+				'    <?php echo 1;',
+				'    ```',
+				'',
+				'    ```expected-output',
+				'    1',
+				'    ```',
+				'',
+				'    ```php interactive',
+				'    <?php echo 2;',
+				'    ```',
+				'',
+				'    ```expected-output',
+				'    2',
+				'    ```',
+				'',
+				'After',
+			)
+		);
+		$fences  = \WP_Parser\get_docblock_code_fences( $description );
+		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description, $fences );
+
+		$this->assertSame(
+			'<p>Before</p> <!-- wp-parser-code-snippet:0 --> <!-- wp-parser-code-snippet:1 --> <p>After</p>',
 			\WP_Parser\format_long_description( $stripped )
 		);
 	}
@@ -784,6 +822,35 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'eight spaces' => array( '        ' ),
 			'tab' => array( "\t" ),
 			'two tabs' => array( "\t\t" ),
+		);
+	}
+
+	/**
+	 * Test that author text cannot collide with generated snippet placeholders.
+	 *
+	 * @dataProvider reserved_code_snippet_placeholders
+	 */
+	public function test_reserved_code_snippet_placeholder_fails( $source ) {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'is reserved for generated snippet placement' );
+
+		\WP_Parser\get_docblock_code_fences(
+			"Before\n\n" . $source . "\n\n```php interactive\n<?php echo 1;\n```"
+		);
+	}
+
+	/**
+	 * Returns collision-prone placements of the reserved placeholder comments.
+	 */
+	public function reserved_code_snippet_placeholders() {
+		return array(
+			'public placeholder' => array( '<!-- wp-parser-code-snippet:0 -->' ),
+			'indented public placeholder' => array( '    <!-- wp-parser-code-snippet:0 -->' ),
+			'intermediate placeholder' => array( '<!-- wp-parser-code-snippet-placeholder:0 -->' ),
+			'intermediate placeholder in an ordinary fence' => array(
+				"```\n<!-- wp-parser-code-snippet-placeholder:0 -->\n```",
+			),
 		);
 	}
 
