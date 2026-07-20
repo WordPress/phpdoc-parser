@@ -203,7 +203,37 @@ function fix_newlines( $text ) {
  * @return array
  */
 function export_docblock( $element, array $inherited_setup_blueprints = array(), $source_file = '' ) {
+	$node_docblock          = null;
+	$node_source_docblock   = null;
+	$docblock_was_sanitized = $element instanceof File_Reflector && $element->wasDocBlockSanitized();
+	if ( ! ( $element instanceof File_Reflector ) && method_exists( $element, 'getNode' ) ) {
+		$node = $element->getNode();
+		if ( $node && method_exists( $node, 'getDocComment' ) ) {
+			$node_docblock = $node->getDocComment();
+			if ( $node_docblock ) {
+				$node_source_docblock = (string) $node_docblock;
+			}
+		}
+	}
+
 	$docblock = $element->getDocBlock();
+	if ( ! $docblock && null !== $node_source_docblock && false !== strpos( $node_source_docblock, '```' ) ) {
+		/*
+		 * phpDocumentor parses fenced lines beginning with `@` as tags. Once one
+		 * such line starts its tag block, a later valid PHP expression such as
+		 * `@! file_exists()` is an invalid tag and makes getDocBlock() return null.
+		 * Retry with only complete fence bodies blanked, then restore the AST
+		 * comment. The parsed object supplies tags and namespace context; the raw
+		 * source below still supplies the complete description and snippet code.
+		 */
+		$sanitized_docblock = sanitize_docblock_fenced_contents( $node_source_docblock );
+		if ( $sanitized_docblock !== $node_source_docblock ) {
+			$node_docblock->setText( $sanitized_docblock );
+			$docblock = $element->getDocBlock();
+			$node_docblock->setText( $node_source_docblock );
+			$docblock_was_sanitized = (bool) $docblock;
+		}
+	}
 	if ( ! $docblock ) {
 		return array(
 			'description'      => '',
@@ -211,18 +241,183 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 			'tags'             => array(),
 		);
 	}
+	$fenced_docblock_tag_names = array();
 
 	try {
+		$short_description    = $docblock->getShortDescription();
 		$raw_long_description = $docblock->getLongDescription()->getContents();
-		$fences               = get_docblock_code_fences( $raw_long_description );
-		validate_docblock_setup_blueprint_scope( $fences, $inherited_setup_blueprints );
+		$source_docblock       = null;
+
+		if ( false !== strpos( $short_description, '```' ) || false !== strpos( $raw_long_description, '```' ) ) {
+			if ( $element instanceof File_Reflector ) {
+				$location = $docblock->getLocation();
+				if ( $location && $location->getLineNumber() ) {
+					$source_lines      = explode( "\n", preg_replace( "/\r\n?/", "\n", $element->getContents() ) );
+					$source_line       = $location->getLineNumber() - 1;
+					$source_line_count = count( $source_lines );
+					if ( isset( $source_lines[ $source_line ] ) ) {
+						$opening = strpos( $source_lines[ $source_line ], '/**' );
+						if ( false !== $opening ) {
+							$source_lines[ $source_line ] = substr( $source_lines[ $source_line ], $opening );
+							$source_docblock_lines = array();
+							for ( ; $source_line < $source_line_count; $source_line++ ) {
+								$source_docblock_lines[] = $source_lines[ $source_line ];
+								if ( false !== strpos( $source_lines[ $source_line ], '*/' ) ) {
+									break;
+								}
+							}
+							$source_docblock = implode( "\n", $source_docblock_lines );
+						}
+					}
+				}
+			} elseif ( null !== $node_source_docblock ) {
+				$source_docblock = $node_source_docblock;
+			}
+		}
+
+		if ( null !== $source_docblock ) {
+			// phpDocumentor treats any line beginning with `@` as a tag, even
+			// inside a fenced block, and splits its short description at paragraph
+			// boundaries inside fences. Recover the description directly from the
+			// source comment so runnable code retains its source line structure. Stop
+			// at the first real tag outside a fence. Keep track of tag-looking code
+			// lines so the parsed DocBlock tags below can omit phpDocumentor's false
+			// positives without hiding real tags with the same name.
+			$source_docblock = preg_replace( "/\r\n?/", "\n", $source_docblock );
+			$source_docblock = preg_replace( '/\A[ \t]*\/\*\*[ \t]?/', '', $source_docblock );
+			$source_docblock = preg_replace( '/[ \t]*\*\/[ \t]*\z/', '', $source_docblock );
+			$source_lines    = explode( "\n", $source_docblock );
+			foreach ( $source_lines as $key => $source_line ) {
+				$source_lines[ $key ] = preg_replace( '/^[ \t]*\*[ \t]?/', '', $source_line );
+			}
+
+			$description_lines         = array();
+			$closing_pattern           = null;
+			$open_fence_tag_count      = null;
+			$first_open_fence_tag_line = null;
+			// phpDocumentor starts its tag block at an optionally indented @ followed
+			// by a letter. Once started, only a column-zero @ with any valid tag name
+			// opens another tag; indented lines extend the preceding tag instead.
+			$parsed_tag_block_started  = false;
+			foreach ( $source_lines as $source_line ) {
+				if ( null === $closing_pattern ) {
+					if ( preg_match( '/^[ \t]*(`{3,})[^`]*$/', $source_line, $opening ) ) {
+						$closing_pattern           = '/^[ \t]*' . preg_quote( $opening[1], '/' ) . '[ \t]*$/';
+						$open_fence_tag_count      = count( $fenced_docblock_tag_names );
+						$first_open_fence_tag_line = null;
+					} elseif (
+						( ! $parsed_tag_block_started && preg_match( '/^[ \t]*@\pL/u', $source_line ) ) ||
+						( $parsed_tag_block_started && preg_match( '/^@[\w\-_\\\\]+/u', $source_line ) )
+					) {
+						break;
+					}
+				} elseif ( preg_match( $closing_pattern, $source_line ) ) {
+					$closing_pattern           = null;
+					$open_fence_tag_count      = null;
+					$first_open_fence_tag_line = null;
+				} else {
+					$tag_name = null;
+					if ( ! $parsed_tag_block_started && preg_match( '/^[ \t]*@([\pL][\w\-_\\\\]*)/u', $source_line, $tag_match ) ) {
+						$parsed_tag_block_started = true;
+						$tag_name                 = $tag_match[1];
+					} elseif ( $parsed_tag_block_started && preg_match( '/^@([\w\-_\\\\]+)/u', $source_line, $tag_match ) ) {
+						$tag_name = $tag_match[1];
+					}
+
+					if ( null !== $tag_name ) {
+						if ( null === $first_open_fence_tag_line ) {
+							$first_open_fence_tag_line = count( $description_lines );
+						}
+						$fenced_docblock_tag_names[] = $tag_name;
+					}
+				}
+
+				$description_lines[] = $source_line;
+			}
+			if ( null !== $closing_pattern && null !== $first_open_fence_tag_line ) {
+				$description_lines         = array_slice( $description_lines, 0, $first_open_fence_tag_line );
+				$fenced_docblock_tag_names = array_slice( $fenced_docblock_tag_names, 0, $open_fence_tag_count );
+			}
+			// Remove blank wrapper lines without stripping indentation from a fence
+			// that begins or ends the description. That indentation controls both
+			// content dedenting and the fence's Markdown nesting level.
+			$description_edge_pattern = '/\A(?:[ \t]*\n)+|(?:\n[ \t]*)+\z/';
+			$source_description        = preg_replace( $description_edge_pattern, '', implode( "\n", $description_lines ) );
+			if ( $docblock_was_sanitized ) {
+				// Sanitized parsing never created the false in-fence tags, so every
+				// parsed tag belongs to the actual DocBlock tag section.
+				$fenced_docblock_tag_names = array();
+			}
+
+			if ( preg_match( '/(?:\A|\n)[ \t]*`{3,}[^`\n]*(?=\n|\z)/', $short_description ) ) {
+				$raw_long_description = $source_description;
+				$short_description    = '';
+			} elseif ( '' !== $short_description && 0 === strpos( $source_description, $short_description ) ) {
+				$raw_long_description = preg_replace( $description_edge_pattern, '', substr( $source_description, strlen( $short_description ) ) );
+			} elseif ( '' !== $raw_long_description ) {
+				$long_description_start = strpos( $source_description, $raw_long_description );
+				if ( false !== $long_description_start ) {
+					$raw_long_description = preg_replace( $description_edge_pattern, '', substr( $source_description, $long_description_start ) );
+				}
+			}
+		}
+
+		// phpDocumentor assigns the first DocBlock paragraph to the short
+		// description and can split it at a blank line inside a fence. Detect an
+		// opening line without requiring its closer, then rejoin both descriptions
+		// before parsing so the fence retains its line structure and metadata pairing.
+		if ( '' !== $short_description && preg_match( '/(?:\A|\n)[ \t]*`{3,}[^`\n]*(?=\n|\z)/', $short_description ) ) {
+			$raw_long_description = $short_description . ( '' === $raw_long_description ? '' : "\n\n" . $raw_long_description );
+			$short_description    = '';
+		}
+
+		$fences = get_docblock_code_fences( $raw_long_description );
+
+		// Reusing an enclosing name would make the same reference resolve to
+		// different setup depending on which DocBlock is being exported.
+		foreach ( $fences as $fence ) {
+			if (
+				null !== $fence['setup_name'] &&
+				array_key_exists( $fence['setup_name'], $inherited_setup_blueprints )
+			) {
+				throw new \InvalidArgumentException(
+					'Setup Blueprint "' . $fence['setup_name'] . '" on line ' . ( $fence['start'] + 1 ) .
+					' of the long description is already defined in an enclosing DocBlock.'
+				);
+			}
+		}
+
 		$setup_blueprints     = array();
 		$code_snippets        = export_docblock_code_snippets( $raw_long_description, $setup_blueprints, $fences );
-		$setup_blueprints     = array_merge(
-			get_referenced_setup_blueprints( $code_snippets, $inherited_setup_blueprints ),
-			$setup_blueprints
-		);
-		validate_docblock_setup_blueprint_references( $code_snippets, $setup_blueprints, $fences );
+
+		// Copy only referenced inherited setups into this DocBlock's output. Each
+		// imported post then contains everything its snippets need without copying
+		// every file- or class-level setup into every descendant.
+		$referenced_inherited_setup_blueprints = array();
+		$snippet_lines = array();
+		foreach ( $fences as $fence ) {
+			if ( $fence['is_interactive_php'] ) {
+				$snippet_lines[ $fence['snippet_index'] ] = $fence['start'] + 1;
+			}
+		}
+		foreach ( $code_snippets as $index => $snippet ) {
+			if ( ! isset( $snippet['blueprint'] ) || ! is_string( $snippet['blueprint'] ) ) {
+				continue;
+			}
+
+			if ( array_key_exists( $snippet['blueprint'], $inherited_setup_blueprints ) ) {
+				$referenced_inherited_setup_blueprints[ $snippet['blueprint'] ] = $inherited_setup_blueprints[ $snippet['blueprint'] ];
+				continue;
+			}
+
+			if ( ! array_key_exists( $snippet['blueprint'], $setup_blueprints ) ) {
+				throw new \InvalidArgumentException(
+					'Setup Blueprint "' . $snippet['blueprint'] . '" referenced on line ' .
+					$snippet_lines[ $index ] . ' of the long description is not defined.'
+				);
+			}
+		}
+		$setup_blueprints = array_merge( $referenced_inherited_setup_blueprints, $setup_blueprints );
 	} catch ( \InvalidArgumentException $exception ) {
 		throw new \InvalidArgumentException(
 			describe_docblock_source( $element, $docblock, $source_file ) . ': ' . $exception->getMessage(),
@@ -232,7 +427,7 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	}
 
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
+		'description'      => preg_replace( '/[\n\r]+/', ' ', $short_description ),
 		'long_description' => format_long_description( strip_docblock_code_snippet_fences( $raw_long_description, $fences ) ),
 		'tags'             => array(),
 	);
@@ -244,7 +439,13 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		$output['setup_blueprints'] = $setup_blueprints;
 	}
 
+	$fenced_docblock_tag_counts = array_count_values( $fenced_docblock_tag_names );
 	foreach ( $docblock->getTags() as $tag ) {
+		if ( ! empty( $fenced_docblock_tag_counts[ $tag->getName() ] ) ) {
+			$fenced_docblock_tag_counts[ $tag->getName() ]--;
+			continue;
+		}
+
 		$tag_data = array(
 			'name'    => $tag->getName(),
 			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
@@ -279,6 +480,45 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	}
 
 	return $output;
+}
+
+/**
+ * Blanks complete fenced bodies before phpDocumentor parses a raw DocBlock.
+ *
+ * phpDocumentor has no fence state and may reject valid PHP lines as malformed
+ * tags. Opening and closing lines remain so export_docblock() still knows to
+ * recover the original source after this sanitized comment has supplied the
+ * real tags outside the fences.
+ *
+ * @param string $source_docblock Raw DocBlock including comment delimiters.
+ *
+ * @return string
+ */
+function sanitize_docblock_fenced_contents( $source_docblock ) {
+	$original_source_docblock = $source_docblock;
+	$source_docblock          = preg_replace( "/\r\n?/", "\n", $source_docblock );
+	$contents                 = preg_replace( '/\A[ \t]*\/\*\*[ \t]?/', '', $source_docblock );
+	$contents                 = preg_replace( '/[ \t]*\*\/[ \t]*\z/', '', $contents );
+	$content_lines            = explode( "\n", $contents );
+	foreach ( $content_lines as $key => $line ) {
+		$content_lines[ $key ] = preg_replace( '/^[ \t]*\*[ \t]?/', '', $line );
+	}
+
+	$fences = tokenize_docblock_code_fences( implode( "\n", $content_lines ) );
+	if ( empty( $fences ) ) {
+		return $original_source_docblock;
+	}
+
+	$source_lines = explode( "\n", $source_docblock );
+	foreach ( $fences as $fence ) {
+		for ( $line = $fence['start'] + 1; $line < $fence['end']; $line++ ) {
+			// Retain the DocBlock's decorative `*`, but no text that phpDocumentor
+			// could reinterpret as a tag or part of the surrounding description.
+			$source_lines[ $line ] = preg_match( '/^([ \t]*\*)/', $source_lines[ $line ], $prefix ) ? $prefix[1] : '';
+		}
+	}
+
+	return implode( "\n", $source_lines );
 }
 
 /**
@@ -432,6 +672,65 @@ function export_methods( array $methods, array $inherited_setup_blueprints = arr
  * @return array
  */
 function get_docblock_code_fences( $text ) {
+	$fences = tokenize_docblock_code_fences( $text );
+
+	foreach ( $fences as $key => $fence ) {
+		$info_parts = '' === $fence['info'] ? array() : preg_split( '/\s+/', $fence['info'] );
+
+		// Match the complete public grammar before validating any option value.
+		// Setup-looking text on a non-interactive PHP fence remains ordinary
+		// documentation and must not make an existing DocBlock fail to parse.
+		$referenced_setup   = null;
+		$is_interactive_php = false;
+		if ( 'php' === $fence['language'] && isset( $info_parts[1] ) && 'interactive' === $info_parts[1] ) {
+			if ( 2 === count( $info_parts ) ) {
+				$is_interactive_php = true;
+			} elseif ( 3 === count( $info_parts ) && 0 === strpos( $info_parts[2], 'setup-blueprint=' ) ) {
+				$referenced_setup = substr( $info_parts[2], strlen( 'setup-blueprint=' ) );
+				validate_docblock_setup_blueprint_name( $referenced_setup, $fence['start'] );
+				$is_interactive_php = true;
+			}
+		}
+
+		$setup_name = null;
+		if ( 'setup-blueprint' === $fence['language'] && 2 === count( $info_parts ) ) {
+			$setup_name = $info_parts[1];
+			validate_docblock_setup_blueprint_name( $setup_name, $fence['start'] );
+		}
+
+		$is_expected_output = 'expected-output' === $fence['language'] && 1 === count( $info_parts );
+		$is_blueprint       = 'setup-blueprint' === $fence['language'] && 1 === count( $info_parts );
+		$fences[ $key ]['referenced_setup']   = $referenced_setup;
+		$fences[ $key ]['is_interactive_php'] = $is_interactive_php;
+		$fences[ $key ]['is_expected_output'] = $is_expected_output;
+		$fences[ $key ]['is_blueprint']       = $is_blueprint;
+		$fences[ $key ]['setup_name']         = $setup_name;
+		$fences[ $key ]['is_code_snippet']    = $is_interactive_php || $is_expected_output || $is_blueprint || null !== $setup_name;
+	}
+
+	// Number the interactive PHP fences so the exporter and the stripper agree on each
+	// snippet's index without counting independently.
+	$snippet_index = 0;
+	foreach ( $fences as $key => $fence ) {
+		$fences[ $key ]['snippet_index'] = $fence['is_interactive_php'] ? $snippet_index++ : null;
+	}
+
+	return $fences;
+}
+
+/**
+ * Tokenizes complete backtick fences without interpreting their info strings.
+ *
+ * The raw-source recovery path needs fence boundaries before phpDocumentor has
+ * successfully parsed the comment. Keeping that lexical pass separate prevents
+ * invalid snippet metadata from escaping before export_docblock() can add source
+ * context to the resulting error.
+ *
+ * @param string $text Raw DocBlock contents or long description.
+ *
+ * @return array
+ */
+function tokenize_docblock_code_fences( $text ) {
 	$text       = preg_replace( "/\r\n?/", "\n", $text );
 	$lines      = explode( "\n", $text );
 	$line_count = count( $lines );
@@ -461,50 +760,39 @@ function get_docblock_code_fences( $text ) {
 
 		$code_lines = array_slice( $lines, $line_no + 1, $end - $line_no - 1 );
 		if ( '' !== $indent ) {
-			// Strip the opening fence's indentation from each content line.
+			// Content may be less indented than its fence, so remove as much of the
+			// opening prefix as each line repeats. Stop where tabs and spaces differ
+			// rather than guessing that unlike whitespace occupies equal columns.
 			foreach ( $code_lines as $key => $code_line ) {
-				if ( 0 === strpos( $code_line, $indent ) ) {
-					$code_lines[ $key ] = substr( $code_line, strlen( $indent ) );
+				$remove_length = 0;
+				$max_length    = min( strlen( $indent ), strlen( $code_line ) );
+				while ( $remove_length < $max_length && $indent[ $remove_length ] === $code_line[ $remove_length ] ) {
+					$remove_length++;
+				}
+
+				if ( 0 < $remove_length ) {
+					$code_lines[ $key ] = substr( $code_line, $remove_length );
 				}
 			}
 		}
 
-		$language = trim( $opening[3] );
+		$info     = trim( $opening[3] );
+		$language = $info;
 		if ( preg_match( '/^\S+/', $language, $language_matches ) ) {
 			$language = $language_matches[0];
 		}
 
 		$fence = array(
 			'language' => $language,
-			'info'     => trim( $opening[3] ),
+			'info'     => $info,
 			'code'     => rtrim( implode( "\n", $code_lines ), "\n" ),
 			'start'    => $line_no,
 			'end'      => $end,
 		);
 
-		// Classify each fence once here so the snippet exporter and the
-		// description stripper share the result instead of recomputing it.
-		$info_parts                  = get_docblock_fence_info_parts( $fence );
-		$fence['referenced_setup']   = get_docblock_referenced_blueprint_name( $fence );
-		$fence['is_interactive_php'] = 'php' === $fence['language']
-			&& isset( $info_parts[1] )
-			&& 'interactive' === $info_parts[1]
-			&& ( 2 === count( $info_parts ) || null !== $fence['referenced_setup'] );
-		$fence['is_expected_output'] = is_docblock_expected_output_fence( $fence );
-		$fence['is_blueprint']       = is_docblock_blueprint_fence( $fence );
-		$fence['setup_name']         = get_docblock_setup_blueprint_name( $fence );
-		$fence['is_code_snippet']    = $fence['is_interactive_php'] || $fence['is_expected_output'] || $fence['is_blueprint'] || null !== $fence['setup_name'];
-
 		$fences[] = $fence;
 
 		$line_no = $end;
-	}
-
-	// Number the interactive PHP fences so the exporter and the stripper agree on each
-	// snippet's index without counting independently.
-	$snippet_index = 0;
-	foreach ( $fences as $key => $fence ) {
-		$fences[ $key ]['snippet_index'] = $fence['is_interactive_php'] ? $snippet_index++ : null;
 	}
 
 	return $fences;
@@ -522,10 +810,11 @@ function get_docblock_code_fences( $text ) {
  * case-sensitive so the documented lowercase forms are the only accepted syntax.
  * Reusable setup Blueprint names use lowercase kebab-case starting with a letter.
  *
- * @param string $text             Raw DocBlock long description.
- * @param array  $setup_blueprints Optional. Named setup Blueprints keyed by reference name.
+ * @param string     $text             Raw DocBlock long description.
+ * @param array      $setup_blueprints Optional. Named setup Blueprints keyed by reference name.
+ * @param array|null $fences           Optional. Fences already parsed from the same description.
  *
- * @throws \InvalidArgumentException When a setup Blueprint is not a valid JSON object.
+ * @throws \InvalidArgumentException When snippet metadata is invalid, ambiguous, or unattached.
  *
  * @return array
  */
@@ -712,7 +1001,8 @@ function docblock_fences_have_only_whitespace_between( $first, $second, $lines )
  * fence in `long_description` would make the theme render both the raw Markdown
  * code block and the runnable snippet.
  *
- * @param string $text Raw DocBlock long description.
+ * @param string     $text   Raw DocBlock long description.
+ * @param array|null $fences Optional. Classified fences already validated by the snippet exporter.
  *
  * @return string
  */
@@ -730,13 +1020,16 @@ function strip_docblock_code_snippet_fences( $text, $fences = null ) {
 			continue;
 		}
 
-		// Interactive PHP fences become `code_snippets` entries; replace each one with an
-		// inline placeholder, keyed by the fence's shared snippet index, so the
-		// theme renders the runnable snippet in place between the surrounding
-		// prose. Snippet-metadata fences (expected-output, Blueprints) are removed.
+		// Interactive PHP fences become `code_snippets` entries. A plain HTML
+		// comment survives Markdown rendering, `the_content`, and block parsing,
+		// allowing the theme to replace it in place between the surrounding prose.
+		// Snippet-metadata fences (expected-output, Blueprints) are removed.
 		for ( $i = $fence['start']; $i <= $fence['end']; $i++ ) {
 			if ( $fence['is_interactive_php'] && $i === $fence['start'] ) {
-				$replace_lines[ $i ] = docblock_code_snippet_placeholder( $fence['snippet_index'] );
+				// Keep a nested fence's indentation so Markdown leaves the replacement
+				// inside its list item instead of closing the list around the snippet.
+				$indent = substr( $lines[ $i ], 0, strspn( $lines[ $i ], " \t" ) );
+				$replace_lines[ $i ] = $indent . '<!-- wp-parser-code-snippet:' . (int) $fence['snippet_index'] . ' -->';
 			} else {
 				$remove_lines[ $i ] = true;
 			}
@@ -752,119 +1045,6 @@ function strip_docblock_code_snippet_fences( $text, $fences = null ) {
 	}
 
 	return trim( implode( "\n", $lines ) );
-}
-
-/**
- * Inline placeholder left in `long_description` for the Nth PHP code snippet.
- *
- * A plain HTML comment so it survives Markdown rendering, `the_content`, and the
- * block parser untouched; the theme replaces it with the rendered runnable
- * snippet, keeping snippets positioned between the surrounding prose.
- *
- * @param int $index Zero-based index into `code_snippets`.
- * @return string
- */
-function docblock_code_snippet_placeholder( $index ) {
-	return '<!-- wp-parser-code-snippet:' . (int) $index . ' -->';
-}
-
-/**
- * Returns inherited setup Blueprints referenced by the snippets.
- *
- * @param array $snippets         Exported code snippets.
- * @param array $setup_blueprints Setup Blueprints available from parent DocBlocks.
- *
- * @return array
- */
-function get_referenced_setup_blueprints( $snippets, $setup_blueprints ) {
-	$referenced_setup_blueprints = array();
-
-	foreach ( $snippets as $snippet ) {
-		if ( ! isset( $snippet['blueprint'] ) || ! is_string( $snippet['blueprint'] ) ) {
-			continue;
-		}
-
-		if ( array_key_exists( $snippet['blueprint'], $setup_blueprints ) ) {
-			$referenced_setup_blueprints[ $snippet['blueprint'] ] = $setup_blueprints[ $snippet['blueprint'] ];
-		}
-	}
-
-	return $referenced_setup_blueprints;
-}
-
-/**
- * Rejects snippet references that do not resolve to an available setup Blueprint.
- *
- * @param array $snippets         Exported code snippets.
- * @param array $setup_blueprints Setup Blueprints available to the DocBlock.
- * @param array $fences           Optional parsed fences used to identify unresolved references.
- *
- * @throws \InvalidArgumentException When a snippet references an undefined setup Blueprint.
- */
-function validate_docblock_setup_blueprint_references( $snippets, $setup_blueprints, $fences = array() ) {
-	$snippet_lines = array();
-	foreach ( $fences as $fence ) {
-		if ( $fence['is_interactive_php'] ) {
-			$snippet_lines[ $fence['snippet_index'] ] = $fence['start'] + 1;
-		}
-	}
-
-	foreach ( $snippets as $index => $snippet ) {
-		if (
-			isset( $snippet['blueprint'] ) &&
-			is_string( $snippet['blueprint'] ) &&
-			! array_key_exists( $snippet['blueprint'], $setup_blueprints )
-		) {
-			$location = isset( $snippet_lines[ $index ] )
-				? ' referenced on line ' . $snippet_lines[ $index ] . ' of the long description'
-				: '';
-			throw new \InvalidArgumentException( 'Setup Blueprint "' . $snippet['blueprint'] . '"' . $location . ' is not defined.' );
-		}
-	}
-}
-
-/**
- * Rejects local setup Blueprint definitions that shadow an enclosing DocBlock.
- *
- * @param array $fences                     Parsed DocBlock fences.
- * @param array $inherited_setup_blueprints Setup Blueprints inherited from enclosing DocBlocks.
- *
- * @throws \InvalidArgumentException When a local definition reuses an inherited name.
- */
-function validate_docblock_setup_blueprint_scope( $fences, $inherited_setup_blueprints ) {
-	foreach ( $fences as $fence ) {
-		if (
-			null !== $fence['setup_name'] &&
-			array_key_exists( $fence['setup_name'], $inherited_setup_blueprints )
-		) {
-			throw new \InvalidArgumentException(
-				'Setup Blueprint "' . $fence['setup_name'] . '" on line ' . ( $fence['start'] + 1 ) .
-				' of the long description is already defined in an enclosing DocBlock.'
-			);
-		}
-	}
-}
-
-/**
- * Checks whether a parsed DocBlock fence contains snippet expected output.
- *
- * @param array $fence
- *
- * @return bool
- */
-function is_docblock_expected_output_fence( $fence ) {
-	return 'expected-output' === $fence['language'] && 1 === count( get_docblock_fence_info_parts( $fence ) );
-}
-
-/**
- * Checks whether a parsed DocBlock fence contains a WordPress Playground Blueprint.
- *
- * @param array $fence
- *
- * @return bool
- */
-function is_docblock_blueprint_fence( $fence ) {
-	return 'setup-blueprint' === $fence['language'] && 1 === count( get_docblock_fence_info_parts( $fence ) );
 }
 
 /**
@@ -943,84 +1123,25 @@ function preserve_json_object_shapes( &$value ) {
 }
 
 /**
- * Returns the reference name for a reusable setup Blueprint fence.
- *
- * @param array $fence
- *
- * @return string|null
- */
-function get_docblock_setup_blueprint_name( $fence ) {
-	$info_parts = get_docblock_fence_info_parts( $fence );
-
-	if ( 'setup-blueprint' === $fence['language'] && 2 === count( $info_parts ) ) {
-		validate_docblock_setup_blueprint_name( $info_parts[1], $fence );
-		return $info_parts[1];
-	}
-
-	return null;
-}
-
-/**
- * Returns the setup Blueprint reference from a PHP fence info string.
- *
- * @param array $fence
- *
- * @return string|null
- */
-function get_docblock_referenced_blueprint_name( $fence ) {
-	$info_parts = get_docblock_fence_info_parts( $fence );
-
-	if (
-		'php' === $fence['language'] &&
-		3 === count( $info_parts ) &&
-		'interactive' === $info_parts[1] &&
-		0 === strpos( $info_parts[2], 'setup-blueprint=' )
-	) {
-		$name = substr( $info_parts[2], strlen( 'setup-blueprint=' ) );
-		validate_docblock_setup_blueprint_name( $name, $fence );
-		return $name;
-	}
-
-	return null;
-}
-
-/**
  * Rejects reusable setup Blueprint names outside the documented kebab-case form.
  *
  * Requiring a leading letter prevents PHP from coercing a numeric name into an
  * integer array key and changing the setup Blueprint map into a JSON list.
  *
- * @param string $name  Setup Blueprint name.
- * @param array  $fence Parsed fence used to identify invalid input.
+ * @param string $name    Setup Blueprint name.
+ * @param int    $line_no Zero-based long-description line containing the name.
  *
  * @throws \InvalidArgumentException When the name is not lowercase kebab-case.
  */
-function validate_docblock_setup_blueprint_name( $name, $fence ) {
+function validate_docblock_setup_blueprint_name( $name, $line_no ) {
 	if ( preg_match( '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/D', $name ) ) {
 		return;
 	}
 
 	throw new \InvalidArgumentException(
-		'Setup Blueprint name "' . $name . '" on line ' . ( $fence['start'] + 1 ) .
+		'Setup Blueprint name "' . $name . '" on line ' . ( $line_no + 1 ) .
 		' of the long description must be lowercase kebab-case starting with a letter.'
 	);
-}
-
-/**
- * Splits the full fence info string into whitespace-delimited parts.
- *
- * @param array $fence
- *
- * @return array
- */
-function get_docblock_fence_info_parts( $fence ) {
-	$info = trim( $fence['info'] );
-
-	if ( '' === $info ) {
-		return array();
-	}
-
-	return preg_split( '/\s+/', $info );
 }
 
 /**
@@ -1105,6 +1226,15 @@ function format_long_description( $description ) {
 		$parsedown   = \Parsedown::instance();
 		$description = $parsedown->text( $description );
 	}
+
+	// Fences may use more than three leading spaces. Outside a list, Parsedown
+	// treats their generated placeholder as indented code. Restore only the exact
+	// internal marker so the theme can still replace it with the runnable snippet.
+	$description = preg_replace(
+		'#<pre><code>[ \t]*&lt;!-- wp-parser-code-snippet:([0-9]+) --&gt;</code></pre>#',
+		'<!-- wp-parser-code-snippet:$1 -->',
+		$description
+	);
 
 	$description = fix_newlines( $description );
 

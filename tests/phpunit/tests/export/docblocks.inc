@@ -56,6 +56,8 @@ class Test_Class {
 	 *
 	 * ```php interactive setup-blueprint=file-greeting
 	 * <?php
+	 * // This property snippet line ends in a period.
+	 * @unlink( '/tmp/phpdoc-parser-property' );
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
 	 * ```
