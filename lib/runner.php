@@ -266,11 +266,21 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 
 		/*
 		 * phpDocumentor can split one fenced block across its short and long
-		 * descriptions, alter its line structure, and parse `@` code as tags. If
-		 * either description contains a possible fence, recover the original
-		 * DocBlock before tokenizing it below. File reflectors require slicing the
-		 * comment from the file contents; node-backed reflectors use the raw comment
-		 * captured above.
+		 * descriptions, alter its line structure, and parse `@` code as tags. For
+		 * example, this source:
+		 *
+		 *     ```php interactive
+		 *     <?php
+		 *
+		 *     echo 'before';
+		 *     @unlink( '/tmp/example' );
+		 *     ```
+		 *
+		 * can leave the opening lines in the short description, the `echo` line in the
+		 * long description, and `@unlink` in the tag list. If either description
+		 * contains a possible fence, recover the original DocBlock before tokenizing
+		 * it below. File reflectors require slicing the comment from the file contents;
+		 * node-backed reflectors use the raw comment captured above.
 		 */
 		if ( false !== strpos( $short_description, '```' ) || false !== strpos( $raw_long_description, '```' ) ) {
 			if ( $element instanceof File_Reflector ) {
@@ -300,13 +310,19 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		}
 
 		if ( null !== $source_docblock ) {
-			// phpDocumentor treats any line beginning with `@` as a tag, even
-			// inside a fenced block, and splits its short description at paragraph
-			// boundaries inside fences. Recover the description directly from the
-			// source comment so runnable code retains its source line structure. Stop
-			// at the first real tag outside a fence. Keep track of tag-looking code
-			// lines so the parsed DocBlock tags below can omit phpDocumentor's false
-			// positives without hiding real tags with the same name.
+			/*
+			 * Recover exact description lines from source and stop at the first tag
+			 * outside a fence. For example:
+			 *
+			 *     ```php
+			 *     @since( 'inside-fence' );
+			 *     ```
+			 *     @since 1.0.0
+			 *
+			 * The first `@since` remains snippet code; the second ends the description.
+			 * Record the first name so only phpDocumentor's false in-fence tag is
+			 * removed from the parsed tags, leaving the real `@since 1.0.0` tag.
+			 */
 			$source_docblock = preg_replace( "/\r\n?/", "\n", $source_docblock );
 			$source_docblock = preg_replace( '/\A[ \t]*\/\*\*[ \t]?/', '', $source_docblock );
 			$source_docblock = preg_replace( '/[ \t]*\*\/[ \t]*\z/', '', $source_docblock );
@@ -320,9 +336,6 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 			$source_fences        = tokenize_docblock_code_fences( implode( "\n", $source_lines ) );
 			$source_fence_index   = 0;
 			$description_lines    = array();
-			// phpDocumentor starts its tag block at an optionally indented @ followed
-			// by a letter. Once started, only a column-zero @ with any valid tag name
-			// opens another tag; indented lines extend the preceding tag instead.
 			$parsed_tag_block_started = false;
 			foreach ( $source_lines as $source_line_number => $source_line ) {
 				while (
@@ -334,6 +347,13 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 				$is_in_fence = isset( $source_fences[ $source_fence_index ] ) &&
 					$source_line_number > $source_fences[ $source_fence_index ]['start'];
 
+				/*
+				 * Before tag parsing starts, `^[ \t]*` permits indentation and `\pL`
+				 * requires a Unicode letter: `  @since` matches, while `@_before` does not.
+				 * Once started, `^@` requires column zero and the broader name class permits
+				 * an initial underscore or digit: `@_same` and `@2inside` match, while
+				 * `  @author` remains part of the preceding tag.
+				 */
 				$tag_pattern = $parsed_tag_block_started
 					? '/^@([\w\-_\\\\]+)/u'
 					: '/^[ \t]*@([\pL][\w\-_\\\\]*)/u';
