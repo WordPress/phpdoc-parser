@@ -34,7 +34,10 @@ class Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Read a JSON file containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
+	 * Imports an exported parser document into WordPress.
+	 *
+	 * The command validates the parsed-file envelope before invoking the importer
+	 * and preserves setup Blueprint object and list shapes while decoding JSON.
 	 *
 	 * @synopsis <file> [--quick] [--import-internal]
 	 *
@@ -57,10 +60,46 @@ class Command extends WP_CLI_Command {
 			exit;
 		}
 
-		$phpdoc = json_decode( $phpdoc, true );
-		if ( is_null( $phpdoc ) ) {
+		$phpdoc = json_decode( $phpdoc );
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			WP_CLI::error( sprintf( "JSON in %1\$s can't be decoded :(", $file ) );
 			exit;
+		}
+		if ( ! is_array( $phpdoc ) ) {
+			WP_CLI::error( sprintf( 'JSON in %1$s must contain a top-level list of parsed files.', $file ) );
+			exit;
+		}
+		preserve_json_object_shapes( $phpdoc );
+
+		// The importer dereferences these fields before it can report malformed
+		// input. Validate the file envelope here so bad JSON data produces one
+		// actionable CLI error instead of array-offset warnings or a type error.
+		foreach ( $phpdoc as $index => $parsed_file ) {
+			if (
+				! is_array( $parsed_file ) ||
+				! isset( $parsed_file['path'], $parsed_file['file'] ) ||
+				! is_string( $parsed_file['path'] ) ||
+				'' === $parsed_file['path'] ||
+				! is_array( $parsed_file['file'] ) ||
+				! isset(
+					$parsed_file['file']['description'],
+					$parsed_file['file']['long_description'],
+					$parsed_file['file']['tags']
+				) ||
+				! is_string( $parsed_file['file']['description'] ) ||
+				! is_string( $parsed_file['file']['long_description'] ) ||
+				! is_array( $parsed_file['file']['tags'] ) ||
+				array_values( $parsed_file['file']['tags'] ) !== $parsed_file['file']['tags']
+			) {
+				WP_CLI::error(
+					sprintf(
+						'JSON in %1$s entry %2$d must contain a parsed file object with a path and file metadata.',
+						$file,
+						$index + 1
+					)
+				);
+				exit;
+			}
 		}
 
 		// Import data

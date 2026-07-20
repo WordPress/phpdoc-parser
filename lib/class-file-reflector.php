@@ -45,6 +45,77 @@ class File_Reflector extends FileReflector {
 	protected $last_doc = null;
 
 	/**
+	 * Whether complete fence bodies were blanked before parsing the file DocBlock.
+	 *
+	 * @var bool
+	 */
+	protected $docblock_was_sanitized = false;
+
+	/**
+	 * Indicates whether complete file-DocBlock fence bodies were blanked.
+	 *
+	 * @return bool Whether phpDocumentor parsed a sanitized comment.
+	 */
+	public function wasDocBlockSanitized() {
+		return $this->docblock_was_sanitized;
+	}
+
+	/**
+	 * Lets phpDocumentor identify a file DocBlock without parsing fenced PHP as tags.
+	 *
+	 * `FileReflector` consumes the file comment before visiting its nodes, so
+	 * `export_docblock()` cannot sanitize it later. Complete fence bodies are
+	 * temporarily blanked for the parent traversal and restored afterward; the
+	 * untouched file contents remain available for snippet extraction.
+	 *
+	 * @param PHPParser_Node[] $nodes
+	 *
+	 * @return PHPParser_Node[]
+	 */
+	public function beforeTraverse( array $nodes ) {
+		$source_docblock = null;
+		$docblock        = null;
+
+		foreach ( $nodes as $node ) {
+			if ( $node instanceof \PhpParser\Node\Stmt\InlineHTML ) {
+				continue;
+			}
+
+			foreach ( (array) $node->getAttribute( 'comments' ) as $comment ) {
+				if ( $comment instanceof \PhpParser\Comment\Doc ) {
+					$docblock        = $comment;
+					$source_docblock = (string) $comment;
+					break;
+				}
+			}
+			break;
+		}
+
+		if ( null !== $source_docblock && false !== strpos( $source_docblock, '```' ) ) {
+			$sanitized_docblock = sanitize_docblock_fenced_contents( $source_docblock );
+			if ( $sanitized_docblock !== $source_docblock ) {
+				$docblock->setText( $sanitized_docblock );
+				$this->docblock_was_sanitized = true;
+			}
+		}
+
+		try {
+			$nodes = parent::beforeTraverse( $nodes );
+		} catch ( \Exception $exception ) {
+			if ( null !== $source_docblock ) {
+				$docblock->setText( $source_docblock );
+			}
+			throw $exception;
+		}
+
+		if ( null !== $source_docblock ) {
+			$docblock->setText( $source_docblock );
+		}
+
+		return $nodes;
+	}
+
+	/**
 	 * Add hooks to the queue and update the node stack when we enter a node.
 	 *
 	 * If we are entering a class, function or method, we push it to the location
@@ -144,6 +215,25 @@ class File_Reflector extends FileReflector {
 		parent::leaveNode( $node );
 
 		switch ( $node->getType() ) {
+			case 'Stmt_Property':
+				/*
+				 * PropertyReflector::getDocBlock() reads the declaration node, while
+				 * getNode() returns one PropertyProperty child. Copy the declaration's
+				 * comment to each child after it has been visited so export_docblock() can
+				 * recover the raw fenced text through getNode(). Copying it earlier would
+				 * make enterNode() queue the non-documentable child's comment for the next
+				 * hook.
+				 */
+				$docblock = $node->getDocComment();
+				if ( $docblock ) {
+					foreach ( $node->props as $property ) {
+						$comments   = (array) $property->getAttribute( 'comments' );
+						$comments[] = $docblock;
+						$property->setAttribute( 'comments', $comments );
+					}
+				}
+				break;
+
 			case 'Stmt_Class':
 				$class = end( $this->classes );
 				if ( ! empty( $this->method_uses_queue ) ) {

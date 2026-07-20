@@ -7,6 +7,18 @@
  * fact, this one does. It spans more than two full lines, continuing on to the
  * third line.
  *
+ * ```setup-blueprint file-greeting
+ * {
+ *   "steps": [
+ *     {
+ *       "step": "writeFile",
+ *       "path": "/wordpress/wp-content/mu-plugins/file-greeting.php",
+ *       "data": "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n"
+ *     }
+ *   ]
+ * }
+ * ```
+ *
  * @since 1.5.0
  */
 
@@ -42,6 +54,18 @@ class Test_Class {
 	/**
 	 * This is a docblock for a class property.
 	 *
+	 * ```php interactive setup-blueprint=file-greeting
+	 * <?php
+	 * // This property snippet line ends in a period.
+	 * @unlink( '/tmp/phpdoc-parser-property' );
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_file_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from the file setup
+	 * ```
+	 *
 	 * @since 3.0.0
 	 *
 	 * @var string
@@ -61,6 +85,96 @@ class Test_Class {
 	public function test_method( $var, $arr ) {
 		return $var;
 	}
+
+	/**
+	 * This is a method docblock with a code snippet.
+	 *
+	 * Use this example:
+	 *
+	 * ```setup-blueprint
+	 * {
+	 *   "steps": [
+	 *     {
+	 *       "step": "writeFile",
+	 *       "path": "/wordpress/wp-content/mu-plugins/docs-fixture.php",
+	 *       "data": "<?php\nfunction docs_fixture_greeting() {\n\treturn 'Hello from a method';\n}\n"
+	 *     }
+	 *   ]
+	 * }
+	 * ```
+	 *
+	 * ```php interactive
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_fixture_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from a method
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_code_snippet() {
+	}
+
+	/**
+	 * This is a method docblock with a reused setup Blueprint.
+	 *
+	 * ```setup-blueprint shared-greeting
+	 * {
+	 *   "steps": [
+	 *     {
+	 *       "step": "writeFile",
+	 *       "path": "/wordpress/wp-content/mu-plugins/shared-greeting.php",
+	 *       "data": "<?php\nfunction docs_shared_greeting( $name ) {\n\treturn \"Hello, $name\";\n}\n"
+	 *     }
+	 *   ]
+	 * }
+	 * ```
+	 *
+	 * ```php interactive setup-blueprint=shared-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_shared_greeting( 'first' );
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello, first
+	 * ```
+	 *
+	 * ```php interactive setup-blueprint=shared-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_shared_greeting( 'second' );
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello, second
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_reused_setup_blueprint() {
+	}
+
+	/**
+	 * This is a method docblock with a file-level setup Blueprint.
+	 *
+	 * ```php interactive setup-blueprint=file-greeting
+	 * <?php
+	 * require '/wordpress/wp-load.php';
+	 * echo docs_file_greeting();
+	 * ```
+	 *
+	 * ```expected-output
+	 * Hello from the file setup
+	 * ```
+	 *
+	 * @since 6.9.0
+	 */
+	public function test_method_with_file_setup_blueprint() {
+	}
 }
 
 /**
@@ -75,6 +189,16 @@ $var = apply_filters_ref_array( 'test_ref_array_filter', array( &$var ) );
 
 /**
  * A test action.
+ *
+ * ```php interactive setup-blueprint=file-greeting
+ * <?php
+ * require '/wordpress/wp-load.php';
+ * echo docs_file_greeting();
+ * ```
+ *
+ * ```expected-output
+ * Hello from the file setup
+ * ```
  *
  * @since 3.7.0
  *

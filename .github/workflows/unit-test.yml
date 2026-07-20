@@ -27,7 +27,8 @@ jobs:
       - name: Setup Environment
         run: |
           rm composer.lock
-          npm run setup
+          npm run start
+          npm run composer -- install --no-security-blocking
 
       - name: Test
         run: npm run test
