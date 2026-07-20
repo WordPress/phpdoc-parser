@@ -512,16 +512,38 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 }
 
 /**
- * Blanks complete fenced bodies before phpDocumentor parses a raw DocBlock.
+ * Returns a parser-safe DocBlock with complete fence bodies replaced by blanks.
  *
- * phpDocumentor has no fence state and may reject valid PHP lines as malformed
- * tags. Opening and closing lines remain so export_docblock() still knows to
- * recover the original source after this sanitized comment has supplied the
- * real tags outside the fences.
+ * phpDocumentor does not recognize Markdown fences. It can mistake a fenced
+ * `@unlink(...)` call for a DocBlock tag, then reject a later expression such as
+ * `@! file_exists(...)` as a malformed tag. For example, these comment lines:
+ *
+ *     * ```php
+ *     * @unlink( '/tmp/example' );
+ *     * @! file_exists( '/tmp/example' );
+ *     * ```
+ *     * @since 1.0.0
+ *
+ * are returned as:
+ *
+ *     * ```php
+ *     *
+ *     *
+ *     * ```
+ *     * @since 1.0.0
+ *
+ * The fence delimiters and physical line count remain. Decorated body lines
+ * retain their indentation and `*`, and tags outside fences remain unchanged.
+ * phpDocumentor can therefore parse the real `@since` tag, while callers read
+ * descriptions and snippets from the original DocBlock. Keeping the fence
+ * delimiters also tells export_docblock() to recover that original source.
+ *
+ * An unmatched outer fence is not blanked because its body boundary is unknown.
  *
  * @param string $source_docblock Raw DocBlock including comment delimiters.
  *
- * @return string
+ * @return string Parser-safe DocBlock, or the unchanged input when it contains
+ *                no complete fence.
  */
 function sanitize_docblock_fenced_contents( $source_docblock ) {
 	$original_source_docblock = $source_docblock;
