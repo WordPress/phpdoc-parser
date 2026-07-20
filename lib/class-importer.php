@@ -760,8 +760,14 @@ class Importer implements LoggerAwareInterface {
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_code_snippets', isset( $data['doc']['code_snippets'] ) ? $data['doc']['code_snippets'] : array() );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_setup_blueprints', isset( $data['doc']['setup_blueprints'] ) ? $data['doc']['setup_blueprints'] : array() );
+
+		// Metadata APIs unslash their input. map_deep() reaches retained JSON
+		// objects as well as arrays, preserving backslashes in PHP and Blueprint
+		// source where wp_slash() alone would leave object properties untouched.
+		$code_snippets    = isset( $data['doc']['code_snippets'] ) ? $data['doc']['code_snippets'] : array();
+		$setup_blueprints = isset( $data['doc']['setup_blueprints'] ) ? $data['doc']['setup_blueprints'] : array();
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_code_snippets', map_deep( $code_snippets, 'wp_slash' ) );
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_setup_blueprints', map_deep( $setup_blueprints, 'wp_slash' ) );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_last_parsed_wp_version', $this->version );
 
 		// If the post didn't need to be updated, but meta or tax changed, update it to bump last modified.

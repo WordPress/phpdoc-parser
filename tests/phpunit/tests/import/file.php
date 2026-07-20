@@ -171,4 +171,46 @@ class File_Import_Test extends Import_UnitTestCase {
 		$this->assertEquals( array(), get_post_meta( $post->ID, '_wp-parser_code_snippets', true ) );
 		$this->assertEquals( array(), get_post_meta( $post->ID, '_wp-parser_setup_blueprints', true ) );
 	}
+
+	/**
+	 * Test that WordPress metadata slashing does not alter snippet or Blueprint source.
+	 */
+	public function test_function_snippet_metadata_preserves_backslashes() {
+
+		$posts = get_posts(
+			array( 'post_type' => $this->importer->post_type_function )
+		);
+		$post  = $posts[0];
+
+		$function_data = $this->export_data['functions'][0];
+		$snippets      = array(
+			array(
+				'type' => 'php-code-snippet',
+				'code' => '<?php echo \Docs\Example::class;',
+				'expected_output' => 'Docs\Example',
+				'blueprint' => 'shared',
+			),
+		);
+		$setup_blueprints = array(
+			'shared' => array(
+				'steps' => array(
+					array(
+						'step' => 'writeFile',
+						'path' => '/wordpress/wp-content/mu-plugins/setup.php',
+						'data' => '<?php namespace Docs\Setup;',
+					),
+				),
+				'numericOptions' => (object) array(
+					'0' => 'C:\temporary\file.php',
+				),
+			),
+		);
+		$function_data['doc']['code_snippets']    = $snippets;
+		$function_data['doc']['setup_blueprints'] = $setup_blueprints;
+
+		$this->importer->import_function( $function_data );
+
+		$this->assertEquals( $snippets, get_post_meta( $post->ID, '_wp-parser_code_snippets', true ) );
+		$this->assertEquals( $setup_blueprints, get_post_meta( $post->ID, '_wp-parser_setup_blueprints', true ) );
+	}
 }

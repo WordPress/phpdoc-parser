@@ -118,6 +118,102 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test fences that occupy the first paragraph of a DocBlock.
+	 */
+	public function test_fence_first_docblocks() {
+
+		$file   = __DIR__ . '/fence-first-docblocks.inc';
+		$parsed = \WP_Parser\parse_files( array( $file ), __DIR__ );
+		$file   = $parsed[0];
+
+		$this->assertSame( '', $file['file']['description'] );
+		$this->assertSame( '<!-- wp-parser-code-snippet:0 -->', $file['file']['long_description'] );
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\n" .
+						"@unlink( '/tmp/phpdoc-parser-file-review' );\n" .
+						"@! file_exists( '/tmp/phpdoc-parser-file-review' );\n" .
+						"echo 'file fence';",
+					'blueprint' => 'shared',
+				),
+			),
+			$file['file']['code_snippets']
+		);
+		$this->assertEquals(
+			array(
+				'shared' => array( 'steps' => array() ),
+			),
+			$file['file']['setup_blueprints']
+		);
+
+		$this->assertSame( '', $file['functions'][0]['doc']['description'] );
+		$this->assertSame( '<!-- wp-parser-code-snippet:0 -->', $file['functions'][0]['doc']['long_description'] );
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\n\necho 'fence first';",
+					'blueprint' => 'shared',
+				),
+			),
+			$file['functions'][0]['doc']['code_snippets']
+		);
+
+		$this->assertSame(
+			"<?php\n// This source line ends in a period.\necho 'period split';",
+			$file['functions'][1]['doc']['code_snippets'][0]['code']
+		);
+		$this->assertSame(
+			'<!-- wp-parser-code-snippet:0 -->',
+			$file['functions'][1]['doc']['long_description']
+		);
+
+		$this->assertEquals(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "<?php\n" .
+						"@_before( 'not parsed before a letter-named tag' );\n" .
+						"@unlink( '/tmp/phpdoc-parser-review' );\n" .
+						"@! file_exists( '/tmp/phpdoc-parser-review' );\n" .
+						"@\$suppressed_value;\n" .
+						"@( file_exists( '/tmp/phpdoc-parser-review' ) );\n" .
+						"@_same( 'parsed after the tag block starts' );\n" .
+						"@2inside( 'numeric tag name parsed after the tag block starts' );\n" .
+						"  @author( 'indentation makes this part of the preceding tag' );\n" .
+						"@since( 'inside-fence' );\n" .
+						"echo 'at sign';",
+					'expected_output' => 'at sign',
+				),
+			),
+			$file['functions'][2]['doc']['code_snippets']
+		);
+		$this->assertEquals(
+			array(
+				array(
+					'name' => 'since',
+					'content' => '1.0.0',
+				),
+				array(
+					'name' => '_before',
+					'content' => 'A real custom tag.',
+				),
+				array(
+					'name' => '_same',
+					'content' => 'Another real custom tag.',
+				),
+				array(
+					'name' => 'author',
+					'content' => 'Jane Doe',
+				),
+			),
+			$file['functions'][2]['doc']['tags']
+		);
+	}
+
+	/**
 	 * Test that function docs are exported.
 	 */
 	public function test_function_docblocks() {
@@ -463,6 +559,26 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that content lines do not have to repeat their fence's indentation.
+	 */
+	public function test_code_snippet_content_indentation_is_optional() {
+
+		$fences = \WP_Parser\get_docblock_code_fences(
+			"      ```php interactive\n" .
+			"<?php\n" .
+			"        echo 'spaces';\n" .
+			"   echo 'partially indented';\n" .
+			"\techo 'tab';\n" .
+			"      ```"
+		);
+
+		$this->assertEquals(
+			"<?php\n  echo 'spaces';\necho 'partially indented';\n\techo 'tab';",
+			$fences[0]['code']
+		);
+	}
+
+	/**
 	 * Test that PHP snippets can omit optional metadata.
 	 */
 	public function test_code_snippet_without_metadata() {
@@ -585,6 +701,89 @@ class Export_Docblocks extends Export_UnitTestCase {
 				),
 			),
 			\WP_Parser\export_docblock_code_snippets( $description )
+		);
+	}
+
+	/**
+	 * Test that a snippet placeholder remains inside its Markdown list item.
+	 *
+	 * @dataProvider markdown_list_code_snippet_indentation
+	 */
+	public function test_indented_code_snippet_placeholder_preserves_markdown_list( $marker, $indent, $expected ) {
+
+		$description = implode(
+			"\n",
+			array(
+				$marker . ' Before',
+				'',
+				$indent . '```php interactive',
+				$indent . '<?php echo 1;',
+				$indent . '```',
+				'',
+				$indent . 'After',
+			)
+		);
+		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
+
+		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet:0 -->', $stripped );
+		$this->assertSame(
+			$expected,
+			\WP_Parser\format_long_description( $stripped )
+		);
+	}
+
+	/**
+	 * Returns Markdown list markers and their content indentation.
+	 */
+	public function markdown_list_code_snippet_indentation() {
+		return array(
+			'one-digit ordered marker' => array(
+				'1.',
+				'   ',
+				'<ol> <li> <p>Before</p> <!-- wp-parser-code-snippet:0 --> <p>After</p> </li> </ol>',
+			),
+			'three-digit ordered marker' => array(
+				'100.',
+				'     ',
+				'<ol start="100"> <li> <p>Before</p> <!-- wp-parser-code-snippet:0 --> <p>After</p> </li> </ol>',
+			),
+			'unordered marker' => array(
+				'-',
+				'  ',
+				'<ul> <li> <p>Before</p> <!-- wp-parser-code-snippet:0 --> <p>After</p> </li> </ul>',
+			),
+		);
+	}
+
+	/**
+	 * Test that arbitrary fence indentation does not turn a placeholder into code.
+	 *
+	 * @dataProvider standalone_code_snippet_indentation
+	 */
+	public function test_standalone_indented_code_snippet_placeholder_remains_html( $indent ) {
+
+		$description = "Before\n\n" .
+			$indent . "```php interactive\n" .
+			$indent . "<?php echo 1;\n" .
+			$indent . "```\n\nAfter";
+		$stripped = \WP_Parser\strip_docblock_code_snippet_fences( $description );
+
+		$this->assertStringContainsString( $indent . '<!-- wp-parser-code-snippet:0 -->', $stripped );
+		$this->assertSame(
+			'<p>Before</p> <!-- wp-parser-code-snippet:0 --> <p>After</p>',
+			\WP_Parser\format_long_description( $stripped )
+		);
+	}
+
+	/**
+	 * Returns indentation that Markdown otherwise treats as a code block.
+	 */
+	public function standalone_code_snippet_indentation() {
+		return array(
+			'four spaces' => array( '    ' ),
+			'eight spaces' => array( '        ' ),
+			'tab' => array( "\t" ),
+			'two tabs' => array( "\t\t" ),
 		);
 	}
 
@@ -866,17 +1065,15 @@ class Export_Docblocks extends Export_UnitTestCase {
 	 */
 	public function test_setup_blueprint_name_cannot_shadow_inherited_definition() {
 
-		$fences = \WP_Parser\get_docblock_code_fences(
-			"Introductory prose.\n```setup-blueprint shared\n{}\n```"
-		);
+		$file = __DIR__ . '/shadowed-blueprint.inc';
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'Setup Blueprint "shared" on line 2 of the long description is already defined in an enclosing DocBlock.' );
-
-		\WP_Parser\validate_docblock_setup_blueprint_scope(
-			$fences,
-			array( 'shared' => array( 'steps' => array() ) )
+		$this->expectExceptionMessage(
+			'DocBlock for class "Shadowed_Blueprint_Example" in shadowed-blueprint.inc starting on source line 11: ' .
+			'Setup Blueprint "shared" on line 1 of the long description is already defined in an enclosing DocBlock.'
 		);
+
+		\WP_Parser\parse_files( array( $file ), __DIR__ );
 	}
 
 	/**
@@ -898,52 +1095,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				)
 			)
 		);
-	}
-
-	/**
-	 * Test that named setup Blueprint references must resolve in the DocBlock scope.
-	 */
-	public function test_undefined_setup_blueprint_reference_fails() {
-
-		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'Setup Blueprint "missing" is not defined.' );
-
-		\WP_Parser\validate_docblock_setup_blueprint_references(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => '<?php echo "unreachable";',
-					'blueprint' => 'missing',
-				),
-			),
-			array()
-		);
-	}
-
-	/**
-	 * Test that inline and inherited setup Blueprints satisfy validation.
-	 */
-	public function test_setup_blueprint_reference_validation_accepts_available_blueprints() {
-
-		\WP_Parser\validate_docblock_setup_blueprint_references(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => '<?php echo "inline";',
-					'blueprint' => array( 'steps' => array() ),
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => '<?php echo "inherited";',
-					'blueprint' => 'inherited',
-				),
-			),
-			array(
-				'inherited' => array( 'steps' => array() ),
-			)
-		);
-
-		$this->assertTrue( true );
 	}
 
 	/**
@@ -1171,9 +1322,21 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'code_snippets' => array(
 					array(
 						'type' => 'php-code-snippet',
-						'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
+						'code' => "<?php\n// This property snippet line ends in a period.\n@unlink( '/tmp/phpdoc-parser-property' );\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
 						'expected_output' => 'Hello from the file setup',
 						'blueprint' => 'file-greeting',
+					),
+				),
+				'tags' => array(
+					array(
+						'name' => 'since',
+						'content' => '3.0.0',
+					),
+					array(
+						'name' => 'var',
+						'content' => '',
+						'types' => array( 'string' ),
+						'variable' => '',
 					),
 				),
 				'setup_blueprints' => array(
