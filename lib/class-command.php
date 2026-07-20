@@ -34,7 +34,10 @@ class Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Read a JSON file containing the PHPDoc markup, convert it into WordPress posts, and insert into DB.
+	 * Imports an exported parser document into WordPress.
+	 *
+	 * The command validates the parsed-file envelope before invoking the importer
+	 * and preserves setup Blueprint object and list shapes while decoding JSON.
 	 *
 	 * @synopsis <file> [--quick] [--import-internal]
 	 *

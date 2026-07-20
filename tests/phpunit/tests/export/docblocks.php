@@ -64,17 +64,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'blueprint' => 'file-greeting',
 					),
 				),
-				'setup_blueprints' => array(
-					'file-greeting' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
-								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
-							),
-						),
-					),
-				),
+				'setup_blueprints' => $this->file_greeting_setup_blueprints(),
 			)
 		);
 
@@ -102,17 +92,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$this->assertFileHasDocs(
 			array(
 				'description' => 'This is the file-level docblock summary.',
-				'setup_blueprints' => array(
-					'file-greeting' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
-								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
-							),
-						),
-					),
-				),
+				'setup_blueprints' => $this->file_greeting_setup_blueprints(),
 			)
 		);
 	}
@@ -350,17 +330,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'Test_Class'
 			, 'test_method_with_file_setup_blueprint'
 			, array(
-				'setup_blueprints' => array(
-					'file-greeting' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
-								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
-							),
-						),
-					),
-				),
+				'setup_blueprints' => $this->file_greeting_setup_blueprints(),
 				'code_snippets' => array(
 					array(
 						'type' => 'php-code-snippet',
@@ -375,160 +345,92 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test tricky Markdown-like code fence parsing rules.
+	 * Test exact fence matching and indentation handling.
+	 *
+	 * @dataProvider code_snippet_fence_delimiters
 	 */
-	public function test_code_snippet_fence_parser_edge_cases() {
+	public function test_code_snippet_fence_delimiters( $description, $expected_code, $expected_output ) {
 
-		$description = implode(
-			"\n",
-			array(
-				'Inline ```php is not a fence.',
-				'',
-				'``',
-				'Two backticks are too short.',
-				'``',
-				'',
-				'````php interactive',
-				'<?php',
-				'echo "outer";',
-				'```',
-				'echo "the smaller fence stays inside the larger fence";',
-				'```',
-				'````',
-				'````expected-output',
+		$snippets = \WP_Parser\export_docblock_code_snippets( $description );
+
+		$this->assertCount( 1, $snippets );
+		$this->assertSame( $expected_code, $snippets[0]['code'] );
+		$this->assertSame( $expected_output, $snippets[0]['expected_output'] );
+	}
+
+	public function code_snippet_fence_delimiters() {
+		return array(
+			'smaller runs stay inside a larger fence' => array(
+				"````php interactive\n<?php\n```\necho 'inside';\n```\n````\n````expected-output\nouter\n````",
+				"<?php\n```\necho 'inside';\n```",
 				'outer',
-				'````',
-				'',
-				'```php interactive',
-				'<?php',
-				'echo "a different-length fence does not close";',
-				'````',
-				'echo "still inside";',
-				'``` not a closer',
-				'echo "still inside after text on the would-be closer";',
-				'```',
-				'```expected-output',
-				'different-length',
-				'```',
-				'',
-				'    ```php interactive',
-				'    <?php',
-				'      echo "indented fences strip the fence indentation";',
-				'    ```',
-				'    ```expected-output',
-				'    indented',
-				'    ```',
-				'',
-				'   ```php interactive',
-				'<?php',
-				'echo "three leading spaces are still a fence";',
-				'   ```',
-				'   ```expected-output',
-				'three leading spaces',
-				'   ```',
-				'',
-				'```js',
-				'console.log("another snippet");',
-				'```',
-				'```js',
-				'console.log("this fence breaks the pending blueprint");',
-				'```',
-				'```php interactive',
-				'<?php',
-				'echo "no blueprint from before JS";',
-				'```',
-				'```expected-output',
-				'no blueprint from before JS',
-				'```',
-				'',
-				'```setup-blueprint',
-				'{"steps":[{"step":"writeFile","path":"/tmp/one.php","data":"<?php echo 1;"}]}',
-				'```',
-				'```php interactive',
-				'<?php',
-				'echo "blueprint before";',
-				'```',
-				'```expected-output',
-				'blueprint before',
-				'```',
-				'',
-				'```php interactive',
-				'<?php',
-				'echo "blueprint after";',
-				'```',
-				'```setup-blueprint',
-				'{"steps":[{"step":"writeFile","path":"/tmp/two.php","data":"<?php echo 2;"}]}',
-				'```',
-				'```expected-output',
-				'blueprint after',
-				'```',
-				'',
-				'````php interactive',
-				'<?php',
-				'echo "unterminated snippets are ignored";',
-				'```js',
-				'console.log("do not parse fences inside an unterminated fence");',
-				'```',
-			)
-		);
-
-		$this->assertEquals(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"outer\";\n```\necho \"the smaller fence stays inside the larger fence\";\n```",
-					'expected_output' => 'outer',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"a different-length fence does not close\";\n````\necho \"still inside\";\n``` not a closer\necho \"still inside after text on the would-be closer\";",
-					'expected_output' => 'different-length',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\n  echo \"indented fences strip the fence indentation\";",
-					'expected_output' => 'indented',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"three leading spaces are still a fence\";",
-					'expected_output' => 'three leading spaces',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"no blueprint from before JS\";",
-					'expected_output' => 'no blueprint from before JS',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"blueprint before\";",
-					'expected_output' => 'blueprint before',
-					'blueprint' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/tmp/one.php',
-								'data' => '<?php echo 1;',
-							),
-						),
-					),
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"blueprint after\";",
-					'expected_output' => 'blueprint after',
-					'blueprint' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/tmp/two.php',
-								'data' => '<?php echo 2;',
-							),
-						),
-					),
-				),
 			),
-			\WP_Parser\export_docblock_code_snippets( $description )
+			'different runs and text do not close a fence' => array(
+				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```\n```expected-output\nexact\n```",
+				"<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
+				'exact',
+			),
+			'arbitrary indentation is removed from content' => array(
+				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```\n    ```expected-output\n    indented\n```",
+				"<?php\n  echo 'indented';",
+				'indented',
+			),
+			'three leading spaces are accepted' => array(
+				"   ```php interactive\n<?php echo 'three';\n```\n```expected-output\nthree\n   ```",
+				"<?php echo 'three';",
+				'three',
+			),
+		);
+	}
+
+	/**
+	 * Test that inline, short, and unterminated fences cannot expose nested fences.
+	 *
+	 * @dataProvider ignored_code_fence_boundaries
+	 */
+	public function test_ignored_code_fence_boundaries( $description ) {
+
+		$this->assertSame( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
+		$this->assertSame( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	public function ignored_code_fence_boundaries() {
+		return array(
+			'inline backticks' => array( 'Inline ```php interactive is not a fence.' ),
+			'two backticks' => array( "``php interactive\n<?php echo 'short';\n``" ),
+			'unterminated fence' => array(
+				"````php interactive\n<?php echo 'unterminated';\n```php interactive\n<?php echo 'nested';\n```",
+			),
+			'unterminated fence after a complete ordinary fence' => array(
+				"```js\nconsole.log('complete');\n```\n\n````php interactive\n<?php echo 'unterminated';\n```",
+			),
+		);
+	}
+
+	/**
+	 * Test inline setup Blueprints on either side of an interactive fence.
+	 *
+	 * @dataProvider inline_setup_blueprint_positions
+	 */
+	public function test_inline_setup_blueprint_positions( $description, $expected_path ) {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets( $description );
+
+		$this->assertSame( $expected_path, $snippets[0]['blueprint']['steps'][0]['path'] );
+	}
+
+	public function inline_setup_blueprint_positions() {
+		$php = "```php interactive\n<?php echo 'snippet';\n```";
+
+		return array(
+			'before PHP' => array(
+				"```setup-blueprint\n{\"steps\":[{\"step\":\"writeFile\",\"path\":\"/tmp/before.php\",\"data\":\"\"}]}\n```\n" . $php,
+				'/tmp/before.php',
+			),
+			'after PHP' => array(
+				$php . "\n```setup-blueprint\n{\"steps\":[{\"step\":\"writeFile\",\"path\":\"/tmp/after.php\",\"data\":\"\"}]}\n```",
+				'/tmp/after.php',
+			),
 		);
 	}
 
@@ -609,33 +511,47 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that PHP fences are ordinary documentation unless marked interactive.
+	 * Test that unsupported info strings remain ordinary documentation.
+	 *
+	 * @dataProvider unrecognized_code_fence_info_strings
 	 */
-	public function test_plain_php_fences_are_not_code_snippets() {
+	public function test_unrecognized_code_fence_info_strings( $info, $body ) {
 
-		$description = implode(
-			"\n",
-			array(
-				'```php',
-				'<?php echo "plain";',
-				'```',
-				'```php title="interactive-is-not-the-first-argument"',
-				'<?php echo "also plain";',
-				'```',
-				'```php-interactive',
-				'<?php echo "still plain";',
-				'```',
-				'```php example setup-blueprint=NOT-VALID',
-				'<?php echo "setup-looking metadata on a plain fence";',
-				'```',
-				'```php INTERACTIVE setup-blueprint=ALSO-INVALID',
-				'<?php echo "the interactive marker is case-sensitive";',
-				'```',
-			)
+		$description = '```' . $info . "\n" . $body . "\n```";
+
+		$this->assertSame( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
+		$this->assertSame( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	public function unrecognized_code_fence_info_strings() {
+		$php       = '<?php echo 1;';
+		$blueprint = '{"steps":[]}';
+
+		return array(
+			'plain PHP' => array( 'php', $php ),
+			'interactive inside an option' => array( 'php title="interactive-is-not-the-first-argument"', $php ),
+			'combined language name' => array( 'php-interactive', $php ),
+			'option on non-interactive PHP' => array( 'php example setup-blueprint=NOT-VALID', $php ),
+			'uppercase interactive marker' => array( 'php INTERACTIVE setup-blueprint=ALSO-INVALID', $php ),
+			'Blueprint alias' => array( 'blueprint', $blueprint ),
+			'collapsed setup Blueprint name' => array( 'setupblueprint shared', $blueprint ),
+			'setup Blueprint after JSON language' => array( 'json setup-blueprint shared', $blueprint ),
+			'Blueprint reference alias' => array( 'php interactive blueprint=shared', $php ),
+			'collapsed Blueprint reference' => array( 'php interactive setupblueprint=shared', $php ),
+			'unsupported interactive option' => array( 'php interactive editable=false', $php ),
+			'output alias' => array( 'output', 'output' ),
+			'underscored expected output' => array( 'expected_output', 'output' ),
+			'typed expected output' => array( 'text/expected-output', 'output' ),
+			'uppercase PHP' => array( 'PHP interactive', $php ),
+			'mixed-case PHP' => array( 'Php interactive', $php ),
+			'uppercase interactive marker without options' => array( 'php INTERACTIVE', $php ),
+			'mixed-case interactive marker' => array( 'php Interactive', $php ),
+			'uppercase setup option' => array( 'php interactive SETUP-BLUEPRINT=shared', $php ),
+			'uppercase setup language' => array( 'SETUP-BLUEPRINT shared', $blueprint ),
+			'mixed-case setup language' => array( 'Setup-Blueprint shared', $blueprint ),
+			'uppercase expected output' => array( 'EXPECTED-OUTPUT', 'output' ),
+			'mixed-case expected output' => array( 'Expected-Output', 'output' ),
 		);
-
-		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
-		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
 	}
 
 	/**
@@ -884,90 +800,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 				)
 			)
 		);
-	}
-
-	/**
-	 * Test that obsolete snippet syntax is treated as ordinary documentation.
-	 */
-	public function test_code_snippet_syntax_aliases_are_not_recognized() {
-
-		$description = implode(
-			"\n",
-			array(
-				'```blueprint',
-				'{"steps":[]}',
-				'```',
-				'```setupblueprint shared',
-				'{"steps":[]}',
-				'```',
-				'```json setup-blueprint shared',
-				'{"steps":[]}',
-				'```',
-				'```php interactive blueprint=shared',
-				'<?php echo "blueprint alias";',
-				'```',
-				'```php interactive setupblueprint=shared',
-				'<?php echo "setupblueprint alias";',
-				'```',
-				'```php interactive editable=false',
-				'<?php echo "unsupported extra argument";',
-				'```',
-				'```output',
-				'output alias',
-				'```',
-				'```expected_output',
-				'expected output alias',
-				'```',
-				'```text/expected-output',
-				'text expected output alias',
-				'```',
-			)
-		);
-
-		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
-		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
-	}
-
-	/**
-	 * Test that capitalization variants are treated as ordinary documentation.
-	 */
-	public function test_code_snippet_syntax_is_case_sensitive() {
-
-		$description = implode(
-			"\n",
-			array(
-				'```PHP interactive',
-				'<?php echo "uppercase language";',
-				'```',
-				'```Php interactive',
-				'<?php echo "mixed-case language";',
-				'```',
-				'```php INTERACTIVE',
-				'<?php echo "uppercase marker";',
-				'```',
-				'```php Interactive',
-				'<?php echo "mixed-case marker";',
-				'```',
-				'```php interactive SETUP-BLUEPRINT=shared',
-				'<?php echo "uppercase option";',
-				'```',
-				'```SETUP-BLUEPRINT shared',
-				'{"steps":[]}',
-				'```',
-				'```Setup-Blueprint shared',
-				'{"steps":[]}',
-				'```',
-				'```EXPECTED-OUTPUT',
-				'uppercase output',
-				'```',
-				'```Expected-Output',
-				'mixed-case output',
-				'```',
-			)
-		);
-
-		$this->assertEquals( array(), \WP_Parser\export_docblock_code_snippets( $description ) );
-		$this->assertEquals( $description, \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
 	}
 
 	/**
@@ -1406,18 +1238,22 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'variable' => '',
 					),
 				),
-				'setup_blueprints' => array(
-					'file-greeting' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
-								'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
-							),
-						),
+				'setup_blueprints' => $this->file_greeting_setup_blueprints(),
+			)
+		);
+	}
+
+	private function file_greeting_setup_blueprints() {
+		return array(
+			'file-greeting' => array(
+				'steps' => array(
+					array(
+						'step' => 'writeFile',
+						'path' => '/wordpress/wp-content/mu-plugins/file-greeting.php',
+						'data' => "<?php\nfunction docs_file_greeting() {\n\treturn 'Hello from the file setup';\n}\n",
 					),
 				),
-			)
+			),
 		);
 	}
 }
