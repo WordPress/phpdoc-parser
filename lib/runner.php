@@ -264,6 +264,14 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		$raw_long_description = $docblock->getLongDescription()->getContents();
 		$source_docblock       = null;
 
+		/*
+		 * phpDocumentor can split one fenced block across its short and long
+		 * descriptions, alter its line structure, and parse `@` code as tags. If
+		 * either description contains a possible fence, recover the original
+		 * DocBlock before tokenizing it below. File reflectors require slicing the
+		 * comment from the file contents; node-backed reflectors use the raw comment
+		 * captured above.
+		 */
 		if ( false !== strpos( $short_description, '```' ) || false !== strpos( $raw_long_description, '```' ) ) {
 			if ( $element instanceof File_Reflector ) {
 				$location = $docblock->getLocation();
