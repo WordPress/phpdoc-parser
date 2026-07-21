@@ -2,13 +2,6 @@
 
 namespace WP_Parser;
 
-use WP_Parser\Reflection\BaseReflector;
-use WP_Parser\Reflection\ClassReflector\MethodReflector;
-use WP_Parser\Reflection\ClassReflector\PropertyReflector;
-use WP_Parser\Reflection\FunctionReflector;
-use WP_Parser\Reflection\FunctionReflector\ArgumentReflector;
-use WP_Parser\Reflection\ReflectionAbstract;
-
 /**
  * @param string $directory
  *
@@ -222,7 +215,7 @@ function fix_newlines( $text ) {
 }
 
 /**
- * @param BaseReflector|ReflectionAbstract $element
+ * @param Abstract_Reflector|File_Reflector $element
  *
  * @return array
  */
@@ -302,7 +295,7 @@ function export_hooks( array $hooks ) {
 }
 
 /**
- * @param ArgumentReflector[] $arguments
+ * @param Argument_Reflector[] $arguments
  *
  * @return array
  */
@@ -321,7 +314,7 @@ function export_arguments( array $arguments ) {
 }
 
 /**
- * @param PropertyReflector[] $properties
+ * @param Property_Reflector[] $properties
  *
  * @return array
  */
@@ -345,7 +338,7 @@ function export_properties( array $properties ) {
 }
 
 /**
- * @param MethodReflector[] $methods
+ * @param Method_Reflector[] $methods
  *
  * @return array
  */
@@ -399,7 +392,7 @@ function export_uses( array $uses ) {
 
 	foreach ( $uses as $type => $used_elements ) {
 
-		/** @var MethodReflector|FunctionReflector $element */
+		/** @var Method_Call_Reflector|Function_Call_Reflector $element */
 		foreach ( $used_elements as $element ) {
 
 			$name = $element->getName();

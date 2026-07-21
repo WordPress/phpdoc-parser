@@ -2,16 +2,25 @@
 
 namespace WP_Parser;
 
-use WP_Parser\Reflection;
-use WP_Parser\Reflection\FileReflector;
+use phpDocumentor\Reflection\DocBlock;
+use phpDocumentor\Reflection\DocBlock\Context;
+use phpDocumentor\Reflection\DocBlock\Location;
+use PhpParser\Comment\Doc;
+use PhpParser\Error;
+use PhpParser\Node;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
+use PhpParser\NodeVisitor\NameResolver;
+use PhpParser\ParserFactory;
 
 /**
  * Reflection class for a full file.
  *
- * Extends the FileReflector from phpDocumentor to parse out WordPress
- * hooks and note function relationships.
+ * Parses a PHP file and collects its docblock, includes, constants,
+ * functions, and classes, along with WordPress hooks and the function,
+ * method, and constructor calls used in each scope.
  */
-class File_Reflector extends FileReflector {
+class File_Reflector implements NodeVisitor {
 	/**
 	 * Attribute key used to store queued uses on PHP-Parser nodes.
 	 */
@@ -35,10 +44,10 @@ class File_Reflector extends FileReflector {
 	protected $method_uses_queue = array();
 
 	/**
-	 * Stack of classes/methods/functions currently being parsed.
+	 * Stack of class/method/function nodes currently being parsed.
 	 *
-	 * @see \WP_Parser\FileReflector::getLocation()
-	 * @var \WP_Parser\Reflection\BaseReflector[]
+	 * @see \WP_Parser\File_Reflector::getLocation()
+	 * @var Node[]
 	 */
 	protected $location = array();
 
@@ -48,6 +57,217 @@ class File_Reflector extends FileReflector {
 	 * @var \PhpParser\Comment\Doc
 	 */
 	protected $last_doc = null;
+
+	/**
+	 * The name of the file associated with this reflection object.
+	 *
+	 * @var string
+	 */
+	protected $filename = '';
+
+	/**
+	 * The contents of this file.
+	 *
+	 * @var string
+	 */
+	protected $contents = '';
+
+	/**
+	 * Namespace context (namespace and aliases), updated during traversal
+	 * and shared with every element reflector created for this file.
+	 *
+	 * @var Context
+	 */
+	protected $context;
+
+	/**
+	 * The file-level DocBlock, if one was found.
+	 *
+	 * @var DocBlock|null
+	 */
+	protected $doc_block;
+
+	/**
+	 * @var Include_Reflector[]
+	 */
+	protected $includes = array();
+
+	/**
+	 * @var Constant_Reflector[]
+	 */
+	protected $constants = array();
+
+	/**
+	 * @var Class_Reflector[]
+	 */
+	protected $classes = array();
+
+	/**
+	 * @var Function_Reflector[]
+	 */
+	protected $functions = array();
+
+	/**
+	 * Reads the file to reflect.
+	 *
+	 * @param string $file Path of the file.
+	 *
+	 * @throws \RuntimeException If the file does not exist or is unreadable.
+	 */
+	public function __construct( $file ) {
+		if ( ! is_string( $file ) || ! is_readable( $file ) ) {
+			throw new \RuntimeException(
+				'The given file should be a string, should exist on the filesystem and should be readable'
+			);
+		}
+
+		$this->filename = $file;
+		$this->contents = file_get_contents( $file );
+		$this->context  = new Context();
+	}
+
+	/**
+	 * Parses the file and populates the reflected elements.
+	 */
+	public function process() {
+		// With big fluent interfaces it can happen that PHP-Parser's Traverser
+		// exceeds the 100 recursions limit; we set it to 10000 to be sure.
+		ini_set( 'xdebug.max_nesting_level', 10000 );
+
+		try {
+			$nodes = ( new ParserFactory() )->createForNewestSupportedVersion()->parse( $this->contents );
+
+			$traverser = new NodeTraverser();
+			$traverser->addVisitor( new NameResolver() );
+			$traverser->addVisitor( $this );
+			$traverser->traverse( $nodes );
+		} catch ( Error $e ) {
+			echo 'Parse Error: ', $e->getMessage();
+		}
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getFilename() {
+		return $this->filename;
+	}
+
+	/**
+	 * @param string $filename
+	 */
+	public function setFilename( $filename ) {
+		$this->filename = $filename;
+	}
+
+	/**
+	 * Returns the file-level DocBlock, if one was found.
+	 *
+	 * @return DocBlock|null
+	 */
+	public function getDocBlock() {
+		return $this->doc_block;
+	}
+
+	/**
+	 * @return Include_Reflector[]
+	 */
+	public function getIncludes() {
+		return $this->includes;
+	}
+
+	/**
+	 * @return Constant_Reflector[]
+	 */
+	public function getConstants() {
+		return $this->constants;
+	}
+
+	/**
+	 * @return Function_Reflector[]
+	 */
+	public function getFunctions() {
+		return $this->functions;
+	}
+
+	/**
+	 * @return Class_Reflector[]
+	 */
+	public function getClasses() {
+		return $this->classes;
+	}
+
+	/**
+	 * Detects the file-level DocBlock before traversal starts.
+	 *
+	 * @param Node[] $nodes
+	 *
+	 * @return Node[]
+	 */
+	public function beforeTraverse( array $nodes ) {
+		$node = null;
+		$key  = 0;
+		foreach ( $nodes as $k => $n ) {
+			if ( ! $n instanceof Node\Stmt\InlineHTML ) {
+				$node = $n;
+				$key  = $k;
+				break;
+			}
+		}
+
+		if ( $node ) {
+			$comments = (array) $node->getAttribute( 'comments' );
+
+			// Remove non-DocBlock comments.
+			$comments = array_values(
+				array_filter(
+					$comments,
+					function ( $comment ) {
+						return $comment instanceof Doc;
+					}
+				)
+			);
+
+			if ( ! empty( $comments ) ) {
+				try {
+					$docblock = new DocBlock(
+						(string) $comments[0],
+						null,
+						new Location( $comments[0]->getStartLine() )
+					);
+
+					/*
+					 * The first DocBlock in a file documents the file if
+					 * - it precedes another DocBlock or
+					 * - it contains a @package tag and doesn't precede a class
+					 *   declaration or
+					 * - it precedes a non-documentable element (thus no include,
+					 *   require, class, function, define, const)
+					 */
+					if ( count( $comments ) > 1
+						|| ( ! $node instanceof Node\Stmt\Class_
+							&& ! $node instanceof Node\Stmt\Interface_
+							&& $docblock->hasTag( 'package' ) )
+						|| ! $this->isNodeDocumentable( $node )
+					) {
+						$this->doc_block = $docblock;
+
+						// Remove the file-level DocBlock from the node's comments.
+						array_shift( $comments );
+					}
+				} catch ( \Exception $e ) {
+					// Treat an unparsable docblock as no file docblock.
+				}
+			}
+
+			// Always update the comments attribute so that standard comments
+			// do not stop a DocBlock from being attached to an element.
+			$node->setAttribute( 'comments', $comments );
+			$nodes[ $key ] = $node;
+		}
+
+		return $nodes;
+	}
 
 	/**
 	 * Add hooks to the queue and update the node stack when we enter a node.
@@ -68,11 +288,17 @@ class File_Reflector extends FileReflector {
 	 *
 	 * @param \PhpParser\Node $node
 	 */
-	public function enterNode( \PhpParser\Node $node ) {
-		parent::enterNode( $node );
+	public function enterNode( Node $node ) {
+		// A docblock on an expression statement belongs to the expression within.
+		if ( $node instanceof Node\Stmt\Expression && $this->isNodeDocumentable( $node->expr ) ) {
+			$comments = $node->getAttribute( 'comments' );
+			if ( ! empty( $comments ) && empty( $node->expr->getAttribute( 'comments' ) ) ) {
+				$node->expr->setAttribute( 'comments', $comments );
+			}
+		}
 
 		switch ( $node->getType() ) {
-			// Add classes, functions, and methods to the current location stack
+			// Add classes, functions, and methods to the current location stack.
 			case 'Stmt_Class':
 			case 'Stmt_Function':
 			case 'Stmt_ClassMethod':
@@ -117,7 +343,7 @@ class File_Reflector extends FileReflector {
 
 			// Parse out `new Class()` calls as uses of Class::__construct().
 			case 'Expr_New':
-				$method = new \WP_Parser\Method_Call_Reflector( $node, $this->context );
+				$method = new Method_Call_Reflector( $node, $this->context );
 
 				// Add it to the list of methods used in this scope.
 				$this->add_use( 'methods', $method );
@@ -141,22 +367,82 @@ class File_Reflector extends FileReflector {
 	}
 
 	/**
-	 * Assign queued hooks to functions and update the node stack on leaving a node.
+	 * Collects reflected elements, assigns queued hooks to functions, and
+	 * updates the node stack on leaving a node.
 	 *
-	 * We can now access the function/method reflectors, so we can assign any queued
-	 * hooks to them. The reflector for a node isn't created until the node is left.
+	 * The reflector for a node isn't created until the node is left, at
+	 * which point any queued uses can be assigned to it.
 	 *
 	 * @param \PhpParser\Node $node
 	 */
-	public function leaveNode( \PhpParser\Node $node ) {
+	public function leaveNode( Node $node ) {
+		switch ( get_class( $node ) ) {
+			case 'PhpParser\Node\Stmt\Use_':
+				foreach ( $node->uses as $use ) {
+					$this->context->setNamespaceAlias(
+						(string) $use->getAlias(),
+						$this->nameToString( $use->name )
+					);
+				}
+				break;
 
-		parent::leaveNode( $node );
+			case 'PhpParser\Node\Stmt\Namespace_':
+				$this->context->setNamespace(
+					isset( $node->name ) && $node->name ? $this->nameToString( $node->name ) : ''
+				);
+				break;
+
+			case 'PhpParser\Node\Stmt\Class_':
+				$class = new Class_Reflector( $node, $this->context );
+				$class->parseSubElements();
+				$this->classes[] = $class;
+				break;
+
+			case 'PhpParser\Node\Stmt\Function_':
+				$this->functions[] = new Function_Reflector( $node, $this->context );
+				break;
+
+			case 'PhpParser\Node\Stmt\Const_':
+				foreach ( $node->consts as $constant ) {
+					$this->constants[] = new Constant_Reflector( $node, $this->context, $constant );
+				}
+				break;
+
+			case 'PhpParser\Node\Expr\FuncCall':
+				if ( ( $node->name instanceof Node\Name )
+					&& 'define' == $node->name
+					&& isset( $node->args[0] )
+					&& isset( $node->args[1] )
+				) {
+					// Transform the first argument of the define function call into a constant name.
+					$name = str_replace(
+						array( '\\\\', '"', "'" ),
+						array( '\\', '', '' ),
+						trim( $this->pretty_print_value( $node->args[0]->value ), '\'' )
+					);
+
+					$name_parts = explode( '\\', $name );
+					$short_name = end( $name_parts );
+
+					$constant                 = new Node\Const_( $short_name, $node->args[1]->value, $node->getAttributes() );
+					$constant->namespacedName = new Node\Name( $name );
+
+					$constant_statement = new Node\Stmt\Const_( array( $constant ) );
+					$constant_statement->setAttribute( 'comments', array( $node->getDocComment() ) );
+
+					$this->constants[] = new Constant_Reflector( $constant_statement, $this->context, $constant );
+				}
+				break;
+
+			case 'PhpParser\Node\Expr\Include_':
+				$this->includes[] = new Include_Reflector( $node, $this->context );
+				break;
+		}
 
 		switch ( $node->getType() ) {
 			case 'Stmt_Class':
 				$class = end( $this->classes );
 				if ( ! empty( $this->method_uses_queue ) ) {
-					/** @var Reflection\ClassReflector\MethodReflector $method */
 					foreach ( $class->getMethods() as $method ) {
 						$method_name = $method->getName();
 						if ( isset( $this->method_uses_queue[ $method_name ] ) ) {
@@ -204,11 +490,46 @@ class File_Reflector extends FileReflector {
 	}
 
 	/**
+	 * @param Node[] $nodes
+	 */
+	public function afterTraverse( array $nodes ) {
+	}
+
+	/**
+	 * Checks whether the given node is a documentable element.
+	 *
 	 * @param \PhpParser\Node $node
 	 *
 	 * @return bool
 	 */
-	protected function isFilter( \PhpParser\Node $node ) {
+	protected function isNodeDocumentable( Node $node ) {
+		if ( $node instanceof Node\Stmt\Expression ) {
+			$node = $node->expr;
+		}
+
+		return ( $node instanceof Node\Stmt\Class_ )
+			|| ( $node instanceof Node\Stmt\Interface_ )
+			|| ( $node instanceof Node\Stmt\ClassConst )
+			|| ( $node instanceof Node\Stmt\ClassMethod )
+			|| ( $node instanceof Node\Stmt\Const_ )
+			|| ( $node instanceof Node\Stmt\Function_ )
+			|| ( $node instanceof Node\Stmt\Property )
+			|| ( $node instanceof Node\Stmt\PropertyProperty )
+			|| ( $node instanceof Node\Stmt\Trait_ )
+			|| ( $node instanceof Node\Expr\Include_ )
+			|| ( $node instanceof Node\Expr\FuncCall
+				&& ( $node->name instanceof Node\Name )
+				&& 'define' == $node->name )
+			|| ( $node instanceof Node\Expr\FuncCall
+				&& $this->isFilter( $node ) );
+	}
+
+	/**
+	 * @param \PhpParser\Node $node
+	 *
+	 * @return bool
+	 */
+	protected function isFilter( Node $node ) {
 		if (
 			'Name' !== $node->name->getType() &&
 			'Name_FullyQualified' !== $node->name->getType()
@@ -231,7 +552,11 @@ class File_Reflector extends FileReflector {
 	}
 
 	/**
-	 * @return File_Reflector
+	 * Returns the node whose scope contains the parser's current position:
+	 * the innermost function, method, or class being traversed, or this
+	 * reflector itself in file scope.
+	 *
+	 * @return File_Reflector|Node
 	 */
 	protected function getLocation() {
 		return empty( $this->location ) ? $this : end( $this->location );
@@ -267,24 +592,43 @@ class File_Reflector extends FileReflector {
 	 *
 	 * @return array
 	 */
-	protected function get_node_uses( \PhpParser\Node $node ) {
+	protected function get_node_uses( Node $node ) {
 		$uses = $node->getAttribute( self::USES_ATTRIBUTE, array() );
 
 		return is_array( $uses ) ? $uses : array();
 	}
 
 	/**
-	 * @param \PhpParser\Node $node
+	 * Returns a string representation of a PHP-Parser name-like value.
 	 *
-	 * @return bool
+	 * @param mixed $name
+	 *
+	 * @return string
 	 */
-	protected function isNodeDocumentable( \PhpParser\Node $node ) {
-		if ( $node instanceof \PhpParser\Node\Stmt\Expression ) {
-			$node = $node->expr;
+	protected function nameToString( $name ) {
+		if ( null === $name ) {
+			return '';
 		}
 
-		return parent::isNodeDocumentable( $node )
-		|| ( $node instanceof \PhpParser\Node\Expr\FuncCall
-			&& $this->isFilter( $node ) );
+		if ( $name instanceof Node\Name ) {
+			return implode( '\\', $name->getParts() );
+		}
+
+		if ( is_object( $name ) && method_exists( $name, '__toString' ) ) {
+			return (string) $name;
+		}
+
+		return (string) $name;
+	}
+
+	/**
+	 * Returns the source representation of a value expression.
+	 *
+	 * @param Node\Expr $value
+	 *
+	 * @return string
+	 */
+	protected function pretty_print_value( Node\Expr $value ) {
+		return ( new Value_Printer() )->prettyPrintExpr( $value );
 	}
 }

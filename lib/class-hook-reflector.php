@@ -2,12 +2,11 @@
 
 namespace WP_Parser;
 
-use WP_Parser\Reflection\BaseReflector;
 
 /**
  * Custom reflector for WordPress hooks.
  */
-class Hook_Reflector extends BaseReflector {
+class Hook_Reflector extends Abstract_Reflector {
 
 	/**
 	 * @return string

@@ -6,12 +6,11 @@
 
 namespace WP_Parser;
 
-use WP_Parser\Reflection\BaseReflector;
 
 /**
  * A reflection of a function call expression.
  */
-class Function_Call_Reflector extends BaseReflector {
+class Function_Call_Reflector extends Abstract_Reflector {
 
 	/**
 	 * Returns the name for this Reflector instance.

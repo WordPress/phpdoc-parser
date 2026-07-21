@@ -2,18 +2,15 @@
 
 namespace WP_Parser;
 
-use WP_Parser\Reflection\BaseReflector;
-use WP_Parser\Reflection\ClassReflector;
-
 /**
  * A reflection of a method call expression.
  */
-class Method_Call_Reflector extends BaseReflector {
+class Method_Call_Reflector extends Abstract_Reflector {
 
 	/**
 	 * The class that this method was called in, if it was called in a class.
 	 *
-	 * @var ClassReflector|false
+	 * @var Class_Reflector|false
 	 */
 	protected $called_in_class = false;
 
@@ -66,9 +63,9 @@ class Method_Call_Reflector extends BaseReflector {
 	/**
 	 * Set the class that this method was called within.
 	 *
-	 * @param ClassReflector $class
+	 * @param Class_Reflector $class
 	 */
-	public function set_class( ClassReflector $class ) {
+	public function set_class( Class_Reflector $class ) {
 
 		$this->called_in_class = $class;
 	}
