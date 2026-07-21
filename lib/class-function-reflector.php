@@ -2,7 +2,6 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\DocBlock\Context;
 use PhpParser\Node;
 
 /**
@@ -32,9 +31,9 @@ class Function_Reflector extends Abstract_Reflector {
 
 	/**
 	 * @param Node    $node
-	 * @param Context $context
+	 * @param File_Context $context
 	 */
-	public function __construct( Node $node, Context $context ) {
+	public function __construct( Node $node, File_Context $context ) {
 		parent::__construct( $node, $context );
 
 		foreach ( $node->params as $param ) {

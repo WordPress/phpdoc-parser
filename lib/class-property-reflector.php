@@ -2,7 +2,6 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\DocBlock\Context;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\PropertyProperty;
 
@@ -28,10 +27,10 @@ class Property_Reflector extends Abstract_Reflector {
 
 	/**
 	 * @param Property         $property
-	 * @param Context          $context
+	 * @param File_Context          $context
 	 * @param PropertyProperty $node
 	 */
-	public function __construct( Property $property, Context $context, PropertyProperty $node ) {
+	public function __construct( Property $property, File_Context $context, PropertyProperty $node ) {
 		parent::__construct( $node, $context );
 
 		$this->property = $property;

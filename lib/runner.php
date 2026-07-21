@@ -2,6 +2,8 @@
 
 namespace WP_Parser;
 
+use phpDocumentor\Reflection\DocBlock\Tags;
+
 /**
  * @param string $directory
  *
@@ -215,6 +217,142 @@ function fix_newlines( $text ) {
 }
 
 /**
+ * Formats a long description like the legacy docblock parser did:
+ * bare `<code>` elements are wrapped in `<pre>` and the text is run
+ * through Markdown.
+ *
+ * @param string $text
+ *
+ * @return string
+ */
+function format_long_description( $text ) {
+	if ( false !== strpos( $text, '<code>' ) ) {
+		$text = str_replace(
+			array( '<code>', "<code>\r\n", "<code>\n", "<code>\r", '</code>' ),
+			array( '<pre><code>', '<code>', '<code>', '<code>', '</code></pre>' ),
+			$text
+		);
+	}
+
+	if ( class_exists( 'Parsedown' ) ) {
+		$text = \Parsedown::instance()->parse( $text );
+	}
+
+	return trim( $text );
+}
+
+/**
+ * Returns the list of type strings for a tag's type declaration.
+ *
+ * @param \phpDocumentor\Reflection\Type|null $type
+ *
+ * @return string[]
+ */
+function export_types( $type ) {
+	if ( null === $type ) {
+		return array();
+	}
+
+	if ( $type instanceof \phpDocumentor\Reflection\Types\AggregatedType ) {
+		$types = array();
+		foreach ( $type as $sub_type ) {
+			$types[] = (string) $sub_type;
+		}
+
+		return $types;
+	}
+
+	return array( (string) $type );
+}
+
+/**
+ * Exports a docblock tag in the legacy output format.
+ *
+ * @param \phpDocumentor\Reflection\DocBlock\Tag $tag
+ *
+ * @return array
+ */
+function export_tag( $tag ) {
+	$name           = $tag->getName();
+	$description    = '';
+	$invalid_refers = null;
+
+	if ( $tag instanceof Tags\InvalidTag || $tag instanceof Tags\Author ) {
+		// The raw tag body; also used for tags v5 fails to parse, e.g.
+		// `@since MU (3.0.0)`.
+		$description = (string) $tag;
+	} elseif ( $tag instanceof Tags\BaseTag ) {
+		$description = (string) $tag->getDescription();
+	} else {
+		$description = (string) $tag;
+	}
+
+	if ( $tag instanceof Tags\Link && '' === $description ) {
+		// The legacy parser used the link itself as the description.
+		$description = $tag->getLink();
+	}
+
+	/*
+	 * References that are not resolvable code elements, such as
+	 * `@see 'hook_name'` or references into JavaScript, fail structured
+	 * parsing. Split out the reference like the legacy parser did.
+	 */
+	if ( $tag instanceof Tags\InvalidTag && in_array( $name, array( 'see', 'uses', 'covers' ), true ) ) {
+		$parts          = preg_split( '/\s+/Su', trim( $description ), 2 );
+		$invalid_refers = isset( $parts[0] ) ? $parts[0] : '';
+		$description    = isset( $parts[1] ) ? $parts[1] : '';
+	}
+
+	$tag_data = array(
+		'name'    => $name,
+		'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $description ) ),
+	);
+
+	if ( $tag instanceof Tags\TagWithType ) {
+		$tag_data['types'] = export_types( $tag->getType() );
+	} elseif ( $tag instanceof Tags\Method ) {
+		$tag_data['types'] = export_types( $tag->getReturnType() );
+	}
+
+	if ( $tag instanceof Tags\Link ) {
+		$tag_data['link'] = $tag->getLink();
+	}
+
+	if ( method_exists( $tag, 'getVariableName' ) ) {
+		$variable             = (string) $tag->getVariableName();
+		$tag_data['variable'] = '' === $variable ? '' : '$' . $variable;
+	}
+
+	if ( method_exists( $tag, 'getReference' ) ) {
+		$tag_data['refers'] = (string) $tag->getReference();
+	} elseif ( null !== $invalid_refers ) {
+		$tag_data['refers'] = $invalid_refers;
+	}
+
+	// Version tags: use the version as the content and export any note
+	// separately as the description.
+	$is_version_tag = $tag instanceof Tags\Since
+		|| $tag instanceof Tags\Version
+		|| $tag instanceof Tags\Deprecated
+		|| ( $tag instanceof Tags\InvalidTag && in_array( $name, array( 'since', 'version', 'deprecated' ), true ) );
+
+	if ( $is_version_tag ) {
+		$version = method_exists( $tag, 'getVersion' ) ? (string) $tag->getVersion() : '';
+
+		if ( ! empty( $version ) ) {
+			$tag_data['content'] = $version;
+		}
+
+		$version_description = preg_replace( '/[\n\r]+/', ' ', format_description( $description ) );
+		if ( ! empty( $version_description ) ) {
+			$tag_data['description'] = $version_description;
+		}
+	}
+
+	return $tag_data;
+}
+
+/**
  * @param Abstract_Reflector|File_Reflector $element
  *
  * @return array
@@ -230,43 +368,13 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => fix_newlines( $docblock->getLongDescription()->getFormattedContents() ),
+		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getSummary() ),
+		'long_description' => fix_newlines( format_long_description( (string) $docblock->getDescription() ) ),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
-		$tag_data = array(
-			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
-		);
-		if ( method_exists( $tag, 'getTypes' ) ) {
-			$tag_data['types'] = $tag->getTypes();
-		}
-		if ( method_exists( $tag, 'getLink' ) ) {
-			$tag_data['link'] = $tag->getLink();
-		}
-		if ( method_exists( $tag, 'getVariableName' ) ) {
-			$tag_data['variable'] = $tag->getVariableName();
-		}
-		if ( method_exists( $tag, 'getReference' ) ) {
-			$tag_data['refers'] = $tag->getReference();
-		}
-		if ( method_exists( $tag, 'getVersion' ) ) {
-			// Version string.
-			$version = $tag->getVersion();
-			if ( ! empty( $version ) ) {
-				$tag_data['content'] = $version;
-			}
-			// Description string.
-			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
-				if ( ! empty( $description ) ) {
-					$tag_data['description'] = $description;
-				}
-			}
-		}
-		$output['tags'][] = $tag_data;
+		$output['tags'][] = export_tag( $tag );
 	}
 
 	return $output;

@@ -3,8 +3,6 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\DocBlock;
-use phpDocumentor\Reflection\DocBlock\Context;
-use phpDocumentor\Reflection\DocBlock\Location;
 use PhpParser\Comment\Doc;
 use PhpParser\Error;
 use PhpParser\Node;
@@ -76,7 +74,7 @@ class File_Reflector implements NodeVisitor {
 	 * Namespace context (namespace and aliases), updated during traversal
 	 * and shared with every element reflector created for this file.
 	 *
-	 * @var Context
+	 * @var File_Context
 	 */
 	protected $context;
 
@@ -123,7 +121,7 @@ class File_Reflector implements NodeVisitor {
 
 		$this->filename = $file;
 		$this->contents = file_get_contents( $file );
-		$this->context  = new Context();
+		$this->context  = new File_Context();
 	}
 
 	/**
@@ -230,10 +228,8 @@ class File_Reflector implements NodeVisitor {
 
 			if ( ! empty( $comments ) ) {
 				try {
-					$docblock = new DocBlock(
-						(string) $comments[0],
-						null,
-						new Location( $comments[0]->getStartLine() )
+					$docblock = Abstract_Reflector::get_docblock_factory()->create(
+						(string) $comments[0]
 					);
 
 					/*
@@ -255,7 +251,7 @@ class File_Reflector implements NodeVisitor {
 						// Remove the file-level DocBlock from the node's comments.
 						array_shift( $comments );
 					}
-				} catch ( \Exception $e ) {
+				} catch ( \Throwable $e ) {
 					// Treat an unparsable docblock as no file docblock.
 				}
 			}

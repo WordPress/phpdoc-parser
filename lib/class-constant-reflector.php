@@ -2,7 +2,6 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\DocBlock\Context;
 use PhpParser\Node\Const_;
 use PhpParser\Node\Stmt\Const_ as ConstStmt;
 
@@ -26,10 +25,10 @@ class Constant_Reflector extends Abstract_Reflector {
 
 	/**
 	 * @param ConstStmt $stmt
-	 * @param Context   $context
+	 * @param File_Context   $context
 	 * @param Const_    $node
 	 */
-	public function __construct( ConstStmt $stmt, Context $context, Const_ $node ) {
+	public function __construct( ConstStmt $stmt, File_Context $context, Const_ $node ) {
 		parent::__construct( $node, $context );
 
 		$this->constant = $stmt;

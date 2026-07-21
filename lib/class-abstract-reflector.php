@@ -3,8 +3,8 @@
 namespace WP_Parser;
 
 use phpDocumentor\Reflection\DocBlock;
-use phpDocumentor\Reflection\DocBlock\Context;
-use phpDocumentor\Reflection\DocBlock\Location;
+use phpDocumentor\Reflection\DocBlockFactory;
+use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use PhpParser\Node;
 
 /**
@@ -27,7 +27,7 @@ abstract class Abstract_Reflector {
 	 * The context object is shared with the File_Reflector and is updated
 	 * as the file is traversed.
 	 *
-	 * @var Context
+	 * @var File_Context
 	 */
 	protected $context;
 
@@ -39,12 +39,32 @@ abstract class Abstract_Reflector {
 	protected static $value_printer = null;
 
 	/**
-	 * @param Node    $node
-	 * @param Context $context
+	 * Shared docblock parser.
+	 *
+	 * @var DocBlockFactoryInterface
 	 */
-	public function __construct( Node $node, Context $context ) {
+	protected static $docblock_factory = null;
+
+	/**
+	 * @param Node         $node
+	 * @param File_Context $context
+	 */
+	public function __construct( Node $node, File_Context $context ) {
 		$this->node    = $node;
 		$this->context = $context;
+	}
+
+	/**
+	 * Returns the shared docblock parser.
+	 *
+	 * @return DocBlockFactoryInterface
+	 */
+	public static function get_docblock_factory() {
+		if ( null === self::$docblock_factory ) {
+			self::$docblock_factory = DocBlockFactory::createInstance();
+		}
+
+		return self::$docblock_factory;
 	}
 
 	/**
@@ -79,12 +99,11 @@ abstract class Abstract_Reflector {
 		}
 
 		try {
-			return new DocBlock(
+			return self::get_docblock_factory()->create(
 				(string) $comment,
-				$this->context,
-				new Location( $comment->getStartLine() )
+				$this->context->getTypeContext()
 			);
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			// Treat an unparsable docblock as no docblock.
 			return null;
 		}
