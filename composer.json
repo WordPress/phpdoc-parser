@@ -22,11 +22,6 @@
 	"repositories": [
 		{
 			"type": "vcs",
-			"url": "https://github.com/dmsnell/Reflection.git",
-			"no-api": true
-		},
-		{
-			"type": "vcs",
 			"url": "https://github.com/dmsnell/ReflectionDocBlock.git",
 			"no-api": true
 		}
@@ -34,7 +29,7 @@
 	"require"    : {
 		"php"                      : ">=7.4",
 		"composer/installers"      : "~1.0",
-		"phpdocumentor/reflection"          : "^3.0@dev",
+		"nikic/php-parser"                  : "^5.7",
 		"phpdocumentor/reflection-docblock" : "dev-release/2.x as 2.0.5",
 		"erusev/parsedown"         : "~1.7",
 		"scribu/lib-posts-to-posts": "dev-master@dev",
@@ -58,6 +53,9 @@
 	"config": {
 		"allow-plugins": {
 			"composer/installers": true
+		},
+		"platform": {
+			"php": "7.4.33"
 		},
 		"_process-timeout-comment": "Work around `test:watch` timeout, see https://github.com/spatie/phpunit-watcher/issues/63#issuecomment-545633709",
 		"process-timeout": 0

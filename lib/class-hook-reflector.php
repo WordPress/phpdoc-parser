@@ -2,7 +2,7 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\BaseReflector;
+use WP_Parser\Reflection\BaseReflector;
 
 /**
  * Custom reflector for WordPress hooks.

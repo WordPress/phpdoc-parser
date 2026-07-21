@@ -2,12 +2,12 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\BaseReflector;
-use phpDocumentor\Reflection\ClassReflector\MethodReflector;
-use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
-use phpDocumentor\Reflection\FunctionReflector;
-use phpDocumentor\Reflection\FunctionReflector\ArgumentReflector;
-use phpDocumentor\Reflection\ReflectionAbstract;
+use WP_Parser\Reflection\BaseReflector;
+use WP_Parser\Reflection\ClassReflector\MethodReflector;
+use WP_Parser\Reflection\ClassReflector\PropertyReflector;
+use WP_Parser\Reflection\FunctionReflector;
+use WP_Parser\Reflection\FunctionReflector\ArgumentReflector;
+use WP_Parser\Reflection\ReflectionAbstract;
 
 /**
  * @param string $directory

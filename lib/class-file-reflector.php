@@ -2,8 +2,8 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection;
-use phpDocumentor\Reflection\FileReflector;
+use WP_Parser\Reflection;
+use WP_Parser\Reflection\FileReflector;
 
 /**
  * Reflection class for a full file.
@@ -38,7 +38,7 @@ class File_Reflector extends FileReflector {
 	 * Stack of classes/methods/functions currently being parsed.
 	 *
 	 * @see \WP_Parser\FileReflector::getLocation()
-	 * @var \phpDocumentor\Reflection\BaseReflector[]
+	 * @var \WP_Parser\Reflection\BaseReflector[]
 	 */
 	protected $location = array();
 

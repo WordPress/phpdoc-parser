@@ -2,8 +2,8 @@
 
 namespace WP_Parser;
 
-use phpDocumentor\Reflection\BaseReflector;
-use phpDocumentor\Reflection\ClassReflector;
+use WP_Parser\Reflection\BaseReflector;
+use WP_Parser\Reflection\ClassReflector;
 
 /**
  * A reflection of a method call expression.
