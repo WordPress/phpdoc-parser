@@ -279,6 +279,10 @@ class File_Reflector extends FileReflector {
 	 * @return bool
 	 */
 	protected function isNodeDocumentable( \PhpParser\Node $node ) {
+		if ( $node instanceof \PhpParser\Node\Stmt\Expression ) {
+			$node = $node->expr;
+		}
+
 		return parent::isNodeDocumentable( $node )
 		|| ( $node instanceof \PhpParser\Node\Expr\FuncCall
 			&& $this->isFilter( $node ) );
