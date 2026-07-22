@@ -1,18 +1,18 @@
 <phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
 	bootstrap="tests/phpunit/includes/bootstrap.php"
 	backupGlobals="false"
 	colors="true"
-	>
-
+>
+	<coverage>
+		<include>
+			<directory suffix=".php">lib</directory>
+		</include>
+	</coverage>
 	<testsuites>
 		<testsuite name="tests">
 			<directory suffix=".php">tests/phpunit/tests/</directory>
 		</testsuite>
 	</testsuites>
-
-	<filter>
-		<whitelist>
-			<directory suffix=".php">lib</directory>
-		</whitelist>
-	</filter>
 </phpunit>
