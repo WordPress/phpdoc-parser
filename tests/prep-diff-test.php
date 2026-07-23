@@ -65,8 +65,11 @@ $a = json_encode(
 					'name'      => 'beta',
 					'namespace' => 'global',
 					'arguments' => array(
-						array( 'name' => '$first', 'type' => '' ),
+						array( 'name' => '$first', 'type' => '\\Global_Type', 'default' => '\\false' ),
 						array( 'name' => '$second', 'type' => '' ),
+					),
+					'hooks'     => array(
+						array( 'name' => '\\x09tab', 'type' => 'action', 'line' => 10, 'end_line' => 10 ),
 					),
 					'doc'       => array(
 						'tags'             => array(
@@ -74,7 +77,7 @@ $a = json_encode(
 							array( 'name' => 'param', 'content' => 'First.', 'variable' => '$first' ),
 						),
 						'long_description' => '',
-						'description'      => 'Calls \\alpha().',
+						'description'      => 'Calls {@see \\alpha()}; preserves \\xC0.',
 					),
 				),
 			),
@@ -105,7 +108,7 @@ $b = json_encode(
 					'name'      => 'beta',
 					'line'      => 98,
 					'doc'       => array(
-						'description'      => 'Calls alpha().',
+						'description'      => 'Calls {@see alpha()}; preserves \\xC0.',
 						'long_description' => '',
 						'tags'             => array(
 							array( 'name' => 'since', 'content' => '1.0.0' ),
@@ -113,8 +116,11 @@ $b = json_encode(
 						),
 					),
 					'arguments' => array(
-						array( 'type' => '', 'name' => '$first' ),
+						array( 'default' => 'false', 'type' => 'Global_Type', 'name' => '$first' ),
 						array( 'type' => '', 'name' => '$second' ),
+					),
+					'hooks'     => array(
+						array( 'end_line' => 100, 'line' => 100, 'type' => 'action', 'name' => '\\x09tab' ),
 					),
 					'uses'      => array(
 						'functions' => array(
@@ -140,7 +146,12 @@ assert_true( array( 'alpha', 'zeta' ) === array_column( $decoded[1]['call_graph'
 assert_true( array( '$first', '$second' ) === array_column( $decoded[1]['functions'][0]['arguments'], 'name' ), 'Function argument order should be preserved.' );
 assert_true( array( 'since', 'param' ) === array_column( $decoded[1]['functions'][0]['doc']['tags'], 'name' ), 'Doc tag order should be preserved.' );
 assert_true( array( 'alpha', 'zeta' ) === array_column( $decoded[1]['functions'][0]['uses']['functions'], 'name' ), 'Function uses should sort by name.' );
-assert_true( array_keys( $decoded[1]['functions'][0] ) === array( 'arguments', 'doc', 'line', 'name', 'namespace', 'uses' ), 'Object keys should be sorted.' );
+assert_true( array_keys( $decoded[1]['functions'][0] ) === array( 'arguments', 'doc', 'hooks', 'line', 'name', 'namespace', 'uses' ), 'Object keys should be sorted.' );
+assert_true(
+	'Calls {@see alpha()}; preserves \\xC0.' === $decoded[1]['functions'][0]['doc']['description'],
+	'Documentation escape sequences should be preserved.'
+);
+assert_true( '\\x09tab' === $decoded[1]['functions'][0]['hooks'][0]['name'], 'Hook names should be preserved.' );
 
 $changed = json_decode( $b, true );
 $changed[1]['functions'][0]['name'] = 'changed';
