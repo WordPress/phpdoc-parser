@@ -49,5 +49,13 @@ class Export_Hooks extends Export_UnitTestCase {
 		$this->assertFileContainsHook(
 			array( 'name' => '\\xC0 hook', 'line' => 9 )
 		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => "\ttab", 'line' => 10 )
+		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\x09tab', 'line' => 11 )
+		);
 	}
 }
