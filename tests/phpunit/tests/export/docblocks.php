@@ -244,6 +244,18 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a leading escape sequence in documentation is preserved.
+	 */
+	public function test_leading_escape_sequence_is_preserved() {
+		$this->assertFunctionHasDocs(
+			'test_leading_escape_sequence',
+			array(
+				'description' => '\\xC0 starts this description.',
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {
