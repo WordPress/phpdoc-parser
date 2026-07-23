@@ -18,7 +18,7 @@ class Hook_Reflector extends BaseReflector {
 			return $name->value;
 		}
 
-		$printer = new \PhpParser\PrettyPrinter\Standard();
+		$printer = new Pretty_Printer();
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 

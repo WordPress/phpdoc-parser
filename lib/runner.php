@@ -81,7 +81,7 @@ function parse_files( $files, $root ) {
 				$out['constants'][] = array(
 					'name'  => $constant->getShortName(),
 					'line'  => $constant->getLineNumber(),
-					'value' => $constant->getValue(),
+					'value' => export_expression( $constant->getNode()->value ),
 				);
 			}
 
@@ -175,6 +175,48 @@ function strip_global_namespace_prefixes( array $names ) {
 }
 
 /**
+ * Export an expression without PHP-Parser's synthetic global namespace prefixes.
+ *
+ * @param null|\PhpParser\Node\Expr $expression Expression to export.
+ *
+ * @return null|string
+ */
+function export_expression( $expression ) {
+	if ( null === $expression ) {
+		return null;
+	}
+
+	static $printer = null;
+
+	if ( null === $printer ) {
+		$printer = new Pretty_Printer();
+	}
+
+	return $printer->prettyPrintExpr( $expression );
+}
+
+/**
+ * Remove synthetic global namespace prefixes from inline DocBlock references.
+ *
+ * @param string $text Formatted DocBlock text.
+ *
+ * @return string
+ */
+function strip_global_namespace_prefixes_from_inline_references( $text ) {
+	return preg_replace_callback(
+		'~{@(?:link|see)\s+([^}\s]+)~',
+		static function( $matches ) {
+			return str_replace(
+				$matches[1],
+				strip_global_namespace_prefix( $matches[1] ),
+				$matches[0]
+			);
+		},
+		$text
+	);
+}
+
+/**
  * Fixes newline handling in parsed text.
  *
  * DocBlock lines, particularly for descriptions, generally adhere to a given character width. For sentences and
@@ -245,27 +287,33 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => fix_newlines( $docblock->getLongDescription()->getFormattedContents() ),
+		'description'      => strip_global_namespace_prefixes_from_inline_references(
+			preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() )
+		),
+		'long_description' => strip_global_namespace_prefixes_from_inline_references(
+			fix_newlines( $docblock->getLongDescription()->getFormattedContents() )
+		),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
+			'content' => strip_global_namespace_prefixes_from_inline_references(
+				preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
+			),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = strip_global_namespace_prefixes( $tag->getTypes() );
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
-			$tag_data['link'] = $tag->getLink();
+			$tag_data['link'] = strip_global_namespace_prefix( $tag->getLink() );
 		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$tag_data['variable'] = $tag->getVariableName();
 		}
 		if ( method_exists( $tag, 'getReference' ) ) {
-			$tag_data['refers'] = $tag->getReference();
+			$tag_data['refers'] = strip_global_namespace_prefix( $tag->getReference() );
 		}
 		if ( method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
@@ -275,7 +323,9 @@ function export_docblock( $element ) {
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
+				$description = strip_global_namespace_prefixes_from_inline_references(
+					preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
+				);
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}
@@ -320,7 +370,7 @@ function export_arguments( array $arguments ) {
 	foreach ( $arguments as $argument ) {
 		$output[] = array(
 			'name'    => $argument->getName(),
-			'default' => $argument->getDefault(),
+			'default' => export_expression( $argument->getNode()->default ),
 			'type'    => strip_global_namespace_prefix( $argument->getType() ),
 		);
 	}
@@ -341,7 +391,7 @@ function export_properties( array $properties ) {
 			'name'        => $property->getName(),
 			'line'        => $property->getLineNumber(),
 			'end_line'    => $property->getNode()->getAttribute( 'endLine' ),
-			'default'     => $property->getDefault(),
+			'default'     => export_expression( $property->getNode()->default ),
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
 			'visibility'  => $property->getVisibility(),
