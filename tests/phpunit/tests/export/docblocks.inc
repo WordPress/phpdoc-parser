@@ -51,6 +51,11 @@ function test_func( $var, $num ) {
 function test_special_characters() {}
 
 /**
+ * \xC0 starts this description.
+ */
+function test_leading_escape_sequence() {}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,
