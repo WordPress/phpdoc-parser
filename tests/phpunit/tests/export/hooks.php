@@ -45,5 +45,9 @@ class Export_Hooks extends Export_UnitTestCase {
 				'arguments.1' => '$filter_context'
 			)
 		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\xC0 hook', 'line' => 9 )
+		);
 	}
 }
