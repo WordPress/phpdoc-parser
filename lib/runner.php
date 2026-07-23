@@ -93,7 +93,7 @@ function parse_files( $files, $root ) {
 				$func = array(
 					'name'      => $function->getShortName(),
 					'namespace' => $function->getNamespace(),
-					'aliases'   => $function->getNamespaceAliases(),
+					'aliases'   => strip_global_namespace_prefixes( $function->getNamespaceAliases() ),
 					'line'      => $function->getLineNumber(),
 					'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 					'arguments' => export_arguments( $function->getArguments() ),
@@ -120,8 +120,8 @@ function parse_files( $files, $root ) {
 					'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
 					'final'      => $class->isFinal(),
 					'abstract'   => $class->isAbstract(),
-					'extends'    => $class->getParentClass(),
-					'implements' => $class->getInterfaces(),
+					'extends'    => strip_global_namespace_prefix( $class->getParentClass() ),
+					'implements' => strip_global_namespace_prefixes( $class->getInterfaces() ),
 					'properties' => export_properties( $class->getProperties() ),
 					'methods'    => export_methods( $class->getMethods() ),
 					'doc'        => export_docblock( $class ),
@@ -137,32 +137,41 @@ function parse_files( $files, $root ) {
 		throw $e;
 	}
 
-	/*
-	 * nikic/php-parser in version 3 started adding a namespace prefix
-	 * at the start of global names, but this is different than how the
-	 * documentation was previously generated. This removes those prefixes
-	 * only at the start of an output value so embedded reverse soliduses (\)
-	 * in documentation and other source text remain untouched.
-	 */
-	array_walk_recursive(
-		$output,
-		static function( &$value ) {
-			if ( is_string( $value ) ) {
-				// "\wp_kses()" -> "wp_kses()"
-				$without_global_namespace = preg_replace(
-					'~^\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
-					'$1$2',
-					$value,
-				);
-
-				if ( $value !== $without_global_namespace ) {
-					$value = $without_global_namespace;
-				}
-			}
-		}
-	);
-
 	return $output;
+}
+
+/**
+ * Remove a synthetic leading namespace prefix from a global name.
+ *
+ * @param mixed $name Name to normalize.
+ *
+ * @return mixed
+ */
+function strip_global_namespace_prefix( $name ) {
+	if ( ! is_string( $name ) ) {
+		return $name;
+	}
+
+	return preg_replace(
+		'~^\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
+		'$1$2',
+		$name
+	);
+}
+
+/**
+ * Remove synthetic leading namespace prefixes from global names.
+ *
+ * @param array $names Names to normalize.
+ *
+ * @return array
+ */
+function strip_global_namespace_prefixes( array $names ) {
+	foreach ( $names as $key => $name ) {
+		$names[ $key ] = strip_global_namespace_prefix( $name );
+	}
+
+	return $names;
 }
 
 /**
@@ -247,7 +256,7 @@ function export_docblock( $element ) {
 			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
-			$tag_data['types'] = $tag->getTypes();
+			$tag_data['types'] = strip_global_namespace_prefixes( $tag->getTypes() );
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
 			$tag_data['link'] = $tag->getLink();
@@ -312,7 +321,7 @@ function export_arguments( array $arguments ) {
 		$output[] = array(
 			'name'    => $argument->getName(),
 			'default' => $argument->getDefault(),
-			'type'    => $argument->getType(),
+			'type'    => strip_global_namespace_prefix( $argument->getType() ),
 		);
 	}
 
@@ -356,7 +365,7 @@ function export_methods( array $methods ) {
 		$method_data = array(
 			'name'       => $method->getShortName(),
 			'namespace'  => $method->getNamespace(),
-			'aliases'    => $method->getNamespaceAliases(),
+			'aliases'    => strip_global_namespace_prefixes( $method->getNamespaceAliases() ),
 			'line'       => $method->getLineNumber(),
 			'end_line'   => $method->getNode()->getAttribute( 'endLine' ),
 			'final'      => $method->isFinal(),
@@ -407,7 +416,7 @@ function export_uses( array $uses ) {
 				case 'methods':
 					$out[ $type ][] = array(
 						'name'     => $name[1],
-						'class'    => $name[0],
+						'class'    => strip_global_namespace_prefix( $name[0] ),
 						'static'   => $element->isStatic(),
 						'line'     => $element->getLineNumber(),
 						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
@@ -416,6 +425,7 @@ function export_uses( array $uses ) {
 
 				default:
 				case 'functions':
+					$name = strip_global_namespace_prefix( $name );
 					$out[ $type ][] = array(
 						'name'     => $name,
 						'line'     => $element->getLineNumber(),
