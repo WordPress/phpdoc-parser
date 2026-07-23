@@ -6,3 +6,4 @@ do_action( $variable . '-action' );
 do_action( "another-{$variable}-action" );
 do_action( 'hook_' . $object->property . '_pre' );
 apply_filters( 'plain_filter', $variable, $filter_context );
+do_action( '\xC0 hook' );
