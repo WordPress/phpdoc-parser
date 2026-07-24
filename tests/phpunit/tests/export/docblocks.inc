@@ -22,6 +22,8 @@
  * @since 1.5.0
  */
 
+use WordPress\AiClient\Messages\DTO\MessagePart;
+
 /**
  * This is a function docblock.
  *
@@ -38,6 +40,14 @@ function test_func( $var, $num ) {
 
 	// In real life, there *might* be more stuff in here.
 	return true;
+}
+
+/**
+ * Tests a nested union type inside a generic.
+ *
+ * @param MessagePart|list<string|MessagePart|array>|MessagePart[] $prompt A prompt.
+ */
+function test_nested_union_type( $prompt ) {
 }
 
 /**

@@ -6,6 +6,9 @@ use phpDocumentor\Reflection\BaseReflector;
 use phpDocumentor\Reflection\ClassReflector;
 use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
+use phpDocumentor\Reflection\DocBlock\Context;
+use phpDocumentor\Reflection\DocBlock\Tag\MethodTag;
+use phpDocumentor\Reflection\DocBlock\Type\Collection;
 use phpDocumentor\Reflection\FunctionReflector;
 use phpDocumentor\Reflection\FunctionReflector\ArgumentReflector;
 use phpDocumentor\Reflection\ReflectionAbstract;
@@ -231,6 +234,138 @@ function fix_newlines( $text ) {
 	$text = str_replace( $replacement_string, "\n", $text );
 
 	return $text;
+}
+
+/**
+ * Splits a type expression on a delimiter outside of brackets.
+ *
+ * @param string $type      Type expression.
+ * @param string $delimiter Delimiter on which to split.
+ *
+ * @return string[]
+ */
+function split_docblock_type_expression( $type, $delimiter ) {
+	$closing_brackets = array(
+		'<' => '>',
+		'(' => ')',
+		'[' => ']',
+		'{' => '}',
+	);
+	$bracket_stack    = array();
+	$parts            = array();
+	$part             = '';
+	$length           = strlen( $type );
+
+	for ( $i = 0; $i < $length; $i++ ) {
+		$character = $type[ $i ];
+
+		if ( isset( $closing_brackets[ $character ] ) ) {
+			$bracket_stack[] = $closing_brackets[ $character ];
+		} elseif (
+			! empty( $bracket_stack )
+			&& $character === $bracket_stack[ count( $bracket_stack ) - 1 ]
+		) {
+			array_pop( $bracket_stack );
+		}
+
+		if ( $character === $delimiter && empty( $bracket_stack ) ) {
+			$parts[] = $part;
+			$part    = '';
+			continue;
+		}
+
+		$part .= $character;
+	}
+
+	$parts[] = $part;
+
+	return $parts;
+}
+
+/**
+ * Expands aliases in a type expression without losing nested type syntax.
+ *
+ * @param string       $type    Type expression.
+ * @param Context|null $context DocBlock namespace and alias context.
+ *
+ * @return string
+ */
+function expand_docblock_type_expression( $type, ?Context $context ) {
+	$type = trim( $type );
+	if ( '' === $type ) {
+		return '';
+	}
+
+	foreach ( array( '|', ',' ) as $delimiter ) {
+		$parts = split_docblock_type_expression( $type, $delimiter );
+		if ( 1 < count( $parts ) ) {
+			$expanded_parts = array();
+			foreach ( $parts as $part ) {
+				$expanded_part = expand_docblock_type_expression( $part, $context );
+				if ( '' !== $expanded_part ) {
+					$expanded_parts[] = $expanded_part;
+				}
+			}
+
+			return implode( $delimiter, $expanded_parts );
+		}
+	}
+
+	if ( '[]' === substr( $type, -2 ) ) {
+		return expand_docblock_type_expression( substr( $type, 0, -2 ), $context ) . '[]';
+	}
+
+	if ( preg_match( '/^([^<]+)<(.*)>$/s', $type, $matches ) ) {
+		$container = expand_docblock_type_expression( $matches[1], $context );
+		$arguments = expand_docblock_type_expression( $matches[2], $context );
+
+		return $container . '<' . $arguments . '>';
+	}
+
+	// `list` is a PHPDoc built-in missing from the legacy dependency's keyword list.
+	if ( 'list' === strtolower( $type ) ) {
+		return $type;
+	}
+
+	$types = new Collection( array( $type ), $context );
+
+	return isset( $types[0] ) ? $types[0] : '';
+}
+
+/**
+ * Returns context-aware types from a type-bearing DocBlock tag.
+ *
+ * @param object       $tag     DocBlock tag.
+ * @param Context|null $context DocBlock namespace and alias context.
+ *
+ * @return string[]
+ */
+function export_docblock_types( $tag, ?Context $context ) {
+	// Method tags have a distinct content grammar which may begin with `static`.
+	if ( $tag instanceof MethodTag ) {
+		return $tag->getTypes();
+	}
+
+	$content = trim( $tag->getContent() );
+	if ( '' === $content ) {
+		return $tag->getTypes();
+	}
+
+	$content_parts = preg_split( '/\s+/', $content, 2 );
+	$type          = $content_parts[0];
+	if ( '' === $type || '$' === $type[0] || '...$' === substr( $type, 0, 4 ) ) {
+		return $tag->getTypes();
+	}
+
+	$types = array();
+	foreach ( split_docblock_type_expression( $type, '|' ) as $type_part ) {
+		$expanded_type = expand_docblock_type_expression( $type_part, $context );
+		if ( '' !== $expanded_type ) {
+			$types[] = $expanded_type;
+		}
+	}
+
+	return empty( $types ) ? $tag->getTypes() : $types;
 }
 
 /**
@@ -530,7 +665,7 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
-			$tag_data['types'] = $tag->getTypes();
+			$tag_data['types'] = export_docblock_types( $tag, $docblock->getContext() );
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
 			$tag_data['link'] = $tag->getLink();
