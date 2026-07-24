@@ -23,11 +23,16 @@ After that install the dependencies using composer in the parser directory:
 composer install
 ```
 
-## Running
+## Running the parser
+
 Activate the plugin first:
 
-    wp plugin activate phpdoc-parser
+```bash
+wp plugin activate phpdoc-parser
+```
 
 In your site's directory:
 
-    wp parser create /path/to/source/code --user=<id|login>
+```bash
+wp parser create /path/to/source/code --user=<id|login>
+```
