@@ -12,7 +12,7 @@
     "composer": "wp-env --config .wp-env.test.json run --env-cwd='wp-content/plugins/phpdoc-parser' wordpress composer --no-interaction --no-security-blocking",
     "composer:setup": "wp-env --config .wp-env.test.json run --env-cwd='wp-content/plugins/phpdoc-parser' wordpress composer install --no-interaction --no-security-blocking",
     "test:phpunit:setup": "npm-run-all start:test composer:setup",
-    "test:phpunit": "wp-env --config .wp-env.test.json run wordpress php -- --version && wp-env --config .wp-env.test.json run --env-cwd='wp-content/plugins/phpdoc-parser' wordpress vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
+    "test:phpunit": "wp-env --config .wp-env.test.json run --env-cwd='wp-content/plugins/phpdoc-parser' wordpress vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
   },
   "repository": {
     "type": "git",
