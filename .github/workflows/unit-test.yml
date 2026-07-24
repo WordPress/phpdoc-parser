@@ -6,20 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
-    test-php:
-      runs-on: ubuntu-latest
-      strategy:
-          fail-fast: false
-          matrix:
-              php:
-                - '7.4'
+  test-php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - "7.4"
+          - "8.4"
 
-      env:
-        WP_ENV_PHP_VERSION: ${{ matrix.php }}
+    env:
+      WP_ENV_PHP_VERSION: ${{ matrix.php-version }}
 
-      steps:
+    steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
 
       - name: Install
         run: npm ci
