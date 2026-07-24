@@ -27,7 +27,6 @@ jobs:
 
       - name: Setup Environment
         run: |
-          composer install --no-interaction --no-security-blocking
           npm run setup
 
       - name: Test
