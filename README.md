@@ -19,6 +19,7 @@ Clone the repository and set up the development environment:
 git clone https://github.com/WordPress/phpdoc-parser.git
 cd phpdoc-parser
 npm ci
+composer install
 npm run setup
 ```
 
@@ -26,7 +27,10 @@ WordPress is available at <http://localhost:8888>.
 
 ## Tests
 
+For a test-only setup:
+
 ```bash
+composer install
 npm run test:phpunit:setup
 npm test
 ```
