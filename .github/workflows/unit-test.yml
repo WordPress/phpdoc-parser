@@ -22,19 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
-        with:
-          php-version: ${{ matrix.php-version }}
-          coverage: none
-
       - name: Install
         run: npm ci
 
-      - name: Setup Environment
-        run: |
-          composer install --no-interaction --no-security-blocking
-          npm run setup
+      - name: Setup test environment
+        run: npm run test:phpunit:setup
 
       - name: Test
         run: npm run test
