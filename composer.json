@@ -33,7 +33,7 @@
 	],
 	"require"    : {
 		"php"                      : "^8.4",
-		"composer/installers"      : "~1.0",
+		"composer/installers"      : "^2.0",
 		"phpdocumentor/reflection"          : "^3.0@dev",
 		"phpdocumentor/reflection-docblock" : "dev-release/2.x as 2.0.5",
 		"erusev/parsedown"         : "~1.7",
