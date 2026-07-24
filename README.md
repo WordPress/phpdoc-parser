@@ -4,24 +4,34 @@ WP-Parser is the parser for creating the new code reference at [developer.wordpr
 
 We are currently looking for contributors to help us complete the work on the parser.
 
-There is a guide to developing for developer.wordpress.org in the [WordPress documentation handbook](https://make.wordpress.org/docs/handbook/projects/devhub/)
+There is a guide to developing for developer.wordpress.org in the [WordPress documentation handbook](https://make.wordpress.org/docs/handbook/projects/devhub/).
 
 ## Requirements
 * PHP 7.4+
 * [Composer](https://getcomposer.org/)
 * [WP CLI](https://wp-cli.org/)
 
-Clone the repository into your WordPress plugins directory:
+## Development
+
+Clone the repository and set up the development environment:
 
 ```bash
 git clone https://github.com/WordPress/phpdoc-parser.git
+cd phpdoc-parser
+npm ci
+npm run setup
 ```
 
-After that install the dependencies using composer in the parser directory:
+WordPress is available at <http://localhost:8888>.
+
+## Tests
 
 ```bash
-composer install
+npm run test:phpunit:setup
+npm test
 ```
+
+If the development environment was set up with `npm run setup`, only `npm test` is needed.
 
 ## Running the parser
 
