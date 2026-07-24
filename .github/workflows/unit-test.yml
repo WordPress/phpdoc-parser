@@ -28,13 +28,14 @@ jobs:
           php-version: ${{ matrix.php-version }}
           coverage: none
 
-      - name: Install
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Setup Environment
-        run: |
-          composer install --no-interaction --no-security-blocking
-          npm run setup
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-security-blocking
+
+      - name: Setup test environment
+        run: npm run test:phpunit:setup
 
       - name: Test
         run: npm run test
