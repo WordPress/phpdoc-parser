@@ -81,7 +81,7 @@ function parse_files( $files, $root ) {
 				$out['constants'][] = array(
 					'name'  => $constant->getShortName(),
 					'line'  => $constant->getLineNumber(),
-					'value' => $constant->getValue(),
+					'value' => export_expression( $constant->getNode()->value ),
 				);
 			}
 
@@ -93,7 +93,7 @@ function parse_files( $files, $root ) {
 				$func = array(
 					'name'      => $function->getShortName(),
 					'namespace' => $function->getNamespace(),
-					'aliases'   => $function->getNamespaceAliases(),
+					'aliases'   => strip_global_namespace_prefixes( $function->getNamespaceAliases() ),
 					'line'      => $function->getLineNumber(),
 					'end_line'  => $function->getNode()->getAttribute( 'endLine' ),
 					'arguments' => export_arguments( $function->getArguments() ),
@@ -120,8 +120,8 @@ function parse_files( $files, $root ) {
 					'end_line'   => $class->getNode()->getAttribute( 'endLine' ),
 					'final'      => $class->isFinal(),
 					'abstract'   => $class->isAbstract(),
-					'extends'    => $class->getParentClass(),
-					'implements' => $class->getInterfaces(),
+					'extends'    => strip_global_namespace_prefix( $class->getParentClass() ),
+					'implements' => strip_global_namespace_prefixes( $class->getInterfaces() ),
 					'properties' => export_properties( $class->getProperties() ),
 					'methods'    => export_methods( $class->getMethods() ),
 					'doc'        => export_docblock( $class ),
@@ -137,33 +137,83 @@ function parse_files( $files, $root ) {
 		throw $e;
 	}
 
-	/*
-	 * nikic/php-parser in version 3 started adding a namespace prefix
-	 * at the start of global names, but this is different than how the
-	 * documentation was previously generated. this removes those prefixes
-	 * by removing a leading reverse solidus (\) when no other reverse
-	 * solidus appears before the end of a sequence of PHP identifier
-	 * characters.
-	 */
-	array_walk_recursive(
-		$output,
-		static function( &$value ) {
-			if ( is_string( $value ) ) {
-				// "\wp_kses()" -> "wp_kses()"
-				$without_global_namespace = preg_replace(
-					'~(^|\p{Z})\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
-					'$1$2$3',
-					$value,
-				);
-
-				if ( $value !== $without_global_namespace ) {
-					$value = $without_global_namespace;
-				}
-			}
-		}
-	);
-
 	return $output;
+}
+
+/**
+ * Remove a synthetic leading namespace prefix from a global name.
+ *
+ * @param mixed $name Name to normalize.
+ *
+ * @return mixed
+ */
+function strip_global_namespace_prefix( $name ) {
+	if ( ! is_string( $name ) ) {
+		return $name;
+	}
+
+	return preg_replace(
+		'~^\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
+		'$1$2',
+		$name
+	);
+}
+
+/**
+ * Remove synthetic leading namespace prefixes from global names.
+ *
+ * @param array $names Names to normalize.
+ *
+ * @return array
+ */
+function strip_global_namespace_prefixes( array $names ) {
+	foreach ( $names as $key => $name ) {
+		$names[ $key ] = strip_global_namespace_prefix( $name );
+	}
+
+	return $names;
+}
+
+/**
+ * Export an expression without PHP-Parser's synthetic global namespace prefixes.
+ *
+ * @param null|\PhpParser\Node\Expr $expression Expression to export.
+ *
+ * @return null|string
+ */
+function export_expression( $expression ) {
+	if ( null === $expression ) {
+		return null;
+	}
+
+	static $printer = null;
+
+	if ( null === $printer ) {
+		$printer = new Pretty_Printer();
+	}
+
+	return $printer->prettyPrintExpr( $expression );
+}
+
+/**
+ * Remove synthetic global namespace prefixes from inline DocBlock references.
+ *
+ * @param string $text Formatted DocBlock text.
+ *
+ * @return string
+ */
+function strip_global_namespace_prefixes_from_inline_references( $text ) {
+	return preg_replace_callback(
+		'~{@(?:link|see)\s+([^}\s]+)~',
+		static function( $matches ) {
+			return str_replace(
+				$matches[1],
+				strip_global_namespace_prefix( $matches[1] ),
+				$matches[0]
+			);
+		},
+		$text
+	);
 }
 
 /**
@@ -237,27 +287,33 @@ function export_docblock( $element ) {
 	}
 
 	$output = array(
-		'description'      => preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() ),
-		'long_description' => fix_newlines( $docblock->getLongDescription()->getFormattedContents() ),
+		'description'      => strip_global_namespace_prefixes_from_inline_references(
+			preg_replace( '/[\n\r]+/', ' ', $docblock->getShortDescription() )
+		),
+		'long_description' => strip_global_namespace_prefixes_from_inline_references(
+			fix_newlines( $docblock->getLongDescription()->getFormattedContents() )
+		),
 		'tags'             => array(),
 	);
 
 	foreach ( $docblock->getTags() as $tag ) {
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
+			'content' => strip_global_namespace_prefixes_from_inline_references(
+				preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
+			),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
-			$tag_data['types'] = $tag->getTypes();
+			$tag_data['types'] = strip_global_namespace_prefixes( $tag->getTypes() );
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
-			$tag_data['link'] = $tag->getLink();
+			$tag_data['link'] = strip_global_namespace_prefix( $tag->getLink() );
 		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$tag_data['variable'] = $tag->getVariableName();
 		}
 		if ( method_exists( $tag, 'getReference' ) ) {
-			$tag_data['refers'] = $tag->getReference();
+			$tag_data['refers'] = strip_global_namespace_prefix( $tag->getReference() );
 		}
 		if ( method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
@@ -267,7 +323,9 @@ function export_docblock( $element ) {
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
+				$description = strip_global_namespace_prefixes_from_inline_references(
+					preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
+				);
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}
@@ -312,8 +370,8 @@ function export_arguments( array $arguments ) {
 	foreach ( $arguments as $argument ) {
 		$output[] = array(
 			'name'    => $argument->getName(),
-			'default' => $argument->getDefault(),
-			'type'    => $argument->getType(),
+			'default' => export_expression( $argument->getNode()->default ),
+			'type'    => strip_global_namespace_prefix( $argument->getType() ),
 		);
 	}
 
@@ -333,7 +391,7 @@ function export_properties( array $properties ) {
 			'name'        => $property->getName(),
 			'line'        => $property->getLineNumber(),
 			'end_line'    => $property->getNode()->getAttribute( 'endLine' ),
-			'default'     => $property->getDefault(),
+			'default'     => export_expression( $property->getNode()->default ),
 //			'final' => $property->isFinal(),
 			'static'      => $property->isStatic(),
 			'visibility'  => $property->getVisibility(),
@@ -357,7 +415,7 @@ function export_methods( array $methods ) {
 		$method_data = array(
 			'name'       => $method->getShortName(),
 			'namespace'  => $method->getNamespace(),
-			'aliases'    => $method->getNamespaceAliases(),
+			'aliases'    => strip_global_namespace_prefixes( $method->getNamespaceAliases() ),
 			'line'       => $method->getLineNumber(),
 			'end_line'   => $method->getNode()->getAttribute( 'endLine' ),
 			'final'      => $method->isFinal(),
@@ -408,7 +466,7 @@ function export_uses( array $uses ) {
 				case 'methods':
 					$out[ $type ][] = array(
 						'name'     => $name[1],
-						'class'    => $name[0],
+						'class'    => strip_global_namespace_prefix( $name[0] ),
 						'static'   => $element->isStatic(),
 						'line'     => $element->getLineNumber(),
 						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
@@ -417,6 +475,7 @@ function export_uses( array $uses ) {
 
 				default:
 				case 'functions':
+					$name = strip_global_namespace_prefix( $name );
 					$out[ $type ][] = array(
 						'name'     => $name,
 						'line'     => $element->getLineNumber(),

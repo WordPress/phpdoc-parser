@@ -75,10 +75,11 @@ function wp_parser_prep_diff_is_simple_name_record_list( array $list ) {
  * Normalizes scalar values that should not affect output comparisons.
  *
  * @param mixed       $value Scalar value.
+ * @param array       $path  Current JSON path.
  * @param string|null $key   Parent object key.
  * @return mixed Normalized value.
  */
-function wp_parser_prep_diff_normalize_scalar( $value, $key ) {
+function wp_parser_prep_diff_normalize_scalar( $value, array $path, $key ) {
 	if ( in_array( $key, array( 'line', 'end_line', 'startLine', 'endLine' ), true ) ) {
 		return 0;
 	}
@@ -91,6 +92,47 @@ function wp_parser_prep_diff_normalize_scalar( $value, $key ) {
 		return $value;
 	}
 
+	if ( in_array( $key, array( 'content', 'description', 'long_description' ), true ) ) {
+		return preg_replace_callback(
+			'~{@(?:link|see)\s+([^}\s]+)~',
+			static function( $matches ) {
+				return str_replace(
+					$matches[1],
+					wp_parser_prep_diff_normalize_global_names( $matches[1] ),
+					$matches[0]
+				);
+			},
+			$value
+		);
+	}
+
+	$parent_key = 1 < count( $path ) ? $path[ count( $path ) - 2 ] : null;
+	$normalize = in_array(
+		$key,
+		array( 'class', 'default', 'extends', 'link', 'refers', 'type', 'value' ),
+		true
+	);
+
+	$normalize = $normalize
+		|| in_array( $parent_key, array( 'aliases', 'implements', 'types' ), true )
+		|| (
+			'name' === $key
+			&& (
+				wp_parser_prep_diff_path_ends_with( $path, array( 'uses', 'functions', '[]', 'name' ) )
+				|| wp_parser_prep_diff_path_ends_with( $path, array( 'uses', 'methods', '[]', 'name' ) )
+			)
+		);
+
+	return $normalize ? wp_parser_prep_diff_normalize_global_names( $value ) : $value;
+}
+
+/**
+ * Remove synthetic global namespace prefixes from semantic names.
+ *
+ * @param string $value Name or expression to normalize.
+ * @return string Normalized value.
+ */
+function wp_parser_prep_diff_normalize_global_names( $value ) {
 	// "\wp_kses()" -> "wp_kses()".
 	$without_global_namespace = preg_replace(
 		'~(^|\p{Z})\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
@@ -222,7 +264,7 @@ function wp_parser_prep_diff_should_sort_list( array $path, array $list ) {
  */
 function wp_parser_prep_diff_normalize( $value, array $path = array(), $key = null ) {
 	if ( ! is_array( $value ) ) {
-		return wp_parser_prep_diff_normalize_scalar( $value, $key );
+		return wp_parser_prep_diff_normalize_scalar( $value, $path, $key );
 	}
 
 	if ( wp_parser_prep_diff_is_list( $value ) ) {

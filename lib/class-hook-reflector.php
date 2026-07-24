@@ -13,7 +13,12 @@ class Hook_Reflector extends BaseReflector {
 	 * @return string
 	 */
 	public function getName() {
-		$printer = new \PhpParser\PrettyPrinter\Standard();
+		$name = $this->node->args[0]->value;
+		if ( $name instanceof \PhpParser\Node\Scalar\String_ ) {
+			return $name->value;
+		}
+
+		$printer = new Pretty_Printer();
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 

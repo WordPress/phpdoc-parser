@@ -29,6 +29,21 @@ function test_func( $var, $num ) {
 }
 
 /**
+ * Tests special characters in documentation.
+ *
+ * ```php
+ * true === wp_is_valid_utf8( '✏' );
+ * false === wp_is_valid_utf8( "just \xC0 test" );
+ * ```
+ */
+function test_special_characters() {}
+
+/**
+ * \xC0 starts this description.
+ */
+function test_leading_escape_sequence() {}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,
