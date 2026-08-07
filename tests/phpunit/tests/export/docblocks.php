@@ -109,6 +109,30 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a nested union inside a generic remains one exported type.
+	 */
+	public function test_nested_union_inside_generic() {
+
+		$this->assertFunctionHasDocs(
+			'test_nested_union_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A prompt.',
+						'types' => array(
+							'\WordPress\AiClient\Messages\DTO\MessagePart',
+							'list<string|\WordPress\AiClient\Messages\DTO\MessagePart|array>',
+							'\WordPress\AiClient\Messages\DTO\MessagePart[]',
+						),
+						'variable' => '$prompt',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {
