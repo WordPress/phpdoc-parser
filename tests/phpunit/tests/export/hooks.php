@@ -51,11 +51,32 @@ class Export_Hooks extends Export_UnitTestCase {
 		);
 
 		$this->assertFileContainsHook(
-			array( 'name' => "\ttab", 'line' => 10 )
+			array( 'name' => '\\x09tab', 'line' => 10 )
 		);
 
 		$this->assertFileContainsHook(
 			array( 'name' => '\\x09tab', 'line' => 11 )
+		);
+	}
+
+	/**
+	 * Test that hook names keep escapes that are invalid UTF-8 once interpreted.
+	 */
+	public function test_hook_names_keep_invalid_utf8_escapes() {
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\xC0 bad', 'line' => 12 )
+		);
+	}
+
+	/**
+	 * Test that the exported data can be encoded as JSON.
+	 */
+	public function test_export_data_is_json_encodable() {
+
+		$this->assertNotFalse(
+			json_encode( $this->export_data, JSON_PRETTY_PRINT ),
+			json_last_error_msg()
 		);
 	}
 }

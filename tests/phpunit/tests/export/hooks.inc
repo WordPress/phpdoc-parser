@@ -9,3 +9,4 @@ apply_filters( 'plain_filter', $variable, $filter_context );
 do_action( '\xC0 hook' );
 do_action( "\x09tab" );
 do_action( '\x09tab' );
+do_action( "\xC0 bad" );
