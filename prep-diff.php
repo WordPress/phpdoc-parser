@@ -14,6 +14,13 @@
  *     diff -u before.norm.json after.norm.json
  */
 
+/*
+ * The exporter's own normalization rules are reused so that this script cannot
+ * hide a difference in them. The file only declares namespaced functions, so it
+ * is safe to load without the Composer autoloader.
+ */
+require_once __DIR__ . '/lib/runner.php';
+
 /**
  * Checks if an array is a JSON list.
  *
@@ -98,7 +105,7 @@ function wp_parser_prep_diff_normalize_scalar( $value, array $path, $key ) {
 			static function( $matches ) {
 				return str_replace(
 					$matches[1],
-					wp_parser_prep_diff_normalize_global_names( $matches[1] ),
+					\WP_Parser\strip_global_namespace_prefix( $matches[1] ),
 					$matches[0]
 				);
 			},
@@ -123,24 +130,7 @@ function wp_parser_prep_diff_normalize_scalar( $value, array $path, $key ) {
 			)
 		);
 
-	return $normalize ? wp_parser_prep_diff_normalize_global_names( $value ) : $value;
-}
-
-/**
- * Remove synthetic global namespace prefixes from semantic names.
- *
- * @param string $value Name or expression to normalize.
- * @return string Normalized value.
- */
-function wp_parser_prep_diff_normalize_global_names( $value ) {
-	// "\wp_kses()" -> "wp_kses()".
-	$without_global_namespace = preg_replace(
-		'~(^|\p{Z})\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
-		'$1$2$3',
-		$value
-	);
-
-	return null === $without_global_namespace ? $value : $without_global_namespace;
+	return $normalize ? \WP_Parser\strip_global_namespace_prefix( $value ) : $value;
 }
 
 /**
