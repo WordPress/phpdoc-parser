@@ -24,6 +24,32 @@ class Pretty_Printer extends \phpDocumentor\Reflection\PrettyPrinter {
 	}
 
 	/**
+	 * Print heredoc and nowdoc strings with their delimiters.
+	 *
+	 * The parent printer returns PHP-Parser's `rawValue` attribute so that
+	 * escape sequences are not interpreted. For heredoc and nowdoc strings that
+	 * attribute holds the body only, without the `<<<LABEL` delimiters, which is
+	 * no longer a PHP expression. Those are printed by the default printer,
+	 * which does not interpret escape sequences in doc strings either.
+	 *
+	 * @param \PhpParser\Node\Scalar\String_ $node String.
+	 *
+	 * @return string Printed string.
+	 */
+	public function pScalar_String( \PhpParser\Node\Scalar\String_ $node ): string {
+		$kind = $node->getAttribute( 'kind' );
+
+		if (
+			\PhpParser\Node\Scalar\String_::KIND_HEREDOC === $kind ||
+			\PhpParser\Node\Scalar\String_::KIND_NOWDOC === $kind
+		) {
+			return \PhpParser\PrettyPrinter\Standard::pScalar_String( $node );
+		}
+
+		return parent::pScalar_String( $node );
+	}
+
+	/**
 	 * Pretty prints an argument.
 	 *
 	 * @param \PhpParser\Node\Arg $node Expression argument
