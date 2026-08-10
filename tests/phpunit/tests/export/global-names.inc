@@ -32,3 +32,17 @@ class Global_Defaults {
 		return ( new \Vendor\Global_Class() )->global_method();
 	}
 }
+
+/**
+ * Documents inline references.
+ *
+ * Calls {@see \Global_Doc_Function()} and {@see \Vendor\Thing::m()} in prose.
+ *
+ * Spells `{@see \Global_Inline::method()}` in an inline code span.
+ *
+ * ```php
+ * // Renders {@see \Global_Widget::render()}.
+ * $widget->render();
+ * ```
+ */
+function documented_inline_references() {}

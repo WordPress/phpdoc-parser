@@ -42,6 +42,54 @@ class Export_Global_Names extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that prefixes are removed from inline references in prose.
+	 */
+	public function test_prefixed_inline_reference_metadata() {
+		$function = $this->export_data['functions'][1];
+
+		$this->assertStringContainsString(
+			'{@see Global_Doc_Function()}',
+			$function['doc']['long_description']
+		);
+	}
+
+	/**
+	 * Test that namespaced inline references keep their prefix.
+	 */
+	public function test_namespaced_inline_reference_metadata() {
+		$function = $this->export_data['functions'][1];
+
+		$this->assertStringContainsString(
+			'{@see \\Vendor\\Thing::m()}',
+			$function['doc']['long_description']
+		);
+	}
+
+	/**
+	 * Test that inline references in code samples are preserved.
+	 */
+	public function test_code_sample_inline_reference_metadata() {
+		$function = $this->export_data['functions'][1];
+
+		$this->assertStringContainsString(
+			'// Renders {@see \\Global_Widget::render()}.',
+			$function['doc']['long_description']
+		);
+	}
+
+	/**
+	 * Test that inline references in inline code spans are preserved.
+	 */
+	public function test_inline_code_span_inline_reference_metadata() {
+		$function = $this->export_data['functions'][1];
+
+		$this->assertStringContainsString(
+			'<code>{@see \\Global_Inline::method()}</code>',
+			$function['doc']['long_description']
+		);
+	}
+
+	/**
 	 * Test class metadata.
 	 */
 	public function test_class_metadata() {
