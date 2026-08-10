@@ -51,6 +51,54 @@ function test_nested_union_type( $prompt ) {
 }
 
 /**
+ * Tests a parenthesized union with an array suffix.
+ *
+ * @param (int|MessagePart)[] $x Grouped.
+ */
+function test_grouped_union_type( $x ) {
+}
+
+/**
+ * Tests a generic type which contains a space after the delimiter.
+ *
+ * @param array<int, string> $map A map.
+ */
+function test_generic_type_with_space( $map ) {
+}
+
+/**
+ * Tests a type separated from the variable by a non-breaking space.
+ *
+ * @param string $nb NBSP separated.
+ */
+function test_nbsp_separated_type( $nb ) {
+}
+
+/**
+ * Tests an iterable generic type.
+ *
+ * @param iterable<MessagePart> $it Iterable.
+ */
+function test_iterable_generic_type( $it ) {
+}
+
+/**
+ * Tests an integer range return type.
+ *
+ * @return int<0,max> Count.
+ */
+function test_int_range_return_type() {
+}
+
+/**
+ * Tests an intersection type.
+ *
+ * @param MessagePart&Countable $both Intersect.
+ */
+function test_intersection_type( $both ) {
+}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,

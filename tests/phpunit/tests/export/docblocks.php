@@ -255,6 +255,131 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a parenthesized union with an array suffix survives the export.
+	 */
+	public function test_grouped_union_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_grouped_union_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Grouped.',
+						'types' => array(
+							'(int|\WordPress\AiClient\Messages\DTO\MessagePart)[]',
+						),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a space inside a generic doesn't truncate the type.
+	 */
+	public function test_generic_type_with_space() {
+
+		$this->assertFunctionHasDocs(
+			'test_generic_type_with_space'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A map.',
+						'types' => array( 'array<int,string>' ),
+						'variable' => '$map',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a non-breaking space separates the type from the variable.
+	 */
+	public function test_nbsp_separated_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_nbsp_separated_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'NBSP separated.',
+						'types' => array( 'string' ),
+						'variable' => '$nb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an iterable generic isn't turned into a class name.
+	 */
+	public function test_iterable_generic_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_iterable_generic_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Iterable.',
+						'types' => array(
+							'iterable<\WordPress\AiClient\Messages\DTO\MessagePart>',
+						),
+						'variable' => '$it',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an integer range return type keeps both of its bounds.
+	 */
+	public function test_int_range_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_int_range_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'Count.',
+						'types' => array( 'int<0,max>' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that each member of an intersection type is resolved separately.
+	 */
+	public function test_intersection_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_intersection_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Intersect.',
+						'types' => array(
+							'\WordPress\AiClient\Messages\DTO\MessagePart&\Countable',
+						),
+						'variable' => '$both',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {

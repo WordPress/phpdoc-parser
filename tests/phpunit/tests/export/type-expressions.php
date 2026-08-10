@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * A test case for expanding docblock type expressions.
+ */
+
+namespace WP_Parser\Tests;
+
+use phpDocumentor\Reflection\DocBlock\Context;
+
+use function WP_Parser\expand_docblock_type_expression;
+
+/**
+ * Test that type expressions are expanded without losing or inventing information.
+ */
+class Export_Type_Expressions extends \WP_UnitTestCase {
+
+	/**
+	 * Test type expressions expanded within the `\Ns` namespace.
+	 *
+	 * @dataProvider data_namespaced_type_expressions
+	 *
+	 * @param string $type     The type expression to expand.
+	 * @param string $expected The expected expansion.
+	 */
+	public function test_namespaced_type_expressions( $type, $expected ) {
+
+		$this->assertSame(
+			$expected
+			, expand_docblock_type_expression( $type, new Context( '\Ns' ) )
+		);
+	}
+
+	/**
+	 * Data provider for type expressions expanded within the `\Ns` namespace.
+	 *
+	 * @return array[] The type expression, and its expected expansion.
+	 */
+	public function data_namespaced_type_expressions() {
+
+		return array(
+			'parenthesized union with an array suffix' => array(
+				'(int|string)[]'
+				, '(int|string)[]'
+			),
+			'array shape' => array(
+				'array{a: int|string}'
+				, 'array{a: int|string}'
+			),
+			'callable signature' => array(
+				'callable(int|string): void'
+				, 'callable(int|string): void'
+			),
+			'unbalanced brackets' => array(
+				'array<int|string'
+				, 'array<int|string'
+			),
+			'integer range' => array(
+				'int<0,max>'
+				, 'int<0,max>'
+			),
+			'generic with a leading integer literal' => array(
+				'array<0,string>'
+				, 'array<0,string>'
+			),
+			'generic with a quoted string literal' => array(
+				"array<int,'a'>"
+				, "array<int,'a'>"
+			),
+			'iterable generic' => array(
+				'iterable<Foo>'
+				, 'iterable<\Ns\Foo>'
+			),
+			'class-string generic' => array(
+				'class-string<Foo>'
+				, 'class-string<\Ns\Foo>'
+			),
+			'non-empty-list generic' => array(
+				'non-empty-list<int>'
+				, 'non-empty-list<int>'
+			),
+			'never keyword' => array(
+				'never'
+				, 'never'
+			),
+			'generic with a space after the delimiter' => array(
+				'array<int, string>'
+				, 'array<int,string>'
+			),
+			'repeated array suffixes' => array(
+				'Foo[][]'
+				, '\Ns\Foo[][]'
+			),
+		);
+	}
+
+	/**
+	 * Test type expressions expanded with an aliased namespace.
+	 *
+	 * @dataProvider data_aliased_type_expressions
+	 *
+	 * @param string $type     The type expression to expand.
+	 * @param string $expected The expected expansion.
+	 */
+	public function test_aliased_type_expressions( $type, $expected ) {
+
+		$context = new Context( '\Acme', array( 'Bar' => 'Vendor\Bar' ) );
+
+		$this->assertSame( $expected, expand_docblock_type_expression( $type, $context ) );
+	}
+
+	/**
+	 * Data provider for type expressions expanded with an aliased namespace.
+	 *
+	 * @return array[] The type expression, and its expected expansion.
+	 */
+	public function data_aliased_type_expressions() {
+
+		return array(
+			'intersection' => array(
+				'Bar&Foo'
+				, '\Vendor\Bar&\Acme\Foo'
+			),
+			'intersection inside a generic' => array(
+				'list<Bar&Foo>'
+				, 'list<\Vendor\Bar&\Acme\Foo>'
+			),
+		);
+	}
+
+	/**
+	 * Test that a great many array suffixes are expanded without quadratic blowup.
+	 */
+	public function test_repeated_array_suffixes_do_not_blow_up() {
+
+		/*
+		 * The current implementation copies the whole expression at every level of
+		 * recursion, so it needs far more memory than the default limit allows.
+		 * Raise the limit so that this test reports the slowdown rather than
+		 * aborting the whole suite with a fatal error.
+		 */
+		$memory_limit = ini_get( 'memory_limit' );
+		ini_set( 'memory_limit', '1024M' );
+
+		$type = 'int' . str_repeat( '[]', 20000 );
+
+		$start    = microtime( true );
+		$expanded = expand_docblock_type_expression( $type, new Context( '\Ns' ) );
+		$elapsed  = microtime( true ) - $start;
+
+		ini_set( 'memory_limit', $memory_limit );
+
+		$this->assertTrue( $type === $expanded, 'The expanded type expression should be unchanged.' );
+		$this->assertLessThan(
+			5
+			, $elapsed
+			, 'Expanding repeated array suffixes should not take quadratic time.'
+		);
+	}
+}
