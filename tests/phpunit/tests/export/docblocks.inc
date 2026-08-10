@@ -99,6 +99,46 @@ function test_intersection_type( $both ) {
 }
 
 /**
+ * Tests a quoted string literal type which contains a bracket.
+ *
+ * @param 'a<b' $x A description > with gt
+ */
+function test_quoted_literal_type( $x ) {
+}
+
+/**
+ * Tests an unclosed generic type followed by prose.
+ *
+ * @param array<int $x The arrow->prop blah
+ */
+function test_unclosed_generic_type( $x ) {
+}
+
+/**
+ * Tests a generic which is missing a comma and balances at the last byte.
+ *
+ * @return Generator<int A generator of things>
+ */
+function test_unbalanced_generic_return_type() {
+}
+
+/**
+ * Tests a callable type which declares a return type.
+ *
+ * @param callable(int $a, string $b): bool $cb Desc.
+ */
+function test_callable_return_type( $cb ) {
+}
+
+/**
+ * Tests a parameter which is passed by reference.
+ *
+ * @param array<int, string> &$arr By ref.
+ */
+function test_by_reference_param( &$arr ) {
+}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,
@@ -129,6 +169,20 @@ class Test_Class {
 	 * @var string
 	 */
 	public $a_string;
+
+	/**
+	 * This is a callable property.
+	 *
+	 * @var callable(string): string
+	 */
+	public $a_callback;
+
+	/**
+	 * This is a property whose type expression begins with a variable.
+	 *
+	 * @var $map{int, string} Some desc
+	 */
+	public $a_shape;
 
 	/**
 	 * This is a method docblock.

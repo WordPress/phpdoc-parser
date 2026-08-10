@@ -380,6 +380,113 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a bracket inside a quoted literal doesn't extend the type.
+	 *
+	 * The `<` is inside a string literal, so it doesn't open a bracket and the
+	 * type ends at the first whitespace after the literal. Without that, the
+	 * unclosed bracket swallows the variable and eats up to the `>` in the prose.
+	 */
+	public function test_quoted_literal_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_quoted_literal_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A description &gt; with gt',
+						'types' => array( "'a<b'" ),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an unclosed generic followed by prose falls back to a plain split.
+	 *
+	 * The whitespace after `int` isn't in a position where a type expression may
+	 * contain whitespace, so the type expression is malformed and nothing better
+	 * can be inferred than the plain split the legacy dependency made.
+	 */
+	public function test_unclosed_generic_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_unclosed_generic_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'The arrow-&gt;prop blah',
+						'types' => array( 'array<int' ),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a generic which only balances at the last byte doesn't eat the description.
+	 */
+	public function test_unbalanced_generic_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_unbalanced_generic_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'A generator of things&gt;',
+						'types' => array( 'Generator<int' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a callable type keeps its parameters and its return type.
+	 */
+	public function test_callable_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_callable_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Desc.',
+						'types' => array( 'callable(int $a, string $b): bool' ),
+						'variable' => '$cb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a by-reference parameter's name is recovered.
+	 */
+	public function test_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'By ref.',
+						'types' => array( 'array<int,string>' ),
+						'variable' => '$arr',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {
@@ -1403,6 +1510,53 @@ class Export_Docblocks extends Export_UnitTestCase {
 					),
 				),
 			),
+		);
+	}
+
+	/**
+	 * Test that a callable property type keeps its return type.
+	 */
+	public function test_callable_property_type() {
+
+		$this->assertPropertyHasDocs(
+			'Test_Class'
+			, '$a_callback'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'var',
+						'content' => '',
+						'types' => array( 'callable(string): string' ),
+						'variable' => '',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a tag whose content starts with a variable is exported as before.
+	 *
+	 * The legacy dependency treats the whole first token as the variable name and
+	 * leaves nothing for a type. Nothing can be recovered from that, so the
+	 * export has to match the legacy export byte for byte rather than rewriting
+	 * half of it.
+	 */
+	public function test_variable_first_property_type() {
+
+		$this->assertPropertyHasDocs(
+			'Test_Class'
+			, '$a_shape'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'var',
+						'content' => 'string} Some desc',
+						'types' => array(),
+						'variable' => '$map{int,',
+					),
+				),
+			)
 		);
 	}
 }

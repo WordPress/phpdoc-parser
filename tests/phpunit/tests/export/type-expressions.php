@@ -59,6 +59,54 @@ class Export_Type_Expressions extends \WP_UnitTestCase {
 				'int<0,max>'
 				, 'int<0,max>'
 			),
+			'integer range with a lower bound keyword' => array(
+				'int<min,0>'
+				, 'int<min,0>'
+			),
+			'max keyword' => array(
+				'max'
+				, 'max'
+			),
+			'min keyword' => array(
+				'min'
+				, 'min'
+			),
+			'class named like the max keyword' => array(
+				'Max'
+				, '\Ns\Max'
+			),
+			'class named like the min keyword' => array(
+				'Min'
+				, '\Ns\Min'
+			),
+			'class constant' => array(
+				'Base::TYPE_FEED'
+				, '\Ns\Base::TYPE_FEED'
+			),
+			'class constant wildcard' => array(
+				'Foo::*'
+				, '\Ns\Foo::*'
+			),
+			'class constant wildcard on a keyword' => array(
+				'self::LOCATOR_*'
+				, 'self::LOCATOR_*'
+			),
+			'nullable class name' => array(
+				'?Foo'
+				, '?\Ns\Foo'
+			),
+			'nullable class name with an array suffix' => array(
+				'?Foo[]'
+				, '?\Ns\Foo[]'
+			),
+			'nullable keyword' => array(
+				'?string'
+				, '?string'
+			),
+			'nullable never keyword' => array(
+				'?never'
+				, '?never'
+			),
 			'generic with a leading integer literal' => array(
 				'array<0,string>'
 				, 'array<0,string>'
@@ -125,6 +173,10 @@ class Export_Type_Expressions extends \WP_UnitTestCase {
 				'list<Bar&Foo>'
 				, 'list<\Vendor\Bar&\Acme\Foo>'
 			),
+			'nullable alias' => array(
+				'?Bar'
+				, '?\Vendor\Bar'
+			),
 		);
 	}
 
@@ -144,6 +196,34 @@ class Export_Type_Expressions extends \WP_UnitTestCase {
 			5
 			, $elapsed
 			, 'Expanding repeated array suffixes should not take quadratic time.'
+		);
+	}
+
+	/**
+	 * Test that deeply nested generics are expanded without quadratic blowup.
+	 *
+	 * Each level of nesting rescans and copies the whole remaining expression, so
+	 * the cost grows with the square of the length of the expression rather than
+	 * with its length.
+	 *
+	 * The depth is chosen so that the expansion currently takes about two seconds
+	 * while staying under a hundred and thirty megabytes, which is the smallest
+	 * memory limit this runs under.
+	 */
+	public function test_deeply_nested_generics_do_not_blow_up() {
+
+		$depth = 2200;
+		$type  = str_repeat( 'array<', $depth ) . 'int' . str_repeat( '>', $depth );
+
+		$start    = microtime( true );
+		$expanded = expand_docblock_type_expression( $type, new Context( '\Ns' ) );
+		$elapsed  = microtime( true ) - $start;
+
+		$this->assertTrue( $type === $expanded, 'The expanded type expression should be unchanged.' );
+		$this->assertLessThan(
+			1
+			, $elapsed
+			, 'Expanding deeply nested generics should not take quadratic time.'
 		);
 	}
 }

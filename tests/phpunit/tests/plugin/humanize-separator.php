@@ -63,6 +63,41 @@ class Plugin_Humanize_Separator extends \WP_UnitTestCase {
 				'Foo|list<int|string>'
 				, 'Foo' . $separator . 'list<int|string>'
 			),
+			'unbalanced brackets' => array(
+				'\array<int,|string'
+				, '\array<int,' . $separator . 'string'
+			),
+		);
+	}
+
+	/**
+	 * Test that an array of types is humanized element by element.
+	 *
+	 * The `wp_parser_return_type` filter is passed the array of a return tag's
+	 * types rather than a single type expression, so every element has to be
+	 * humanized on its own.
+	 */
+	public function test_humanize_separator_of_an_array() {
+
+		$separator = '<span class="wp-parser-item-type-or"> or </span>';
+
+		$this->assertSame(
+			array(
+				'string' . $separator . 'int',
+				'list<a|b>',
+			)
+			, $this->plugin->humanize_separator( array( 'string|int', 'list<a|b>' ) )
+		);
+	}
+
+	/**
+	 * Test that an array of types without a union is returned unchanged.
+	 */
+	public function test_humanize_separator_of_an_array_without_a_union() {
+
+		$this->assertSame(
+			array( 'string', '\WP_Error' )
+			, $this->plugin->humanize_separator( array( 'string', '\WP_Error' ) )
 		);
 	}
 }
