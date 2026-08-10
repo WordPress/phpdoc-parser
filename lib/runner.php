@@ -210,12 +210,27 @@ function export_expression( $expression ) {
 /**
  * Remove synthetic global namespace prefixes from inline DocBlock references.
  *
+ * A special exception is made for text appearing in `<code>` and `<pre>` tags, as code
+ * samples are reproduced verbatim and any prefix appearing in them was written by hand.
+ *
  * @param string $text Formatted DocBlock text.
  *
  * @return string
  */
 function strip_global_namespace_prefixes_from_inline_references( $text ) {
-	return preg_replace_callback(
+	// Non-naturally occurring string to use as temporary replacement.
+	$replacement_string = '{{{{{}}}}}';
+
+	// Replace inline tag openings within 'code' and 'pre' tags with replacement string.
+	$text = preg_replace_callback(
+		"/(<code[^>]*>)(.+)(?=<\/code>)/sU",
+		function ( $matches ) use ( $replacement_string ) {
+			return str_replace( '{@', $replacement_string, $matches[1] . $matches[2] );
+		},
+		$text
+	);
+
+	$text = preg_replace_callback(
 		'~{@(?:link|see)\s+([^}\s]+)~',
 		static function( $matches ) {
 			return str_replace(
@@ -226,6 +241,9 @@ function strip_global_namespace_prefixes_from_inline_references( $text ) {
 		},
 		$text
 	);
+
+	// Restore inline tag openings into code blocks.
+	return str_replace( $replacement_string, '{@', $text );
 }
 
 /**
