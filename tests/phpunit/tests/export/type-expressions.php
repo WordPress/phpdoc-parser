@@ -139,6 +139,22 @@ class Export_Type_Expressions extends \WP_UnitTestCase {
 				'Foo[][]'
 				, '\Ns\Foo[][]'
 			),
+			'generic with a non-breaking space after the delimiter' => array(
+				"array<int,\xC2\xA0string>"
+				, 'array<int,string>'
+			),
+			'type padded with non-breaking spaces' => array(
+				"\xC2\xA0Foo\xC2\xA0"
+				, '\Ns\Foo'
+			),
+			'group containing a quoted closing parenthesis' => array(
+				'(\'a)\'|Foo)'
+				, '(\'a)\'|\Ns\Foo)'
+			),
+			'expression which merely starts and ends with a group' => array(
+				'(int)foo(string)'
+				, '(int)foo(string)'
+			),
 		);
 	}
 

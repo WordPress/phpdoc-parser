@@ -216,9 +216,63 @@ class Plugin {
 	 */
 	public function make_args_safe( $args ) {
 
-		array_walk_recursive( $args, array( $this, 'sanitize_argument' ) );
+		if ( is_array( $args ) ) {
+			$args = $this->sanitize_arguments( $args );
+		}
 
 		return apply_filters( 'wp_parser_make_args_safe', $args );
+	}
+
+	/**
+	 * Sanitizes every field of an argument list according to what the field holds.
+	 *
+	 * Only the types of an argument are a type expression. Its name, its default
+	 * value and its description are prose, and are printed without escaping, so
+	 * they go through the content filters whatever they happen to look like.
+	 *
+	 * @param array $args Arguments to make safe.
+	 *
+	 * @return array The arguments, made safe.
+	 */
+	protected function sanitize_arguments( array $args ) {
+
+		foreach ( $args as $key => $value ) {
+			if ( 'type' === $key || 'types' === $key ) {
+				$args[ $key ] = $this->sanitize_type( $value );
+			} elseif ( is_array( $value ) ) {
+				$args[ $key ] = $this->sanitize_arguments( $value );
+			} else {
+				$args[ $key ] = $this->sanitize_argument( $value );
+			}
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Sanitizes a type, or a list of them, without destroying the type expression.
+	 *
+	 * The content filters are written for prose, and a type expression isn't
+	 * prose: a fully qualified class name is all namespace separators, which
+	 * `stripslashes_deep()` eats, and a generic type is wrapped in what
+	 * `wp_filter_kses()` reads as an HTML tag and throws away. A type which is
+	 * displayed as written is escaped where it's printed instead.
+	 *
+	 * @param mixed $type A type expression, or a list of them.
+	 *
+	 * @return mixed The type, made safe.
+	 */
+	protected function sanitize_type( $type ) {
+
+		if ( is_array( $type ) ) {
+			return array_map( array( $this, 'sanitize_type' ), $type );
+		}
+
+		if ( is_string( $type ) && $this->is_type_expression_safe( $type ) ) {
+			return $type;
+		}
+
+		return $this->sanitize_argument( $type );
 	}
 
 	/**
@@ -238,16 +292,6 @@ class Plugin {
 			'stripslashes_deep',
 		);
 
-		/*
-		 * These filters are written for prose, and a type expression isn't
-		 * prose: a fully qualified class name is all namespace separators,
-		 * which `stripslashes_deep()` eats, and a generic type is wrapped in
-		 * what `wp_filter_kses()` reads as an HTML tag and throws away.
-		 */
-		if ( is_string( $value ) && $this->is_type_expression_safe( $value ) ) {
-			return $value;
-		}
-
 		foreach ( $filters as $filter ) {
 			$value = call_user_func( $filter, $value );
 		}
@@ -264,24 +308,40 @@ class Plugin {
 	 */
 	protected function is_type_expression_safe( $value ) {
 
-		/*
-		 * Only the characters a DocBlock type expression is written with are
-		 * allowed, and whitespace is only allowed where a type expression
-		 * breaks, which is directly after one of its delimiters. That leaves
-		 * out `/` and `=` entirely, so neither a closing tag nor an attribute
-		 * can be written at all, which is what every markup injection needs.
-		 */
-		if ( 1 !== preg_match( '~^(?:[A-Za-z0-9_\\\\|&,\'"()\[\]{}<>?:.$-]|(?<=[,:|&])\s)*+$~', $value ) ) {
+		if ( ! is_string( $value ) ) {
 			return false;
 		}
 
 		/*
-		 * A `<` which is never closed reads as a start tag which swallows
-		 * everything after it up to the next `>`, wherever that turns out to
-		 * be. It also isn't a type expression, so there is nothing to preserve.
+		 * Only the characters a DocBlock type expression is written with are
+		 * allowed. That leaves out `/` and `=` entirely, so neither a closing
+		 * tag nor an attribute can be written at all, which is what every markup
+		 * injection needs.
 		 */
-		$scan = scan_docblock_type_syntax( $value );
-		if ( ! $scan['balanced'] ) {
+		if ( 1 !== preg_match( '~^[A-Za-z0-9_\\\\|&,\'"()\[\]{}<>?:.$\s-]++$~', $value ) ) {
+			return false;
+		}
+
+		/*
+		 * A bracket at the very start qualifies nothing, so `<b>hello` is markup
+		 * in front of prose rather than a generic type. A group is the exception:
+		 * a nested expression is written in front of an array suffix, as in
+		 * `(int|string)[]`.
+		 */
+		if ( false !== strpos( '<[{', $value[0] ) ) {
+			return false;
+		}
+
+		/*
+		 * Whether the whole value is a type expression is decided by the same
+		 * scanner which decides where a tag's type expression ends, so a type
+		 * the exporter preserves can't be one this destroys. A bracket which is
+		 * never closed reads as a start tag which swallows everything after it
+		 * up to the next `>`, wherever that turns out to be, and whitespace
+		 * anywhere but where a type expression breaks means it's prose.
+		 */
+		$scan = scan_docblock_tag_content( $value );
+		if ( ! $scan['scannable'] || ! $scan['balanced'] || $value !== $scan['type'] ) {
 			return false;
 		}
 
@@ -297,7 +357,8 @@ class Plugin {
 		 * rejected above.
 		 */
 		return 1 !== preg_match(
-			'~<\s*(?:script|style|iframe|xmp|textarea|title|svg|math|template)\b~i',
+			'~<\s*(?:script|style|iframe|xmp|textarea|title|svg|math|template'
+				. '|plaintext|noembed|noframes|noscript|listing|select)\b~i',
 			$value
 		);
 	}

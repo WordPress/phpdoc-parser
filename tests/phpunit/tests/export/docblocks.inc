@@ -139,6 +139,46 @@ function test_by_reference_param( &$arr ) {
 }
 
 /**
+ * Tests a return type which is one leading paren group full of prose.
+ *
+ * @return (mixed depends on context)
+ */
+function test_leading_group_prose_return_type() {
+}
+
+/**
+ * Tests a leading paren group which is followed by a colon.
+ *
+ * @return (bool): true on success
+ */
+function test_leading_group_colon_return_type() {
+}
+
+/**
+ * Tests a callable type with an empty parameter list.
+ *
+ * @param callable(): bool $cb Empty.
+ */
+function test_empty_callable_param( $cb ) {
+}
+
+/**
+ * Tests an untyped parameter which is passed by reference.
+ *
+ * @param &$arr By ref desc.
+ */
+function test_untyped_by_reference_param( &$arr ) {
+}
+
+/**
+ * Tests an untyped variadic parameter which is passed by reference.
+ *
+ * @param &...$rest The rest.
+ */
+function test_untyped_variadic_by_reference_param( &...$rest ) {
+}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,

@@ -249,10 +249,20 @@ const DOCBLOCK_SCAN_QUOTED = '"';
 /**
  * Marks a byte which is inside a parenthesized group.
  *
- * A group holds either a nested expression, as in `(int|string)[]`, or a
- * callable's parameter list, as in `callable(int $a, string $b): bool`.
+ * A group holds a single nested expression, as in `(int|string)[]`. It is
+ * written where a single type is written, so whitespace inside one only sits
+ * where the expression it holds breaks.
  */
 const DOCBLOCK_SCAN_GROUPED = '(';
+
+/**
+ * Marks a byte which is inside a callable's parameter list.
+ *
+ * A parameter list is a list of types and names rather than a single type, as
+ * in `callable(int $a, string $b): bool`, so whitespace inside one separates one
+ * parameter from the next wherever it appears.
+ */
+const DOCBLOCK_SCAN_CALL = 'c';
 
 /**
  * Marks a byte which is inside a generic, an array shape, or an array index.
@@ -274,6 +284,8 @@ const DOCBLOCK_SCAN_NESTED = '<';
  *
  * @return array {
  *     @type string $mask     One mark per byte of the expression.
+ *     @type bool[] $calls    Keyed by the offset of each `)` which closes a
+ *                            callable's parameter list.
  *     @type bool   $balanced Whether every bracket and string literal is closed.
  * }
  */
@@ -286,6 +298,14 @@ function scan_docblock_type_syntax( $expression ) {
 	);
 
 	/*
+	 * A `(` which directly follows the name of something opens that thing's
+	 * parameter list, as in `callable(int $a): bool`. A `(` which follows
+	 * anything else opens a group holding a single nested expression, as in
+	 * `(int|string)[]`, which is why the two are marked apart.
+	 */
+	$identifier_characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
+
+	/*
 	 * The enclosing mark and the bracket which closes the current group are
 	 * tracked alongside each other so that neither has to be recomputed for
 	 * every byte, which is the difference between scanning a long expression
@@ -296,6 +316,7 @@ function scan_docblock_type_syntax( $expression ) {
 	$mark      = DOCBLOCK_SCAN_TOP_LEVEL;
 	$quote     = '';
 	$mask      = '';
+	$calls     = array();
 	$length    = strlen( $expression );
 
 	for ( $i = 0; $i < $length; $i++ ) {
@@ -321,12 +342,31 @@ function scan_docblock_type_syntax( $expression ) {
 			$mask       .= $mark;
 			$enclosing[] = array( $closing, $mark );
 			$closing     = $closing_brackets[ $character ];
-			$mark        = '(' === $character ? DOCBLOCK_SCAN_GROUPED : DOCBLOCK_SCAN_NESTED;
+
+			if ( '(' !== $character ) {
+				$mark = DOCBLOCK_SCAN_NESTED;
+			} else {
+				$preceding = 0 < $i ? $expression[ $i - 1 ] : '';
+				$mark      = (
+					'' !== $preceding
+					&& (
+						0x80 <= ord( $preceding )
+						|| false !== strpos( $identifier_characters, $preceding )
+					)
+				)
+					? DOCBLOCK_SCAN_CALL
+					: DOCBLOCK_SCAN_GROUPED;
+			}
+
 			continue;
 		}
 
 		// An empty closing bracket never matches, so no group is open.
 		if ( $character === $closing ) {
+			if ( DOCBLOCK_SCAN_CALL === $mark ) {
+				$calls[ $i ] = true;
+			}
+
 			list( $closing, $mark ) = array_pop( $enclosing );
 		}
 
@@ -335,8 +375,34 @@ function scan_docblock_type_syntax( $expression ) {
 
 	return array(
 		'mask'     => $mask,
+		'calls'    => $calls,
 		'balanced' => '' === $quote && '' === $closing,
 	);
+}
+
+/**
+ * Reports whether whitespace inside brackets sits where a type expression breaks.
+ *
+ * A type expression only breaks after one of the delimiters a generic, an array
+ * shape or a group is written with, or against the bracket which opens or closes
+ * one. An array shape is regularly written over several lines, which puts a break
+ * in both of those places.
+ *
+ * Whitespace anywhere else in them, as in `Generator<int A generator>`, means the
+ * brackets are prose rather than a type expression.
+ *
+ * @param string $content Tag content or type expression.
+ * @param int    $offset  Offset of the whitespace run.
+ * @param int    $run     Length of the whitespace run.
+ *
+ * @return bool
+ */
+function is_docblock_type_expression_break( $content, $offset, $run ) {
+	$before = 0 < $offset ? $content[ $offset - 1 ] : '';
+	$after  = $offset + $run < strlen( $content ) ? $content[ $offset + $run ] : '';
+
+	return ( '' !== $before && false !== strpos( ',:|&<{[(', $before ) )
+		|| ( '' !== $after && false !== strpos( '>}])', $after ) );
 }
 
 /**
@@ -386,11 +452,11 @@ function split_docblock_tag_content( $content ) {
  *
  * A type expression may contain whitespace, but only in a few places: inside a
  * callable's parameter list, inside a string literal, after one of the
- * delimiters a generic or an array shape breaks at, and between a callable's
- * parameter list and its return type. Whitespace anywhere else inside brackets
- * means the brackets aren't a type expression at all, and nothing better can be
- * inferred than the plain split on the first whitespace which the legacy
- * dependency made.
+ * delimiters a generic, an array shape or a group breaks at, and between a
+ * callable's parameter list and its return type. Whitespace anywhere else inside
+ * brackets means the brackets aren't a type expression at all, and nothing
+ * better can be inferred than the plain split on the first whitespace which the
+ * legacy dependency made.
  *
  * Whitespace is matched in Unicode mode so that a non-breaking space separates
  * the type from the rest of the content, matching how the tag was parsed
@@ -404,9 +470,12 @@ function split_docblock_tag_content( $content ) {
  *     @type string $type      The type expression.
  *     @type string $remainder The content which follows the type expression.
  *     @type bool   $scannable Whether the content could be scanned as UTF-8.
+ *     @type bool   $balanced  Whether every bracket and string literal is closed.
  * }
  */
 function scan_docblock_tag_content( $content ) {
+	$scan = scan_docblock_type_syntax( $content );
+
 	$matched = preg_match_all( '/\s+/Su', $content, $matches, PREG_OFFSET_CAPTURE );
 	if ( false === $matched ) {
 		// The content isn't valid UTF-8; split it bytewise instead.
@@ -416,6 +485,7 @@ function scan_docblock_tag_content( $content ) {
 			'type'      => $parts[0],
 			'remainder' => $parts[1],
 			'scannable' => false,
+			'balanced'  => $scan['balanced'],
 		);
 	}
 
@@ -424,7 +494,6 @@ function scan_docblock_tag_content( $content ) {
 		$whitespace[ $match[1] ] = strlen( $match[0] );
 	}
 
-	$scan      = scan_docblock_type_syntax( $content );
 	$mask      = $scan['mask'];
 	$malformed = false;
 	$length    = strlen( $content );
@@ -442,12 +511,15 @@ function scan_docblock_tag_content( $content ) {
 			 * A callable's return type is written after its parameter list, as
 			 * in `callable(int $a): bool`, so the whitespace which follows the
 			 * colon is inside the type expression rather than at the end of it.
+			 * A group holds a single nested expression and has no parameter list
+			 * to declare a return type for, so a `):` which closes one, as in
+			 * `(bool): true on success`, is where the prose starts.
 			 */
 			if (
 				2 <= $i
 				&& ':' === $content[ $i - 1 ]
 				&& ')' === $content[ $i - 2 ]
-				&& DOCBLOCK_SCAN_TOP_LEVEL === $mask[ $i - 2 ]
+				&& isset( $scan['calls'][ $i - 2 ] )
 			) {
 				$i += $run - 1;
 				continue;
@@ -457,29 +529,22 @@ function scan_docblock_tag_content( $content ) {
 				'type'      => substr( $content, 0, $i ),
 				'remainder' => substr( $content, $i + $run ),
 				'scannable' => true,
+				'balanced'  => $scan['balanced'],
 			);
 		}
 
 		/*
-		 * Whitespace inside a generic or an array shape only ever sits where
-		 * the expression breaks: after one of its delimiters, or against the
-		 * bracket which opens or closes it. An array shape is regularly written
-		 * over several lines, which puts a break in both of those places.
-		 *
-		 * Whitespace anywhere else in them, as in `Generator<int A generator>`,
-		 * means the brackets are prose rather than a type expression.
+		 * Whitespace inside a generic, an array shape or a group only ever sits
+		 * where the expression breaks. Whitespace inside a callable's parameter
+		 * list separates one parameter from the next and may sit anywhere.
 		 */
-		if ( DOCBLOCK_SCAN_NESTED === $mark ) {
-			$before = 0 < $i ? $content[ $i - 1 ] : '';
-			$after  = $i + $run < $length ? $content[ $i + $run ] : '';
-
-			if (
-				( '' === $before || false === strpos( ',:|&<{[(', $before ) )
-				&& ( '' === $after || false === strpos( '>}])', $after ) )
-			) {
-				$malformed = true;
-				break;
-			}
+		if (
+			DOCBLOCK_SCAN_CALL !== $mark
+			&& DOCBLOCK_SCAN_QUOTED !== $mark
+			&& ! is_docblock_type_expression_break( $content, $i, $run )
+		) {
+			$malformed = true;
+			break;
 		}
 
 		// Skip past the rest of the whitespace run, which is inside the type.
@@ -493,6 +558,7 @@ function scan_docblock_tag_content( $content ) {
 			'type'      => $parts[0],
 			'remainder' => $parts[1],
 			'scannable' => true,
+			'balanced'  => $scan['balanced'],
 		);
 	}
 
@@ -500,6 +566,7 @@ function scan_docblock_tag_content( $content ) {
 		'type'      => $content,
 		'remainder' => '',
 		'scannable' => true,
+		'balanced'  => $scan['balanced'],
 	);
 }
 
@@ -608,6 +675,39 @@ function is_docblock_type_keyword( $type ) {
 const DOCBLOCK_TYPE_EXPRESSION_MAX_DEPTH = 50;
 
 /**
+ * Trims the whitespace from around a type expression.
+ *
+ * A DocBlock is written with Unicode whitespace as readily as with ASCII
+ * whitespace, and the tag was parsed upstream with a Unicode-mode match, so a
+ * non-breaking space is a separator here as well. What `trim()` leaves behind
+ * reads as the first character of a class name, which is how `array<int, string>`
+ * written with a non-breaking space comes out naming a class of its own.
+ *
+ * @param string $type Type expression.
+ *
+ * @return string
+ */
+function trim_docblock_type_expression( $type ) {
+	$trimmed = trim( $type );
+	if ( '' === $trimmed ) {
+		return '';
+	}
+
+	// Only an expression with a non-ASCII byte at an end can need more trimming.
+	if (
+		0x80 > ord( $trimmed[0] )
+		&& 0x80 > ord( $trimmed[ strlen( $trimmed ) - 1 ] )
+	) {
+		return $trimmed;
+	}
+
+	$untrimmed = preg_replace( '/^\s+|\s+$/u', '', $trimmed );
+
+	// An expression which isn't valid UTF-8 can't be matched that way at all.
+	return null === $untrimmed ? $trimmed : $untrimmed;
+}
+
+/**
  * Expands aliases in a type expression without losing nested type syntax.
  *
  * @param string       $type    Type expression.
@@ -617,7 +717,7 @@ const DOCBLOCK_TYPE_EXPRESSION_MAX_DEPTH = 50;
  * @return string
  */
 function expand_docblock_type_expression( $type, ?Context $context, $depth = 0 ) {
-	$type = trim( $type );
+	$type = trim_docblock_type_expression( $type );
 	if ( '' === $type ) {
 		return '';
 	}
@@ -636,7 +736,9 @@ function expand_docblock_type_expression( $type, ?Context $context, $depth = 0 )
 					$expanded_part = expand_docblock_type_expression( $part, $context, $depth + 1 );
 
 					// Never drop a part: one which can't be expanded is kept as written.
-					$expanded_parts[] = '' === $expanded_part ? trim( $part ) : $expanded_part;
+					$expanded_parts[] = '' === $expanded_part
+						? trim_docblock_type_expression( $part )
+						: $expanded_part;
 				}
 
 				return implode( $delimiter, $expanded_parts );
@@ -684,22 +786,15 @@ function expand_docblock_type_expression( $type, ?Context $context, $depth = 0 )
 	 * A group which wraps the whole expression, such as `(int|string)`, holds a
 	 * nested expression. The parentheses have to be scanned to tell that group
 	 * apart from an expression which merely starts and ends with one, such as
-	 * `(int)foo(string)`.
+	 * `(int)foo(string)`: every byte between the two is inside the group only
+	 * when the first parenthesis is the one the last parenthesis closes. The
+	 * scanner is what decides which parentheses are brackets at all, so a
+	 * parenthesis inside a string literal doesn't open or close anything.
 	 */
 	if ( '(' === $type[0] && ')' === $type[ $length - 1 ] ) {
-		$nesting = 0;
-		for ( $i = 0; $i < $length; $i++ ) {
-			if ( '(' === $type[ $i ] ) {
-				++$nesting;
-			} elseif ( ')' === $type[ $i ] ) {
-				--$nesting;
-				if ( 0 === $nesting ) {
-					break;
-				}
-			}
-		}
+		$scan = scan_docblock_type_syntax( $type );
 
-		if ( 0 === $nesting && $length - 1 === $i ) {
+		if ( $length - 1 === strpos( $scan['mask'], DOCBLOCK_SCAN_TOP_LEVEL, 1 ) ) {
 			return '(' . expand_docblock_type_expression( substr( $type, 1, -1 ), $context, $depth + 1 ) . ')';
 		}
 	}
@@ -794,6 +889,34 @@ function resolve_docblock_tag_type_expression( array $tag_data, $tag, ?Context $
 	 */
 	$type = $split['type'];
 	if ( '' === $type || '$' === $type[0] || '...$' === substr( $type, 0, 4 ) ) {
+		return $tag_data;
+	}
+
+	/*
+	 * A parameter which is passed by reference is written as `&$name`, which the
+	 * legacy dependency doesn't recognize as a name: it reads the whole thing as
+	 * the type expression and leaves the parameter unnamed. There is no type
+	 * expression in front of the name to derive anything from, so the name is
+	 * recovered from the content and no type is published for it.
+	 */
+	if ( '&$' === substr( $type, 0, 2 ) || '&...$' === substr( $type, 0, 5 ) ) {
+		if ( ! isset( $tag_data['variable'] ) ) {
+			return $tag_data;
+		}
+
+		$recovered = recover_docblock_tag_variable( $content );
+		if ( null === $recovered ) {
+			return $tag_data;
+		}
+
+		$tag_data['variable'] = $recovered[0];
+		$tag_data['types']    = array();
+		$tag_data['content']  = preg_replace(
+			'/[\n\r]+/',
+			' ',
+			format_description( trim( $recovered[1] ) )
+		);
+
 		return $tag_data;
 	}
 

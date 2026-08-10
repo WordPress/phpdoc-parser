@@ -487,6 +487,118 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a leading group full of prose doesn't swallow the description.
+	 *
+	 * A `(` which follows an identifier opens a callable's parameter list, where
+	 * whitespace separates one parameter from the next. A `(` which follows
+	 * anything else opens a group which holds a single nested expression, and
+	 * prose inside one of those means it isn't a type expression at all. Nothing
+	 * better can be inferred then than the plain split the legacy dependency made.
+	 */
+	public function test_leading_group_prose_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_leading_group_prose_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'depends on context)',
+						'types' => array( '(mixed' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a colon after a leading group doesn't continue the type.
+	 *
+	 * A return type is written after a callable's parameter list, so the
+	 * whitespace which follows the colon is inside the type expression. A group
+	 * which holds a nested expression has no return type to continue into.
+	 */
+	public function test_leading_group_colon_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_leading_group_colon_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'true on success',
+						'types' => array( '(bool):' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a callable with an empty parameter list keeps its return type.
+	 */
+	public function test_empty_callable_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_empty_callable_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Empty.',
+						'types' => array( 'callable(): bool' ),
+						'variable' => '$cb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an untyped by-reference parameter's name is recovered.
+	 *
+	 * The legacy dependency only recognizes a name written as `$name` or
+	 * `...$name`, so `&$arr` is read as the type expression and the parameter
+	 * loses its name. There is no type expression there to publish.
+	 */
+	public function test_untyped_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_untyped_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'By ref desc.',
+						'types' => array(),
+						'variable' => '$arr',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an untyped variadic by-reference parameter's name is recovered.
+	 */
+	public function test_untyped_variadic_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_untyped_variadic_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'The rest.',
+						'types' => array(),
+						'variable' => '$rest',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {

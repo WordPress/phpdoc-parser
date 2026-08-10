@@ -65,6 +65,22 @@ class Export_Tag_Content extends \WP_UnitTestCase {
 				'callable(string): string'
 				, array( 'callable(string): string', '' )
 			),
+			'callable with an empty parameter list' => array(
+				'callable(): bool $cb Empty.'
+				, array( 'callable(): bool', '$cb Empty.' )
+			),
+			'leading group full of prose' => array(
+				'(mixed depends on context)'
+				, array( '(mixed', 'depends on context)' )
+			),
+			'leading group followed by a colon' => array(
+				'(bool): true on success'
+				, array( '(bool):', 'true on success' )
+			),
+			'grouped union followed by a variable' => array(
+				'(int|string)[] $x Grouped.'
+				, array( '(int|string)[]', '$x Grouped.' )
+			),
 			'generic followed by a by-reference variable' => array(
 				'array<int, string> &$arr By ref.'
 				, array( 'array<int, string>', '&$arr By ref.' )
