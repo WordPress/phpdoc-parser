@@ -133,22 +133,11 @@ class Export_Type_Expressions extends \WP_UnitTestCase {
 	 */
 	public function test_repeated_array_suffixes_do_not_blow_up() {
 
-		/*
-		 * The current implementation copies the whole expression at every level of
-		 * recursion, so it needs far more memory than the default limit allows.
-		 * Raise the limit so that this test reports the slowdown rather than
-		 * aborting the whole suite with a fatal error.
-		 */
-		$memory_limit = ini_get( 'memory_limit' );
-		ini_set( 'memory_limit', '1024M' );
-
 		$type = 'int' . str_repeat( '[]', 20000 );
 
 		$start    = microtime( true );
 		$expanded = expand_docblock_type_expression( $type, new Context( '\Ns' ) );
 		$elapsed  = microtime( true ) - $start;
-
-		ini_set( 'memory_limit', $memory_limit );
 
 		$this->assertTrue( $type === $expanded, 'The expanded type expression should be unchanged.' );
 		$this->assertLessThan(

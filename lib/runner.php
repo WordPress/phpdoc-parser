@@ -283,6 +283,159 @@ function split_docblock_type_expression( $type, $delimiter ) {
 }
 
 /**
+ * Splits a DocBlock tag's content into its type expression and the text after it.
+ *
+ * A type expression may contain whitespace inside of brackets, as in
+ * `array<int, string>`, so the boundary is the first whitespace which isn't
+ * nested inside brackets rather than simply the first whitespace. Whitespace is
+ * matched in Unicode mode so that a non-breaking space separates the type from
+ * the rest of the content, matching how the tag was parsed upstream.
+ *
+ * @param string $content Tag content.
+ *
+ * @return string[] The type expression, followed by the remaining content.
+ */
+function split_docblock_tag_content( $content ) {
+	$closing_brackets = array(
+		'<' => '>',
+		'(' => ')',
+		'[' => ']',
+		'{' => '}',
+	);
+	$bracket_stack    = array();
+	$whitespace       = array();
+	$length           = strlen( $content );
+
+	$matched = preg_match_all( '/\s+/Su', $content, $matches, PREG_OFFSET_CAPTURE );
+	if ( false === $matched ) {
+		// The content isn't valid UTF-8; split it bytewise instead.
+		return split_docblock_tag_content_on_whitespace( $content, '/\s+/' );
+	}
+
+	foreach ( $matches[0] as $match ) {
+		$whitespace[ $match[1] ] = strlen( $match[0] );
+	}
+
+	for ( $i = 0; $i < $length; $i++ ) {
+		if ( isset( $whitespace[ $i ] ) ) {
+			if ( empty( $bracket_stack ) ) {
+				return array(
+					substr( $content, 0, $i ),
+					substr( $content, $i + $whitespace[ $i ] ),
+				);
+			}
+
+			// Skip past the rest of the whitespace run, which is inside brackets.
+			$i += $whitespace[ $i ] - 1;
+			continue;
+		}
+
+		$character = $content[ $i ];
+
+		if ( isset( $closing_brackets[ $character ] ) ) {
+			$bracket_stack[] = $closing_brackets[ $character ];
+		} elseif (
+			! empty( $bracket_stack )
+			&& $character === $bracket_stack[ count( $bracket_stack ) - 1 ]
+		) {
+			array_pop( $bracket_stack );
+		}
+	}
+
+	if ( ! empty( $bracket_stack ) ) {
+		// The brackets never balance, so nothing better can be inferred than
+		// the plain split on the first whitespace which was used before.
+		return split_docblock_tag_content_on_whitespace( $content, '/\s+/u' );
+	}
+
+	return array( $content, '' );
+}
+
+/**
+ * Splits a DocBlock tag's content on the first whitespace matched by a pattern.
+ *
+ * @param string $content Tag content.
+ * @param string $pattern Whitespace pattern.
+ *
+ * @return string[] The type expression, followed by the remaining content.
+ */
+function split_docblock_tag_content_on_whitespace( $content, $pattern ) {
+	$parts = preg_split( $pattern, $content, 2 );
+	if ( ! is_array( $parts ) ) {
+		return array( $content, '' );
+	}
+
+	return array( $parts[0], isset( $parts[1] ) ? $parts[1] : '' );
+}
+
+/**
+ * Reports whether a type is a plain identifier or fully qualified class name.
+ *
+ * A trailing class constant, which may itself be a wildcard such as
+ * `Base::TYPE_*`, is part of that shape because the legacy dependency resolves
+ * the class name in front of it.
+ *
+ * Anything else, such as an array shape, a callable signature, a literal, a
+ * hyphenated pseudo-type, or an unbalanced fragment, is beyond the grammar the
+ * legacy dependency understands and must not be handed to it.
+ *
+ * @param string $type Type expression.
+ *
+ * @return bool
+ */
+function is_docblock_type_identifier( $type ) {
+	$identifier = '[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*';
+
+	return 1 === preg_match(
+		'/^\\\\?' . $identifier . '(?:\\\\' . $identifier . ')*(?:::' . $identifier . '\*?)?$/',
+		$type
+	);
+}
+
+/**
+ * Reports whether a type is a keyword rather than a class name.
+ *
+ * The legacy dependency has its own keyword list, but it predates a number of
+ * PHPDoc built-ins and would resolve them against the DocBlock's namespace.
+ *
+ * @param string $type Type expression.
+ *
+ * @return bool
+ */
+function is_docblock_type_keyword( $type ) {
+	static $keywords = array(
+		'array',
+		'bool',
+		'boolean',
+		'callable',
+		'callback',
+		'double',
+		'false',
+		'float',
+		'int',
+		'integer',
+		'iterable',
+		'list',
+		'max',
+		'min',
+		'mixed',
+		'never',
+		'null',
+		'object',
+		'parent',
+		'resource',
+		'scalar',
+		'self',
+		'static',
+		'string',
+		'true',
+		'void',
+	);
+
+	return in_array( strtolower( $type ), $keywords, true );
+}
+
+/**
  * Expands aliases in a type expression without losing nested type syntax.
  *
  * @param string       $type    Type expression.
@@ -296,23 +449,39 @@ function expand_docblock_type_expression( $type, ?Context $context ) {
 		return '';
 	}
 
-	foreach ( array( '|', ',' ) as $delimiter ) {
+	foreach ( array( '|', ',', '&' ) as $delimiter ) {
 		$parts = split_docblock_type_expression( $type, $delimiter );
 		if ( 1 < count( $parts ) ) {
 			$expanded_parts = array();
 			foreach ( $parts as $part ) {
 				$expanded_part = expand_docblock_type_expression( $part, $context );
-				if ( '' !== $expanded_part ) {
-					$expanded_parts[] = $expanded_part;
-				}
+
+				// Never drop a part: one which can't be expanded is kept as written.
+				$expanded_parts[] = '' === $expanded_part ? trim( $part ) : $expanded_part;
 			}
 
 			return implode( $delimiter, $expanded_parts );
 		}
 	}
 
-	if ( '[]' === substr( $type, -2 ) ) {
-		return expand_docblock_type_expression( substr( $type, 0, -2 ), $context ) . '[]';
+	/*
+	 * Every trailing array suffix is peeled off at once. Recursing once per
+	 * suffix copies the entire expression at each level, which costs quadratic
+	 * time and linear stack depth for a type such as `int[][][]...`.
+	 */
+	$length      = strlen( $type );
+	$base_length = $length;
+	while (
+		$base_length >= 2
+		&& '[' === $type[ $base_length - 2 ]
+		&& ']' === $type[ $base_length - 1 ]
+	) {
+		$base_length -= 2;
+	}
+
+	if ( $base_length < $length ) {
+		return expand_docblock_type_expression( substr( $type, 0, $base_length ), $context )
+			. substr( $type, $base_length );
 	}
 
 	if ( preg_match( '/^([^<]+)<(.*)>$/s', $type, $matches ) ) {
@@ -322,8 +491,37 @@ function expand_docblock_type_expression( $type, ?Context $context ) {
 		return $container . '<' . $arguments . '>';
 	}
 
-	// `list` is a PHPDoc built-in missing from the legacy dependency's keyword list.
-	if ( 'list' === strtolower( $type ) ) {
+	/*
+	 * A group which wraps the whole expression, such as `(int|string)`, holds a
+	 * nested expression. The parentheses have to be scanned to tell that group
+	 * apart from an expression which merely starts and ends with one, such as
+	 * `(int)foo(string)`.
+	 */
+	if ( '(' === $type[0] && ')' === $type[ $length - 1 ] ) {
+		$depth = 0;
+		for ( $i = 0; $i < $length; $i++ ) {
+			if ( '(' === $type[ $i ] ) {
+				++$depth;
+			} elseif ( ')' === $type[ $i ] ) {
+				--$depth;
+				if ( 0 === $depth ) {
+					break;
+				}
+			}
+		}
+
+		if ( 0 === $depth && $length - 1 === $i ) {
+			return '(' . expand_docblock_type_expression( substr( $type, 1, -1 ), $context ) . ')';
+		}
+	}
+
+	// A class constant is a keyword when the class name in front of it is one.
+	$name = strstr( $type, '::', true );
+	if ( false === $name ) {
+		$name = $type;
+	}
+
+	if ( ! is_docblock_type_identifier( $type ) || is_docblock_type_keyword( $name ) ) {
 		return $type;
 	}
 
@@ -341,7 +539,13 @@ function expand_docblock_type_expression( $type, ?Context $context ) {
  * @return string[]
  */
 function export_docblock_types( $tag, ?Context $context ) {
-	// Method tags have a distinct content grammar which may begin with `static`.
+	/*
+	 * Method tags have a distinct content grammar which may begin with `static`.
+	 * They are also left alone because the legacy dependency matches their
+	 * return type with `[\w|_\\]+`, which can't match `<` at all: a generic type
+	 * in an `@method` tag is already lost by the time the tag reaches here, so
+	 * there is nothing left for this function to recover.
+	 */
 	if ( $tag instanceof MethodTag ) {
 		return $tag->getTypes();
 	}
@@ -351,7 +555,7 @@ function export_docblock_types( $tag, ?Context $context ) {
 		return $tag->getTypes();
 	}
 
-	$content_parts = preg_split( '/\s+/', $content, 2 );
+	$content_parts = split_docblock_tag_content( $content );
 	$type          = $content_parts[0];
 	if ( '' === $type || '$' === $type[0] || '...$' === substr( $type, 0, 4 ) ) {
 		return $tag->getTypes();
@@ -690,6 +894,41 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 				}
 			}
 		}
+
+		/*
+		 * The legacy dependency splits the type off of a tag's content at the
+		 * first whitespace, so a type expression which contains whitespace, such
+		 * as `array<int, string>`, also swallows the variable name and the start
+		 * of the description. Only in that case are both re-derived here from
+		 * the bracket-aware split; otherwise the parsed values are left alone.
+		 */
+		if ( method_exists( $tag, 'getTypes' ) && ! $tag instanceof MethodTag ) {
+			list( $type, $remainder ) = split_docblock_tag_content( trim( $tag->getContent() ) );
+
+			if ( 1 === preg_match( '/\s/Su', $type ) ) {
+				if ( isset( $tag_data['variable'] ) ) {
+					$remainder_parts = preg_split( '/\s+/Su', ltrim( $remainder ), 2 );
+					$variable        = isset( $remainder_parts[0] ) ? $remainder_parts[0] : '';
+
+					// A variadic parameter is named without its ellipsis.
+					if ( '...$' === substr( $variable, 0, 4 ) ) {
+						$variable = substr( $variable, 3 );
+					}
+
+					if ( '' !== $variable && '$' === $variable[0] ) {
+						$tag_data['variable'] = $variable;
+						$remainder            = isset( $remainder_parts[1] ) ? $remainder_parts[1] : '';
+					}
+				}
+
+				$tag_data['content'] = preg_replace(
+					'/[\n\r]+/',
+					' ',
+					format_description( trim( $remainder ) )
+				);
+			}
+		}
+
 		$output['tags'][] = $tag_data;
 	}
 
