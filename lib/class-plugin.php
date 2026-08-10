@@ -238,11 +238,68 @@ class Plugin {
 			'stripslashes_deep',
 		);
 
+		/*
+		 * These filters are written for prose, and a type expression isn't
+		 * prose: a fully qualified class name is all namespace separators,
+		 * which `stripslashes_deep()` eats, and a generic type is wrapped in
+		 * what `wp_filter_kses()` reads as an HTML tag and throws away.
+		 */
+		if ( is_string( $value ) && $this->is_type_expression_safe( $value ) ) {
+			return $value;
+		}
+
 		foreach ( $filters as $filter ) {
 			$value = call_user_func( $filter, $value );
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Reports whether a value is a type expression which is safe to display as written.
+	 *
+	 * @param string $value Value to check.
+	 *
+	 * @return bool
+	 */
+	protected function is_type_expression_safe( $value ) {
+
+		/*
+		 * Only the characters a DocBlock type expression is written with are
+		 * allowed, and whitespace is only allowed where a type expression
+		 * breaks, which is directly after one of its delimiters. That leaves
+		 * out `/` and `=` entirely, so neither a closing tag nor an attribute
+		 * can be written at all, which is what every markup injection needs.
+		 */
+		if ( 1 !== preg_match( '~^(?:[A-Za-z0-9_\\\\|&,\'"()\[\]{}<>?:.$-]|(?<=[,:|&])\s)*+$~', $value ) ) {
+			return false;
+		}
+
+		/*
+		 * A `<` which is never closed reads as a start tag which swallows
+		 * everything after it up to the next `>`, wherever that turns out to
+		 * be. It also isn't a type expression, so there is nothing to preserve.
+		 */
+		$scan = scan_docblock_type_syntax( $value );
+		if ( ! $scan['balanced'] ) {
+			return false;
+		}
+
+		/*
+		 * An element whose content isn't parsed as markup can execute or
+		 * swallow everything after it even with no attributes and no closing
+		 * tag, so a type which reads as one of those is never displayed as
+		 * written. A class actually named `Script` is the price of that.
+		 *
+		 * `object` and `embed` are deliberately not on this list: `array<object>`
+		 * is an everyday type, and an attribute-less `<object>` or `<embed>` has
+		 * nothing to load, since the `=` and `/` their exploits need are already
+		 * rejected above.
+		 */
+		return 1 !== preg_match(
+			'~<\s*(?:script|style|iframe|xmp|textarea|title|svg|math|template)\b~i',
+			$value
+		);
 	}
 
 	/**
@@ -252,12 +309,37 @@ class Plugin {
 	 * A union nested inside brackets, as in `list<string|\WP_Post>`, is part of a
 	 * single type and is left untouched.
 	 *
-	 * @param string $type Variable type
+	 * @param string|string[] $type Variable type, or the list of a tag's types.
 	 *
-	 * @return string
+	 * @return string|string[]
 	 */
 	public function humanize_separator( $type ) {
+
+		/*
+		 * The `wp_parser_return_type` filter is passed the whole list of a
+		 * return tag's types rather than a single type expression, so every
+		 * one of them is humanized on its own.
+		 */
+		if ( is_array( $type ) ) {
+			return array_map( array( $this, 'humanize_separator' ), $type );
+		}
+
+		if ( ! is_string( $type ) ) {
+			return $type;
+		}
+
 		$separator = '<span class="wp-parser-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>';
+		$scan      = scan_docblock_type_syntax( $type );
+
+		/*
+		 * A bracket which is never closed isn't a type expression, so there is
+		 * no telling which separator is nested inside a single type and which
+		 * one separates two of them. Every separator is replaced in that case,
+		 * which is what this did before it knew about brackets at all.
+		 */
+		if ( ! $scan['balanced'] ) {
+			return str_replace( '|', $separator, $type );
+		}
 
 		return implode( $separator, split_docblock_type_expression( $type, '|' ) );
 	}
