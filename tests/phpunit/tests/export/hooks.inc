@@ -10,3 +10,9 @@ do_action( '\xC0 hook' );
 do_action( "\x09tab" );
 do_action( '\x09tab' );
 do_action( "\xC0 bad" );
+apply_filters( 'heredoc_filter', <<<EOT
+heredoc body
+EOT, 2 );
+apply_filters( 'nowdoc_filter', <<<'EOT'
+nowdoc $body
+EOT, 2 );

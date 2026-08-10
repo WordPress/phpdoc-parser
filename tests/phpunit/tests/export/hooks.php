@@ -70,6 +70,32 @@ class Export_Hooks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that heredoc and nowdoc arguments keep their delimiters.
+	 */
+	public function test_hook_arguments_keep_doc_string_delimiters() {
+
+		$this->assertFileContainsHook(
+			array(
+				'type' => 'filter',
+				'name' => 'heredoc_filter',
+				'line' => 13,
+				'arguments.0' => "<<<EOT\nheredoc body\nEOT",
+				'arguments.1' => '2',
+			)
+		);
+
+		$this->assertFileContainsHook(
+			array(
+				'type' => 'filter',
+				'name' => 'nowdoc_filter',
+				'line' => 16,
+				'arguments.0' => "<<<'EOT'\nnowdoc \$body\nEOT",
+				'arguments.1' => '2',
+			)
+		);
+	}
+
+	/**
 	 * Test that the exported data can be encoded as JSON.
 	 */
 	public function test_export_data_is_json_encodable() {
