@@ -16,3 +16,5 @@ EOT, 2 );
 apply_filters( 'nowdoc_filter', <<<'EOT'
 nowdoc $body
 EOT, 2 );
+do_action( "it's" );
+do_action( 'it\'s' );

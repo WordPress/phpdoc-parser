@@ -32,8 +32,10 @@ class Hook_Reflector extends BaseReflector {
 		$matches = array();
 
 		// quotes on both ends of a string
-		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $matches ) ) {
-			return $matches[1];
+		// The quoted body may contain the other quote character, as in "it's",
+		// or an escaped copy of the quote that delimits it, as in 'it\'s'.
+		if ( preg_match( '/^([\'"])((?:(?!\1)[^\\\\]|\\\\.)*)\1$/s', $name, $matches ) ) {
+			return $matches[2];
 		}
 
 		// two concatenated things, last one of them a variable
