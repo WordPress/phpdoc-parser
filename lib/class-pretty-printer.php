@@ -13,6 +13,13 @@ class Pretty_Printer extends \phpDocumentor\Reflection\PrettyPrinter {
 	 * leading namespace separator is useful in an AST, but adding it to exported
 	 * source expressions changes the established JSON output.
 	 *
+	 * Single-segment fully-qualified names are therefore printed without the
+	 * leading backslash. Inside a namespaced file the printed form denotes a
+	 * namespaced symbol rather than the global one, for example `\Foo::BAR` is
+	 * printed as `Foo::BAR`, which in a namespaced file would resolve to
+	 * `Vendor\Foo::BAR`. This is an accepted limitation because the parser
+	 * targets global-namespace WordPress core code.
+	 *
 	 * @param \PhpParser\Node\Name\FullyQualified $node Fully-qualified name.
 	 *
 	 * @return string Printed name.
