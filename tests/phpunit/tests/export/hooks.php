@@ -96,6 +96,21 @@ class Export_Hooks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that hook names containing a quote character lose the quotes that
+	 * surround them in the source.
+	 */
+	public function test_hook_names_containing_quotes() {
+
+		$this->assertFileContainsHook(
+			array( 'name' => "it's", 'line' => 19 )
+		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => "it\\'s", 'line' => 20 )
+		);
+	}
+
+	/**
 	 * Test that the exported data can be encoded as JSON.
 	 */
 	public function test_export_data_is_json_encodable() {
