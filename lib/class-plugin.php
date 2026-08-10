@@ -309,9 +309,15 @@ class Plugin {
 	 * A union nested inside brackets, as in `list<string|\WP_Post>`, is part of a
 	 * single type and is left untouched.
 	 *
+	 * This is the point at which a type expression becomes markup, so everything
+	 * in it but the separator this adds is escaped: the angle brackets of a
+	 * generic type read as a start tag otherwise, and a browser swallows the type
+	 * along with them. Escaping here rather than where the type is printed keeps
+	 * the separator markup intact, since it's added after the escaping.
+	 *
 	 * @param string|string[] $type Variable type, or the list of a tag's types.
 	 *
-	 * @return string|string[]
+	 * @return string|string[] The type as display-ready HTML.
 	 */
 	public function humanize_separator( $type ) {
 
@@ -335,12 +341,17 @@ class Plugin {
 		 * A bracket which is never closed isn't a type expression, so there is
 		 * no telling which separator is nested inside a single type and which
 		 * one separates two of them. Every separator is replaced in that case,
-		 * which is what this did before it knew about brackets at all.
+		 * which is what this did before it knew about brackets at all. The
+		 * escaped expression can't contain a bracket for a separator to hide
+		 * inside of, so replacing them all is safe here.
 		 */
 		if ( ! $scan['balanced'] ) {
-			return str_replace( '|', $separator, $type );
+			return str_replace( '|', $separator, esc_html( $type ) );
 		}
 
-		return implode( $separator, split_docblock_type_expression( $type, '|' ) );
+		return implode(
+			$separator
+			, array_map( 'esc_html', split_docblock_type_expression( $type, '|' ) )
+		);
 	}
 }
