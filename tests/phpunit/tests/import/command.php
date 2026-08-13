@@ -133,7 +133,7 @@ class Command_Import_Test extends WP_UnitTestCase {
 		return $file;
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		foreach ( $this->files as $file ) {
 			unlink( $file );
 		}

@@ -80,15 +80,21 @@ class File_Reflector extends FileReflector {
 	public function beforeTraverse( array $nodes ) {
 		$source_docblock = null;
 		$docblock        = null;
+		$docblock_node   = null;
+		$docblock_key    = null;
+		$comments        = array();
 
 		foreach ( $nodes as $node ) {
 			if ( $node instanceof \PhpParser\Node\Stmt\InlineHTML ) {
 				continue;
 			}
 
-			foreach ( (array) $node->getAttribute( 'comments' ) as $comment ) {
+			$comments = (array) $node->getAttribute( 'comments' );
+			foreach ( $comments as $key => $comment ) {
 				if ( $comment instanceof \PhpParser\Comment\Doc ) {
 					$docblock        = $comment;
+					$docblock_node   = $node;
+					$docblock_key    = $key;
 					$source_docblock = (string) $comment;
 					break;
 				}
@@ -99,22 +105,27 @@ class File_Reflector extends FileReflector {
 		if ( null !== $source_docblock && false !== strpos( $source_docblock, '```' ) ) {
 			$sanitized_docblock = sanitize_docblock_fenced_contents( $source_docblock );
 			if ( $sanitized_docblock !== $source_docblock ) {
-				$docblock->setText( $sanitized_docblock );
+				$comments[ $docblock_key ] = new \PhpParser\Comment\Doc(
+					$sanitized_docblock,
+					$docblock->getStartLine(),
+					$docblock->getStartFilePos(),
+					$docblock->getStartTokenPos(),
+					$docblock->getEndLine(),
+					$docblock->getEndFilePos(),
+					$docblock->getEndTokenPos()
+				);
+				$docblock_node->setAttribute( 'comments', $comments );
 				$this->docblock_was_sanitized = true;
 			}
 		}
 
 		try {
 			$nodes = parent::beforeTraverse( $nodes );
-		} catch ( \Exception $exception ) {
-			if ( null !== $source_docblock ) {
-				$docblock->setText( $source_docblock );
+		} finally {
+			if ( $this->docblock_was_sanitized ) {
+				$comments[ $docblock_key ] = $docblock;
+				$docblock_node->setAttribute( 'comments', $comments );
 			}
-			throw $exception;
-		}
-
-		if ( null !== $source_docblock ) {
-			$docblock->setText( $source_docblock );
 		}
 
 		return $nodes;

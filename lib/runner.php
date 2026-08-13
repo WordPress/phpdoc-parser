@@ -250,6 +250,8 @@ function fix_newlines( $text ) {
  */
 function export_docblock( $element, array $inherited_setup_blueprints = array(), $source_file = '' ) {
 	$node_docblock          = null;
+	$node_docblock_key      = null;
+	$node_comments          = array();
 	$node_source_docblock   = null;
 	$docblock_was_sanitized = $element instanceof File_Reflector && $element->wasDocBlockSanitized();
 	if ( ! ( $element instanceof File_Reflector ) && method_exists( $element, 'getNode' ) ) {
@@ -257,6 +259,8 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		if ( $node && method_exists( $node, 'getDocComment' ) ) {
 			$node_docblock = $node->getDocComment();
 			if ( $node_docblock ) {
+				$node_comments        = (array) $node->getAttribute( 'comments' );
+				$node_docblock_key    = array_search( $node_docblock, $node_comments, true );
 				$node_source_docblock = (string) $node_docblock;
 			}
 		}
@@ -277,9 +281,22 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		 */
 		$sanitized_docblock = sanitize_docblock_fenced_contents( $node_source_docblock );
 		if ( $sanitized_docblock !== $node_source_docblock ) {
-			$node_docblock->setText( $sanitized_docblock );
-			$docblock = $element->getDocBlock();
-			$node_docblock->setText( $node_source_docblock );
+			$node_comments[ $node_docblock_key ] = new \PhpParser\Comment\Doc(
+				$sanitized_docblock,
+				$node_docblock->getStartLine(),
+				$node_docblock->getStartFilePos(),
+				$node_docblock->getStartTokenPos(),
+				$node_docblock->getEndLine(),
+				$node_docblock->getEndFilePos(),
+				$node_docblock->getEndTokenPos()
+			);
+			$node->setAttribute( 'comments', $node_comments );
+			try {
+				$docblock = $element->getDocBlock();
+			} finally {
+				$node_comments[ $node_docblock_key ] = $node_docblock;
+				$node->setAttribute( 'comments', $node_comments );
+			}
 			$docblock_was_sanitized = (bool) $docblock;
 		}
 	}
