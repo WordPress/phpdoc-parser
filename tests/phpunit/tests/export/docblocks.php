@@ -112,7 +112,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\n" .
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\n" .
 						"@unlink( '/tmp/phpdoc-parser-file-review' );\n" .
 						"@! file_exists( '/tmp/phpdoc-parser-file-review' );\n" .
 						"echo 'file fence';",
@@ -134,7 +134,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\n\necho 'fence first';",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\n\necho 'fence first';",
 					'blueprint' => 'shared',
 				),
 			),
@@ -142,7 +142,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		);
 
 		$this->assertSame(
-			"<?php\n// This source line ends in a period.\necho 'period split';",
+			"<?php\nrequire '/wordpress/wp-load.php';\n// This source line ends in a period.\necho 'period split';",
 			$file['functions'][1]['doc']['code_snippets'][0]['code']
 		);
 		$this->assertSame(
@@ -154,7 +154,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\n" .
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\n" .
 						"@_before( 'not parsed before a letter-named tag' );\n" .
 						"@unlink( '/tmp/phpdoc-parser-review' );\n" .
 						"@! file_exists( '/tmp/phpdoc-parser-review' );\n" .
@@ -362,22 +362,22 @@ class Export_Docblocks extends Export_UnitTestCase {
 		return array(
 			'smaller runs stay inside a larger fence' => array(
 				"````php interactive\n<?php\n```\necho 'inside';\n```\n````\n````expected-output\nouter\n````",
-				"<?php\n```\necho 'inside';\n```",
+				"<?php\nrequire '/wordpress/wp-load.php';\n```\necho 'inside';\n```",
 				'outer',
 			),
 			'different runs and text do not close a fence' => array(
 				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```\n```expected-output\nexact\n```",
-				"<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
+				"<?php\nrequire '/wordpress/wp-load.php';\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
 				'exact',
 			),
 			'arbitrary indentation is removed from content' => array(
 				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```\n    ```expected-output\n    indented\n```",
-				"<?php\n  echo 'indented';",
+				"<?php\nrequire '/wordpress/wp-load.php';\n  echo 'indented';",
 				'indented',
 			),
 			'three leading spaces are accepted' => array(
 				"   ```php interactive\n<?php echo 'three';\n```\n```expected-output\nthree\n   ```",
-				"<?php echo 'three';",
+				"<?php\nrequire '/wordpress/wp-load.php';\necho 'three';",
 				'three',
 			),
 		);
@@ -489,7 +489,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'No metadata';",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho 'No metadata';",
 				),
 			),
 			\WP_Parser\export_docblock_code_snippets(
@@ -497,7 +497,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 					"\n",
 					array(
 						'```php interactive',
-						'<?php',
 						'echo \'No metadata\';',
 						'```',
 						'',
@@ -507,6 +506,33 @@ class Export_Docblocks extends Export_UnitTestCase {
 					)
 				)
 			)
+		);
+	}
+
+	/**
+	 * Test that interactive snippets receive a complete WordPress PHP preamble.
+	 */
+	public function test_code_snippet_includes_wordpress_preamble() {
+
+		$preamble = "<?php\nrequire '/wordpress/wp-load.php';";
+
+		$this->assertSame(
+			$preamble . "\necho 'body only';",
+			\WP_Parser\export_docblock_code_snippets(
+				"```php interactive\necho 'body only';\n```"
+			)[0]['code']
+		);
+		$this->assertSame(
+			$preamble . "\necho 'opening tag';",
+			\WP_Parser\export_docblock_code_snippets(
+				"```php interactive\n<?php\necho 'opening tag';\n```"
+			)[0]['code']
+		);
+		$this->assertSame(
+			$preamble . "\necho 'complete preamble';",
+			\WP_Parser\export_docblock_code_snippets(
+				"```php interactive\n" . $preamble . "\necho 'complete preamble';\n```"
+			)[0]['code']
 		);
 	}
 
@@ -608,11 +634,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho step_one();",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho step_one();",
 				),
 				array(
 					'type'            => 'php-code-snippet',
-					'code'            => "<?php\necho step_two();",
+					'code'            => "<?php\nrequire '/wordpress/wp-load.php';\necho step_two();",
 					'expected_output' => 'done',
 				),
 			),
@@ -779,7 +805,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho docs_case_fixture();",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho docs_case_fixture();",
 				),
 			),
 			\WP_Parser\export_docblock_code_snippets(
@@ -790,7 +816,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'{"steps":[]}',
 						'```',
 						'```php interactive',
-						'<?php',
 						'echo docs_case_fixture();',
 						'```',
 						'```expected-output copied from a run',
@@ -1066,12 +1091,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'First';",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho 'First';",
 					'expected_output' => 'First',
 				),
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'Second';",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho 'Second';",
 					'blueprint' => array(
 						'steps' => array(
 							array(
@@ -1088,7 +1113,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 					"\n",
 					array(
 						'```php interactive',
-						'<?php',
 						'echo \'First\';',
 						'```',
 						'```expected-output',
@@ -1098,7 +1122,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'{"steps":[{"step":"writeFile","path":"/tmp/second.php","data":"<?php echo \"second setup\";"}]}',
 						'```',
 						'```php interactive',
-						'<?php',
 						'echo \'Second\';',
 						'```',
 					)
@@ -1188,18 +1211,18 @@ class Export_Docblocks extends Export_UnitTestCase {
 			array(
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"first\";",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho \"first\";",
 					'expected_output' => 'first',
 					'blueprint' => 'shared',
 				),
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"no leaked inline blueprint\";",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho \"no leaked inline blueprint\";",
 					'expected_output' => 'no leaked inline blueprint',
 				),
 				array(
 					'type' => 'php-code-snippet',
-					'code' => "<?php\necho \"third\";",
+					'code' => "<?php\nrequire '/wordpress/wp-load.php';\necho \"third\";",
 					'blueprint' => 'shared',
 				),
 			),
@@ -1221,7 +1244,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'code_snippets' => array(
 					array(
 						'type' => 'php-code-snippet',
-						'code' => "<?php\n// This property snippet line ends in a period.\n@unlink( '/tmp/phpdoc-parser-property' );\nrequire '/wordpress/wp-load.php';\necho docs_file_greeting();",
+						'code' => "<?php\nrequire '/wordpress/wp-load.php';\n// This property snippet line ends in a period.\n@unlink( '/tmp/phpdoc-parser-property' );\necho docs_file_greeting();",
 						'expected_output' => 'Hello from the file setup',
 						'blueprint' => 'file-greeting',
 					),

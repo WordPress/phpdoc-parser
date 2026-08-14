@@ -994,7 +994,7 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 
 		$snippet = array(
 			'type' => 'php-code-snippet',
-			'code' => $fences[ $i ]['code'],
+			'code' => add_docblock_php_snippet_preamble( $fences[ $i ]['code'] ),
 		);
 
 		if ( null !== $fences[ $i ]['referenced_setup'] ) {
@@ -1083,6 +1083,33 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	}
 
 	return $snippets;
+}
+
+/**
+ * Adds the WordPress bootstrap preamble to an interactive PHP snippet.
+ *
+ * Interactive snippets run in a standalone PHP process, so they need to load
+ * WordPress before executing the example. Authors may omit the boilerplate from
+ * the fenced code. Existing snippets that include the PHP opening tag or the
+ * complete preamble are normalized without duplicating either line.
+ *
+ * @param string $code Snippet code extracted from a DocBlock fence.
+ *
+ * @return string Complete runnable PHP code.
+ */
+function add_docblock_php_snippet_preamble( $code ) {
+	$preamble = "<?php\nrequire '/wordpress/wp-load.php';";
+
+	if ( 0 === strpos( $code, $preamble ) ) {
+		return $code;
+	}
+
+	if ( 0 === strpos( $code, '<?php' ) ) {
+		$code = substr( $code, strlen( '<?php' ) );
+		$code = preg_replace( '/^[ \t]*\n?/', '', $code, 1 );
+	}
+
+	return $preamble . ( '' === $code ? '' : "\n" . $code );
 }
 
 /**
