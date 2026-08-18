@@ -7,7 +7,8 @@
 namespace WP_Parser\Tests;
 
 /**
- * Test that synthetic global namespace prefixes are removed from metadata.
+ * Test that synthetic global namespace prefixes are removed from resolved
+ * metadata while documentation text is exported as authored.
  */
 class Export_Global_Names extends Export_UnitTestCase {
 
@@ -42,15 +43,43 @@ class Export_Global_Names extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that prefixes are removed from inline references in prose.
+	 * Test that inline references in prose are preserved as authored.
 	 */
 	public function test_prefixed_inline_reference_metadata() {
 		$function = $this->export_data['functions'][1];
 
 		$this->assertStringContainsString(
-			'{@see Global_Doc_Function()}',
+			'{@see \\Global_Doc_Function()}',
 			$function['doc']['long_description']
 		);
+	}
+
+	/**
+	 * Test that see tag references are preserved as authored.
+	 */
+	public function test_see_tag_reference_metadata() {
+		$tags = $this->export_data['functions'][1]['doc']['tags'];
+
+		$this->assertSame( '\\Global_See_Target()', $tags[0]['refers'] );
+		$this->assertSame( 'Global_See_Plain()', $tags[1]['refers'] );
+	}
+
+	/**
+	 * Test that link tag targets are preserved as authored.
+	 */
+	public function test_link_tag_metadata() {
+		$tags = $this->export_data['functions'][1]['doc']['tags'];
+
+		$this->assertSame( 'https://example.com/reference', $tags[2]['link'] );
+	}
+
+	/**
+	 * Test that prefixes synthesized by type resolution stay stripped.
+	 */
+	public function test_prefixed_tag_type_metadata() {
+		$tags = $this->export_data['functions'][1]['doc']['tags'];
+
+		$this->assertEquals( array( 'Global_Prefixed_Type' ), $tags[3]['types'] );
 	}
 
 	/**
