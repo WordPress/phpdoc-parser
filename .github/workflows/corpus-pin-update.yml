@@ -1,0 +1,169 @@
+# Keeps `WP_CORPUS_TAG` in corpus-diff.yml pinned to the current WordPress
+# stable. Dependabot cannot track WordPress core releases, so this does it:
+# weekly, ask api.wordpress.org for the latest stable, and open a PR that
+# rewrites the one pin line when it has moved.
+#
+# Why a bump PR is cheap to review, deliberately: it changes only the corpus
+# input, never the parser. Its own corpus-diff run therefore parses the new
+# corpus with an identical parser on both sides — 0 hunks by construction.
+# Reviewing a bump PR is checking that the corpus guards (file count, export
+# size) still pass on the new tag. A non-zero diff on one of these PRs would
+# mean corpus-diff is not comparing what it claims to.
+#
+# Dependency, and the likely failure: creating the PR needs "Allow GitHub
+# Actions to create and approve pull requests" (Settings -> Actions -> General
+# -> Workflow permissions). Many organizations disable it. If it is off, the
+# "Open the bump PR" step fails loudly with that setting named; enable it, or
+# give the step a PAT as GH_TOKEN. The failure is never swallowed: a silent
+# no-op would leave the corpus quietly rotting on an old tag.
+
+name: Corpus Pin Update
+
+on:
+  schedule:
+    # Weekly, Mondays. Off the hour to dodge the top-of-hour scheduling queue.
+    - cron: "43 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: corpus-pin-update
+  cancel-in-progress: false
+
+jobs:
+  corpus-pin-update:
+    name: Bump the pinned WordPress corpus
+    # Forks inherit schedules; only the canonical repo should open these PRs.
+    if: github.repository == 'WordPress/phpdoc-parser'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    env:
+      WORKFLOW_FILE: .github/workflows/corpus-diff.yml
+      # Canonical, and authoritative about what "stable" means: it excludes
+      # betas and RCs, which a raw tag listing of WordPress/WordPress does not.
+      VERSION_CHECK_API: https://api.wordpress.org/core/version-check/1.7/
+      CORPUS_MIRROR: https://github.com/WordPress/WordPress.git
+      LC_ALL: C
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve the latest WordPress stable
+        id: resolve
+        run: |
+          set -euo pipefail
+          latest="$(curl -sSfL --retry 3 --retry-delay 5 "${VERSION_CHECK_API}" | jq -r '.offers[0].current // ""')"
+          # An API hiccup must not become a garbage commit.
+          if ! printf '%s' "${latest}" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "::error::${VERSION_CHECK_API} did not yield a usable version (got: '${latest}')."
+            exit 1
+          fi
+          echo "Latest WordPress stable: ${latest}"
+          echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Compare against the pinned tag
+        id: pin
+        env:
+          LATEST: ${{ steps.resolve.outputs.latest }}
+        run: |
+          set -euo pipefail
+          current="$(sed -n 's/^ *WP_CORPUS_TAG: *"\([^"]*\)".*/\1/p' "${WORKFLOW_FILE}")"
+          if ! printf '%s' "${current}" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "::error::Could not read a single WP_CORPUS_TAG version out of ${WORKFLOW_FILE} (got: '${current}')."
+            exit 1
+          fi
+          echo "Pinned corpus tag: ${current}"
+
+          # Three reasons not to bump, in order: nothing moved; the pin is
+          # ahead of the published stable, which is deliberate (someone pinned
+          # a prerelease) and must not be quietly walked back; or the
+          # WordPress/WordPress mirror corpus-diff downloads from has not
+          # tagged the release yet, in which case the next run picks it up
+          # rather than this one opening a PR whose corpus cannot be built.
+          bump=false
+          if [ "${current}" = "${LATEST}" ]; then
+            echo "Already pinned to the latest stable; nothing to do."
+          elif [ "$(printf '%s\n%s\n' "${current}" "${LATEST}" | sort -V | tail -n 1)" != "${LATEST}" ]; then
+            echo "Pinned ${current} is newer than the published stable ${LATEST}; leaving it alone."
+          elif ! git ls-remote --exit-code --tags "${CORPUS_MIRROR}" "refs/tags/${LATEST}" > /dev/null; then
+            echo "${CORPUS_MIRROR} has no ${LATEST} tag yet; will retry on the next run."
+          else
+            echo "Bumping the corpus pin from ${current} to ${LATEST}."
+            bump=true
+          fi
+
+          {
+            echo "bump=${bump}"
+            echo "current=${current}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Rewrite the pin
+        if: steps.pin.outputs.bump == 'true'
+        env:
+          LATEST: ${{ steps.resolve.outputs.latest }}
+        run: |
+          set -euo pipefail
+          sed "s/^\( *WP_CORPUS_TAG: *\).*/\1\"${LATEST}\"/" "${WORKFLOW_FILE}" > "${WORKFLOW_FILE}.tmp"
+          mv "${WORKFLOW_FILE}.tmp" "${WORKFLOW_FILE}"
+
+          # The rewrite must be exactly the pin line and nothing else.
+          check="$(sed -n 's/^ *WP_CORPUS_TAG: *"\([^"]*\)".*/\1/p' "${WORKFLOW_FILE}")"
+          added="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $1}')"
+          removed="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $2}')"
+          if [ "${check}" != "${LATEST}" ] || [ "${added}" != "1" ] || [ "${removed}" != "1" ]; then
+            echo "::error::Pin rewrite did not produce a single-line change to ${LATEST} (read back '${check}', +${added:-0}/-${removed:-0})."
+            git --no-pager diff -- "${WORKFLOW_FILE}"
+            exit 1
+          fi
+          git --no-pager diff -- "${WORKFLOW_FILE}"
+
+      - name: Open the bump PR
+        if: steps.pin.outputs.bump == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          CURRENT: ${{ steps.pin.outputs.current }}
+          LATEST: ${{ steps.resolve.outputs.latest }}
+        run: |
+          set -euo pipefail
+          branch="bump-corpus-pin-${LATEST}"
+
+          # Idempotent: any prior PR for this version, open or closed, means the
+          # bump has already been proposed and possibly declined. Leave it be.
+          existing="$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${branch}" --state all --json url --jq '.[0].url // ""')"
+          if [ -n "${existing}" ]; then
+            echo "A bump PR for ${LATEST} already exists: ${existing}"
+            exit 0
+          fi
+
+          title="Bump the pinned WordPress corpus to ${LATEST}"
+          cat > pr-body.md <<BODY
+          \`WP_CORPUS_TAG\` in \`${WORKFLOW_FILE}\` moves from \`${CURRENT}\` to \`${LATEST}\`, the current WordPress stable per [the core version-check API](${VERSION_CHECK_API}).
+
+          This changes only the corpus input, never the parser, so the corpus-diff run on this PR parses the new corpus with an identical parser on both sides: **0 hunks by construction**. Reviewing this PR is checking that the corpus guards (file count, export size) still pass on the new tag. A non-zero diff here would mean corpus-diff is not comparing what it claims to.
+
+          Opened by \`.github/workflows/corpus-pin-update.yml\`.
+          BODY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git add -- "${WORKFLOW_FILE}"
+          git commit -m "${title}"
+          # Force is safe and wanted: no PR exists for this branch, so any
+          # branch of this name is debris from a run that pushed and then
+          # failed to open the PR. Overwriting it lets that run self-heal.
+          git push --force origin "HEAD:refs/heads/${branch}"
+
+          if ! url="$(gh pr create --repo "${GITHUB_REPOSITORY}" --base "${BASE_BRANCH}" --head "${branch}" --title "${title}" --body-file pr-body.md 2>&1)"; then
+            printf '%s\n' "${url}" >&2
+            echo "::error::Pushed ${branch} but could not open the PR. The usual cause is 'Allow GitHub Actions to create and approve pull requests' being disabled for this repository or organization (Settings -> Actions -> General -> Workflow permissions). Enable it, or supply a PAT with 'repo' scope as GH_TOKEN for this step, then re-run this workflow."
+            exit 1
+          fi
+
+          echo "Opened ${url}"
+          echo "Opened [${title}](${url})" >> "${GITHUB_STEP_SUMMARY}"
