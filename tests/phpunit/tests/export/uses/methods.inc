@@ -19,3 +19,5 @@ class My_Class extends Parent_Class {
 		parent::do_parental_stuff();
 	}
 }
+
+$wp_the_query->get( 'paged' );
