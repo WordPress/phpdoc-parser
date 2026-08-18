@@ -56,6 +56,15 @@ jobs:
           mv "WordPress-${WP_CORPUS_TAG}/wp-includes" corpus/wp-includes
           rm -rf wordpress.zip "WordPress-${WP_CORPUS_TAG}"
 
+      # An empty or miscached corpus would make both exports emit `[]` and the
+      # diff trivially empty — a green job that checked nothing. wp-includes
+      # has well over 500 PHP files on any supported tag.
+      - name: Verify corpus
+        run: |
+          count=$(find corpus/wp-includes -name '*.php' | wc -l)
+          echo "Corpus PHP files: ${count}"
+          [ "$count" -ge 500 ]
+
       - name: Check out merge base
         run: git worktree add base "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
 
@@ -65,11 +74,19 @@ jobs:
       - name: Install Composer dependencies (base)
         run: composer --working-dir=base install --no-interaction --no-security-blocking
 
+      # The size floor guards the same failure mode as Verify corpus: a real
+      # wp-includes export is tens of megabytes of JSON.
       - name: Export corpus (base)
-        run: php -d memory_limit=4G tools/export-corpus.php base corpus/wp-includes > base.json
+        run: |
+          php -d memory_limit=4G tools/export-corpus.php base corpus/wp-includes > base.json
+          ls -l base.json
+          [ "$(wc -c < base.json)" -ge 1000000 ]
 
       - name: Export corpus (head)
-        run: php -d memory_limit=4G tools/export-corpus.php . corpus/wp-includes > head.json
+        run: |
+          php -d memory_limit=4G tools/export-corpus.php . corpus/wp-includes > head.json
+          ls -l head.json
+          [ "$(wc -c < head.json)" -ge 1000000 ]
 
       - name: Normalize and diff
         run: |
