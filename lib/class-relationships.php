@@ -274,6 +274,10 @@ class Relationships {
 
 					// Convert slugs to IDs.
 					if ( empty( $this->slugs_to_ids[ $to_type ] ) ) { // TODO why might this be empty? test class-IXR.php
+						// No posts of this type exist; without a slug map the
+						// raw slug candidates must not reach the connection
+						// loop, where they would be coerced to post ID 1.
+						$this->relationships[ $from_type ][ $from_id ][ $to_type ] = array();
 						continue;
 					}
 
@@ -385,7 +389,7 @@ class Relationships {
 	 *                           namespace, and falling back to the global namespace.
 	 */
 	public function names_to_slugs( $name, $namespace = null ) {
-		$fully_qualified = ( 0 === strpos( '\\', $name ) );
+		$fully_qualified = ( 0 === strpos( $name, '\\' ) );
 		$name = ltrim( $name, '\\' );
 		$names = array();
 
@@ -426,7 +430,7 @@ class Relationships {
 				if ( array_key_exists( $slug, $slugs_to_ids ) ) {
 					$slugs_with_ids[ $slug ] = $slugs_to_ids[ $slug ];
 					// if we found it in this scope, stop searching the chain.
-					continue;
+					break;
 				}
 			}
 		}
