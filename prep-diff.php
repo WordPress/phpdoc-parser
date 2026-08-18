@@ -99,24 +99,10 @@ function wp_parser_prep_diff_normalize_scalar( $value, array $path, $key ) {
 		return $value;
 	}
 
-	if ( in_array( $key, array( 'content', 'description', 'long_description' ), true ) ) {
-		return preg_replace_callback(
-			'~{@(?:link|see)\s+([^}\s]+)~',
-			static function( $matches ) {
-				return str_replace(
-					$matches[1],
-					\WP_Parser\strip_global_namespace_prefix( $matches[1] ),
-					$matches[0]
-				);
-			},
-			$value
-		);
-	}
-
 	$parent_key = 1 < count( $path ) ? $path[ count( $path ) - 2 ] : null;
 	$normalize = in_array(
 		$key,
-		array( 'class', 'default', 'extends', 'link', 'refers', 'type', 'value' ),
+		array( 'class', 'default', 'extends', 'type', 'value' ),
 		true
 	);
 
