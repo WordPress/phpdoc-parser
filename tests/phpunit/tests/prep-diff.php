@@ -131,7 +131,7 @@ class Prep_Diff_Test extends \WP_UnitTestCase {
 							'name'      => 'beta',
 							'line'      => 98,
 							'doc'       => array(
-								'description'      => 'Calls {@see alpha()}; preserves \\xC0.',
+								'description'      => 'Calls {@see \\alpha()}; preserves \\xC0.',
 								'long_description' => '',
 								'tags'             => array(
 									array( 'name' => 'since', 'content' => '1.0.0' ),
@@ -216,10 +216,44 @@ class Prep_Diff_Test extends \WP_UnitTestCase {
 		$decoded = json_decode( $this->normalize( $this->get_json() ), true );
 
 		$this->assertSame(
-			'Calls {@see alpha()}; preserves \\xC0.',
+			'Calls {@see \\alpha()}; preserves \\xC0.',
 			$decoded[1]['functions'][0]['doc']['description']
 		);
 		$this->assertSame( '\\x09tab', $decoded[1]['functions'][0]['hooks'][0]['name'] );
+	}
+
+	/**
+	 * Test that documentation text passes through as authored.
+	 *
+	 * The exporter no longer rewrites documentation text, so a difference in
+	 * these fields is a real behavior change that the diff must show.
+	 *
+	 * @dataProvider data_documentation_text
+	 *
+	 * @param string $key   Key holding documentation text.
+	 * @param string $value Documentation text.
+	 */
+	public function test_documentation_text_passes_through( $key, $value ) {
+
+		$decoded = json_decode( $this->normalize( json_encode( array( $key => $value ) ) ), true );
+
+		$this->assertSame( $value, $decoded[ $key ] );
+	}
+
+	/**
+	 * Data provider for documentation text.
+	 *
+	 * @return array[] Key and documentation text.
+	 */
+	public function data_documentation_text() {
+
+		return array(
+			'inline reference in a description'      => array( 'description', 'Calls {@see \\alpha()}.' ),
+			'inline reference in a long description' => array( 'long_description', 'Calls {@link \\alpha()}.' ),
+			'inline reference in tag content'        => array( 'content', 'See {@see \\Widget::render()}.' ),
+			'see tag reference'                      => array( 'refers', '\\alpha()' ),
+			'link tag target'                        => array( 'link', '\\alpha()' ),
+		);
 	}
 
 	/**
