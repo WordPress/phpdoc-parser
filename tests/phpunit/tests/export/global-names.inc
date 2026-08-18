@@ -44,5 +44,10 @@ class Global_Defaults {
  * // Renders {@see \Global_Widget::render()}.
  * $widget->render();
  * ```
+ *
+ * @see \Global_See_Target() Compares prefixed references.
+ * @see Global_See_Plain() Compares plain references.
+ * @link https://example.com/reference Explains the behavior.
+ * @param \Global_Prefixed_Type $ignored Unused.
  */
 function documented_inline_references() {}
