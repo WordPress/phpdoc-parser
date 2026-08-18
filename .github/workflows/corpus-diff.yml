@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      WP_CORPUS_TAG: "6.8"
+      WP_CORPUS_TAG: "7.0.4"
       LC_ALL: C
 
     steps:
