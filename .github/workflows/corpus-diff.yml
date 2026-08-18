@@ -1,0 +1,99 @@
+# Parses a pinned corpus of WordPress core source with the parser at the PR's
+# merge base and at its head, normalizes both JSON outputs with prep-diff.php,
+# and diffs them. Anything in the diff is a behavior change this PR makes:
+# every hunk must be either intended (and explained in the PR) or a regression.
+#
+# Policy decisions, deliberate:
+# - The corpus is pinned to one WordPress tag so diffs are reproducible.
+# - The head checkout's tools/export-corpus.php and prep-diff.php drive both
+#   sides, so tooling changes never masquerade as parser changes. When
+#   prep-diff.php itself changes, its effect on normalization shows up in the
+#   diff and is reviewed like any other change.
+# - Non-blocking: the job succeeds even when the diff is non-empty. The diff
+#   is published as an artifact and summarized. Make it blocking only after
+#   the signal has proven trustworthy.
+# - PHP 7.4, the supported floor, keeps parity with the oldest runtime.
+
+name: Corpus Diff
+
+on:
+  pull_request:
+
+jobs:
+  corpus-diff:
+    name: WordPress corpus regeneration diff
+    runs-on: ubuntu-latest
+
+    env:
+      WP_CORPUS_TAG: "6.8"
+      LC_ALL: C
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: "7.4"
+          coverage: none
+
+      - name: Cache corpus
+        id: cache-corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: wp-corpus-${{ env.WP_CORPUS_TAG }}
+
+      - name: Download corpus
+        if: steps.cache-corpus.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL -o wordpress.zip "https://github.com/WordPress/WordPress/archive/refs/tags/${WP_CORPUS_TAG}.zip"
+          unzip -q wordpress.zip "WordPress-${WP_CORPUS_TAG}/wp-includes/*"
+          mkdir -p corpus
+          mv "WordPress-${WP_CORPUS_TAG}/wp-includes" corpus/wp-includes
+          rm -rf wordpress.zip "WordPress-${WP_CORPUS_TAG}"
+
+      - name: Check out merge base
+        run: git worktree add base "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
+
+      - name: Install Composer dependencies (head)
+        run: composer install --no-interaction --no-security-blocking
+
+      - name: Install Composer dependencies (base)
+        run: composer --working-dir=base install --no-interaction --no-security-blocking
+
+      - name: Export corpus (base)
+        run: php -d memory_limit=4G tools/export-corpus.php base corpus/wp-includes > base.json
+
+      - name: Export corpus (head)
+        run: php -d memory_limit=4G tools/export-corpus.php . corpus/wp-includes > head.json
+
+      - name: Normalize and diff
+        run: |
+          php -d memory_limit=4G prep-diff.php < base.json > base.norm.json
+          php -d memory_limit=4G prep-diff.php < head.json > head.norm.json
+          # diff exits 1 on differences (expected) and 2 on trouble (fail).
+          diff -u --label base --label head base.norm.json head.norm.json > corpus.diff || [ $? -eq 1 ]
+          if [ -s corpus.diff ]; then
+            hunks=$(grep -c '^@@' corpus.diff)
+            lines=$(wc -l < corpus.diff)
+            {
+              echo "### Corpus diff: ${hunks} hunks, ${lines} lines"
+              echo
+              echo "The parser's output over wp-includes@${WP_CORPUS_TAG} changed."
+              echo "Review the \`corpus.diff\` artifact: every hunk must be intended and explained in the PR."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Corpus diff: 0 hunks (no behavior change)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus.diff
+          path: corpus.diff
+          if-no-files-found: ignore
