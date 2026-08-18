@@ -208,45 +208,6 @@ function export_expression( $expression ) {
 }
 
 /**
- * Remove synthetic global namespace prefixes from inline DocBlock references.
- *
- * A special exception is made for text appearing in `<code>` and `<pre>` tags, as code
- * samples are reproduced verbatim and any prefix appearing in them was written by hand.
- *
- * @param string $text Formatted DocBlock text.
- *
- * @return string
- */
-function strip_global_namespace_prefixes_from_inline_references( $text ) {
-	// Non-naturally occurring string to use as temporary replacement.
-	$replacement_string = '{{{{{}}}}}';
-
-	// Replace inline tag openings within 'code' and 'pre' tags with replacement string.
-	$text = preg_replace_callback(
-		"/(<code[^>]*>)(.+)(?=<\/code>)/sU",
-		function ( $matches ) use ( $replacement_string ) {
-			return str_replace( '{@', $replacement_string, $matches[1] . $matches[2] );
-		},
-		$text
-	);
-
-	$text = preg_replace_callback(
-		'~{@(?:link|see)\s+([^}\s]+)~',
-		static function( $matches ) {
-			return str_replace(
-				$matches[1],
-				strip_global_namespace_prefix( $matches[1] ),
-				$matches[0]
-			);
-		},
-		$text
-	);
-
-	// Restore inline tag openings into code blocks.
-	return str_replace( $replacement_string, '{@', $text );
-}
-
-/**
  * Fixes newline handling in parsed text.
  *
  * DocBlock lines, particularly for descriptions, generally adhere to a given character width. For sentences and
@@ -574,12 +535,8 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	}
 
 	$output = array(
-		'description'      => strip_global_namespace_prefixes_from_inline_references(
-			preg_replace( '/[\n\r]+/', ' ', $short_description )
-		),
-		'long_description' => strip_global_namespace_prefixes_from_inline_references(
-			format_long_description( strip_docblock_code_snippet_fences( $raw_long_description, $fences ) )
-		),
+		'description'      => preg_replace( '/[\n\r]+/', ' ', $short_description ),
+		'long_description' => format_long_description( strip_docblock_code_snippet_fences( $raw_long_description, $fences ) ),
 		'tags'             => array(),
 	);
 
@@ -599,21 +556,19 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => strip_global_namespace_prefixes_from_inline_references(
-				preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
-			),
+			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
 			$tag_data['types'] = strip_global_namespace_prefixes( $tag->getTypes() );
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
-			$tag_data['link'] = strip_global_namespace_prefix( $tag->getLink() );
+			$tag_data['link'] = $tag->getLink();
 		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$tag_data['variable'] = $tag->getVariableName();
 		}
 		if ( method_exists( $tag, 'getReference' ) ) {
-			$tag_data['refers'] = strip_global_namespace_prefix( $tag->getReference() );
+			$tag_data['refers'] = $tag->getReference();
 		}
 		if ( method_exists( $tag, 'getVersion' ) ) {
 			// Version string.
@@ -623,9 +578,7 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 			}
 			// Description string.
 			if ( method_exists( $tag, 'getDescription' ) ) {
-				$description = strip_global_namespace_prefixes_from_inline_references(
-					preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) )
-				);
+				$description = preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) );
 				if ( ! empty( $description ) ) {
 					$tag_data['description'] = $description;
 				}
