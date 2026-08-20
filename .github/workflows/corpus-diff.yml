@@ -1,7 +1,8 @@
-# Parses a pinned corpus of WordPress core source with the parser at the PR's
-# merge base and at its head, normalizes both JSON outputs with prep-diff.php,
-# and diffs them. Anything in the diff is a behavior change this PR makes:
-# every hunk must be either intended (and explained in the PR) or a regression.
+# Parses a pinned corpus of WordPress core source with the parser at the base
+# branch and with the PR merged into it, normalizes both JSON outputs with
+# prep-diff.php, and diffs them. Anything in the diff is a behavior change this
+# PR makes: every hunk must be either intended (and explained in the PR) or a
+# regression.
 #
 # Policy decisions, deliberate:
 # - The corpus is pinned to one WordPress tag so diffs are reproducible.
@@ -18,6 +19,11 @@ name: Corpus Diff
 
 on:
   pull_request:
+
+# A new push to the PR supersedes any run still in flight for it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   corpus-diff:
@@ -65,7 +71,12 @@ jobs:
           echo "Corpus PHP files: ${count}"
           [ "$count" -ge 500 ]
 
-      - name: Check out merge base
+      # On pull_request, HEAD is the PR merged into the base branch, so its
+      # merge base with the base branch is the base branch tip, not the commit
+      # the PR branched from. That is the intended comparison: base as it is
+      # now against base plus exactly this PR, with no hunks from other work
+      # that landed since the branch point.
+      - name: Check out base
         run: git worktree add base "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
 
       - name: Install Composer dependencies (head)

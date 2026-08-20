@@ -53,7 +53,7 @@ wp parser create /path/to/source/code --user=<id|login>
 
 ## Corpus diff
 
-Unit tests do not cover every shape of real-world documentation, so changes to the parser are also checked against a corpus of WordPress core source. The same corpus is parsed with the parser at two refs — the merge base of a pull request and its head — both JSON outputs are normalized with `prep-diff.php`, and the two are diffed. Everything in that diff is a behavior change the pull request makes: every hunk must be either intended and explained, or it is a regression.
+Unit tests do not cover every shape of real-world documentation, so changes to the parser are also checked against a corpus of WordPress core source. The same corpus is parsed with the parser at two refs — the base branch and the pull request merged into it — both JSON outputs are normalized with `prep-diff.php`, and the two are diffed. Everything in that diff is a behavior change the pull request makes: every hunk must be either intended and explained, or it is a regression.
 
 `.github/workflows/corpus-diff.yml` runs this on every pull request. The corpus is `wp-includes` from a pinned WordPress tag (`WP_CORPUS_TAG` in the workflow), so diffs are reproducible. The job is non-blocking: it uploads the diff as a `corpus.diff` artifact and reports the hunk count in the job summary. The head checkout's `tools/export-corpus.php` and `prep-diff.php` drive both sides, so tooling changes never masquerade as parser changes; when `prep-diff.php` itself changes, its effect on normalization shows up in the diff and is reviewed like any other change.
 
@@ -71,6 +71,8 @@ git worktree add base "$(git merge-base origin/master HEAD)"
 composer --working-dir=base install
 composer install
 ```
+
+On a branch this compares against the commit the branch left `master` at. CI runs on the pull request merged into `master`, so it compares against the `master` tip; merge `master` into the branch first to get the same comparison.
 
 Export both sides over the same corpus, normalize, and diff. `export-corpus.php` takes the parser root and the corpus directory, and writes JSON to stdout:
 

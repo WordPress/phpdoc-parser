@@ -38,11 +38,9 @@ if ( ! is_dir( $corpus_dir ) ) {
 
 require $parser_root . '/vendor/autoload.php';
 
+// get_wp_files() reports an unreadable subdirectory with a WP_Error, a class
+// that only exists inside WordPress: under plain PHP that path is a fatal
+// error with a non-zero exit, so there is no return value to check here.
 $files = \WP_Parser\get_wp_files( $corpus_dir );
-
-if ( ! is_array( $files ) ) {
-	fwrite( STDERR, 'Could not list the PHP files in ' . $corpus_dir . '.' . PHP_EOL );
-	exit( 1 );
-}
 
 echo json_encode( \WP_Parser\parse_files( $files, $corpus_dir ), JSON_PRETTY_PRINT ), PHP_EOL;
