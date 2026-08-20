@@ -13,7 +13,8 @@
 # - Non-blocking: the job succeeds even when the diff is non-empty. The diff
 #   is published as an artifact and summarized. Make it blocking only after
 #   the signal has proven trustworthy.
-# - PHP 7.4, the supported floor, keeps parity with the oldest runtime.
+# - PHP 8.4, the newest runtime in the unit-test matrix. Both sides run under
+#   the same binary, so the PHP version never shows up as a parser change.
 
 name: Corpus Diff
 
@@ -43,7 +44,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
-          php-version: "7.4"
+          php-version: "8.4"
           coverage: none
 
       - name: Cache corpus
