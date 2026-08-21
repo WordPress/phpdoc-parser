@@ -57,30 +57,35 @@ jobs:
           php-version: "8.4"
           coverage: none
 
+      # The key carries the corpus layout: bump the suffix when the download
+      # step changes what it keeps.
       - name: Cache corpus
         id: cache-corpus
         uses: actions/cache@v4
         with:
           path: corpus
-          key: wp-corpus-${{ env.WP_CORPUS_TAG }}
+          key: wp-corpus-${{ env.WP_CORPUS_TAG }}-php-all
 
+      # The whole release: wp-admin, wp-includes, the root files, and
+      # wp-content with the bundled themes and plugins. Only PHP files are
+      # kept; the parser reads nothing else.
       - name: Download corpus
         if: steps.cache-corpus.outputs.cache-hit != 'true'
         run: |
           curl -sSfL -o wordpress.zip "https://github.com/WordPress/WordPress/archive/refs/tags/${WP_CORPUS_TAG}.zip"
-          unzip -q wordpress.zip "WordPress-${WP_CORPUS_TAG}/wp-includes/*"
-          mkdir -p corpus
-          mv "WordPress-${WP_CORPUS_TAG}/wp-includes" corpus/wp-includes
-          rm -rf wordpress.zip "WordPress-${WP_CORPUS_TAG}"
+          unzip -q wordpress.zip
+          mv "WordPress-${WP_CORPUS_TAG}" corpus
+          find corpus -type f ! -name '*.php' -delete
+          rm wordpress.zip
 
       # An empty or miscached corpus would make both exports emit `[]` and the
-      # diff trivially empty — a green job that checked nothing. wp-includes
-      # has well over 500 PHP files on any supported tag.
+      # diff trivially empty, a green job that checked nothing. A release has
+      # well over 1500 PHP files on any supported tag.
       - name: Verify corpus
         run: |
-          count=$(find corpus/wp-includes -name '*.php' | wc -l)
+          count=$(find corpus -name '*.php' | wc -l)
           echo "Corpus PHP files: ${count}"
-          [ "$count" -ge 500 ]
+          [ "$count" -ge 1500 ]
 
       # On pull_request, HEAD is the PR merged into the base branch, so its
       # merge base with the base branch is the base branch tip, not the commit
@@ -97,16 +102,16 @@ jobs:
         run: composer --working-dir=base install --no-interaction --no-security-blocking
 
       # The size floor guards the same failure mode as Verify corpus: a real
-      # wp-includes export is tens of megabytes of JSON.
+      # export is tens of megabytes of JSON.
       - name: Export corpus (base)
         run: |
-          php -d memory_limit=4G tools/export-corpus.php base corpus/wp-includes > base.json
+          php -d memory_limit=4G tools/export-corpus.php base corpus > base.json
           ls -l base.json
           [ "$(wc -c < base.json)" -ge 1000000 ]
 
       - name: Export corpus (head)
         run: |
-          php -d memory_limit=4G tools/export-corpus.php . corpus/wp-includes > head.json
+          php -d memory_limit=4G tools/export-corpus.php . corpus > head.json
           ls -l head.json
           [ "$(wc -c < head.json)" -ge 1000000 ]
 

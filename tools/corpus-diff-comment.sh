@@ -27,7 +27,7 @@ link=${ARTIFACT_URL:-${RUN_URL:-}}
 
 marker='<!-- corpus-diff -->'
 heading='### Corpus diff'
-compared="\`wp-includes@${WP_CORPUS_TAG}\`, parser at \`${BASE_SHA:0:7}\` (base) vs \`${HEAD_SHA:0:7}\` (this PR merged)"
+compared="WordPress ${WP_CORPUS_TAG}, parser at \`${BASE_SHA:0:7}\` (base) vs \`${HEAD_SHA:0:7}\` (this PR merged)"
 
 if [ ! -s "$diff_file" ]; then
 	printf '%s\n%s\n\n**0 hunks.** No behavior change over %s.\n' "$marker" "$heading" "$compared"
