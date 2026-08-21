@@ -1,15 +1,17 @@
 # Parses a pinned corpus of WordPress core source with the parser at the base
-# branch and with the PR merged into it, normalizes both JSON outputs with
-# prep-diff.php, and diffs them. Anything in the diff is a behavior change this
-# PR makes: every hunk must be either intended (and explained in the PR) or a
-# regression.
+# branch and with the PR merged into it, and diffs the two JSON exports.
+# Anything in the diff is a behavior change this PR makes: every hunk must be
+# either intended (and explained in the PR) or a regression.
 #
 # Policy decisions, deliberate:
 # - The corpus is pinned to one WordPress tag so diffs are reproducible.
-# - The head checkout's tools/export-corpus.php and prep-diff.php drive both
-#   sides, so tooling changes never masquerade as parser changes. When
-#   prep-diff.php itself changes, its effect on normalization shows up in the
-#   diff and is reviewed like any other change.
+# - The head checkout's tools/export-corpus.php drives both sides, so tooling
+#   changes never masquerade as parser changes.
+# - The exports are diffed as emitted, without prep-diff.php. Both sides share
+#   the corpus, the PHP binary, and the exporter, so the export is already
+#   deterministic; prep-diff.php exists to reconcile exports from different
+#   environments, and its erasures (line numbers, global-namespace prefixes)
+#   and collection sorting would hide or scatter real changes here.
 # - Non-blocking: the job succeeds even when the diff is non-empty. The diff
 #   is published as an artifact and summarized. Make it blocking only after
 #   the signal has proven trustworthy.
@@ -100,12 +102,10 @@ jobs:
           ls -l head.json
           [ "$(wc -c < head.json)" -ge 1000000 ]
 
-      - name: Normalize and diff
+      - name: Diff
         run: |
-          php -d memory_limit=4G prep-diff.php < base.json > base.norm.json
-          php -d memory_limit=4G prep-diff.php < head.json > head.norm.json
           # diff exits 1 on differences (expected) and 2 on trouble (fail).
-          diff -u --label base --label head base.norm.json head.norm.json > corpus.diff || [ $? -eq 1 ]
+          diff -u --label base --label head base.json head.json > corpus.diff || [ $? -eq 1 ]
           if [ -s corpus.diff ]; then
             hunks=$(grep -c '^@@' corpus.diff)
             lines=$(wc -l < corpus.diff)

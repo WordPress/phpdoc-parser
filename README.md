@@ -53,9 +53,9 @@ wp parser create /path/to/source/code --user=<id|login>
 
 ## Corpus diff
 
-Unit tests do not cover every shape of real-world documentation, so changes to the parser are also checked against a corpus of WordPress core source. The same corpus is parsed with the parser at two refs — the base branch and the pull request merged into it — both JSON outputs are normalized with `prep-diff.php`, and the two are diffed. Everything in that diff is a behavior change the pull request makes: every hunk must be either intended and explained, or it is a regression.
+Unit tests do not cover every shape of real-world documentation, so changes to the parser are also checked against a corpus of WordPress core source. The same corpus is parsed with the parser at two refs, the base branch and the pull request merged into it, and the two JSON exports are diffed. Everything in that diff is a behavior change the pull request makes: every hunk must be either intended and explained, or it is a regression.
 
-`.github/workflows/corpus-diff.yml` runs this on every pull request. The corpus is `wp-includes` from a pinned WordPress tag (`WP_CORPUS_TAG` in the workflow), so diffs are reproducible. The job is non-blocking: it uploads the diff as a `corpus.diff` artifact and reports the hunk count in the job summary. The head checkout's `tools/export-corpus.php` and `prep-diff.php` drive both sides, so tooling changes never masquerade as parser changes; when `prep-diff.php` itself changes, its effect on normalization shows up in the diff and is reviewed like any other change.
+`.github/workflows/corpus-diff.yml` runs this on every pull request. The corpus is `wp-includes` from a pinned WordPress tag (`WP_CORPUS_TAG` in the workflow), so diffs are reproducible. The job is non-blocking: it uploads the diff as a `corpus.diff` artifact and reports the hunk count in the job summary. The head checkout's `tools/export-corpus.php` drives both sides, so tooling changes never masquerade as parser changes. The exports are diffed as emitted: both sides share the corpus, the PHP binary, and the exporter, so the output is already deterministic. `prep-diff.php` is for comparing exports from different environments; its line-number and namespace-prefix erasure and its collection sorting would hide or scatter real changes here.
 
 To run it locally, get the pinned corpus:
 
@@ -74,15 +74,13 @@ composer install
 
 On a branch this compares against the commit the branch left `master` at. CI runs on the pull request merged into `master`, so it compares against the `master` tip; merge `master` into the branch first to get the same comparison.
 
-Export both sides over the same corpus, normalize, and diff. `export-corpus.php` takes the parser root and the corpus directory, and writes JSON to stdout:
+Export both sides over the same corpus and diff. `export-corpus.php` takes the parser root and the corpus directory, and writes JSON to stdout:
 
 ```bash
 export LC_ALL=C
 php -d memory_limit=4G tools/export-corpus.php base WordPress-7.0.4/wp-includes > base.json
 php -d memory_limit=4G tools/export-corpus.php . WordPress-7.0.4/wp-includes > head.json
-php -d memory_limit=4G prep-diff.php < base.json > base.norm.json
-php -d memory_limit=4G prep-diff.php < head.json > head.norm.json
-diff -u base.norm.json head.norm.json > corpus.diff
+diff -u base.json head.json > corpus.diff
 ```
 
 An empty `corpus.diff` means the change has no effect on parser output.
