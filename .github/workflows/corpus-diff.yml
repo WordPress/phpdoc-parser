@@ -13,8 +13,12 @@
 #   environments, and its erasures (line numbers, global-namespace prefixes)
 #   and collection sorting would hide or scatter real changes here.
 # - Non-blocking: the job succeeds even when the diff is non-empty. The diff
-#   is published as an artifact and summarized. Make it blocking only after
-#   the signal has proven trustworthy.
+#   is published as an artifact, summarized, and posted as a PR comment that
+#   is updated in place on every run. Make it blocking only after the signal
+#   has proven trustworthy.
+# - The comment needs a token that can write to the PR. pull_request runs for
+#   forks and for Dependabot get a read-only token, so those PRs get the
+#   summary and the artifact only.
 # - PHP 8.4, the newest runtime in the unit-test matrix. Both sides run under
 #   the same binary, so the PHP version never shows up as a parser change.
 
@@ -27,6 +31,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   corpus-diff:
@@ -106,23 +114,40 @@ jobs:
         run: |
           # diff exits 1 on differences (expected) and 2 on trouble (fail).
           diff -u --label base --label head base.json head.json > corpus.diff || [ $? -eq 1 ]
-          if [ -s corpus.diff ]; then
-            hunks=$(grep -c '^@@' corpus.diff)
-            lines=$(wc -l < corpus.diff)
-            {
-              echo "### Corpus diff: ${hunks} hunks, ${lines} lines"
-              echo
-              echo "The parser's output over wp-includes@${WP_CORPUS_TAG} changed."
-              echo "Review the \`corpus.diff\` artifact: every hunk must be intended and explained in the PR."
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "### Corpus diff: 0 hunks (no behavior change)" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "Corpus diff: $(grep -c '^@@' corpus.diff || true) hunks, $(wc -l < corpus.diff) lines"
 
       - name: Upload diff
+        id: upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: corpus.diff
           path: corpus.diff
           if-no-files-found: ignore
+
+      - name: Render report
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          BASE_SHA="$(git -C base rev-parse HEAD)" tools/corpus-diff-comment.sh corpus.diff > comment.md
+          tail -n +2 comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Create the comment on the first run and update it on every later one,
+      # so the PR carries one report that reflects the latest push.
+      - name: Comment on the pull request
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          ids=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- corpus-diff -->")) | .id')
+          id=${ids%%$'\n'*}
+          if [ -n "$id" ]; then
+            gh api --silent -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@comment.md
+          else
+            gh api --silent -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@comment.md
+          fi
