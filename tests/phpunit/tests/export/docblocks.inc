@@ -55,10 +55,8 @@ class Test_Class {
 	 * This is a docblock for a class property.
 	 *
 	 * ```php interactive setup-blueprint=file-greeting
-	 * <?php
 	 * // This property snippet line ends in a period.
 	 * @unlink( '/tmp/phpdoc-parser-property' );
-	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
 	 * ```
 	 *
@@ -104,8 +102,6 @@ class Test_Class {
 	 * ```
 	 *
 	 * ```php interactive
-	 * <?php
-	 * require '/wordpress/wp-load.php';
 	 * echo docs_fixture_greeting();
 	 * ```
 	 *
@@ -134,8 +130,6 @@ class Test_Class {
 	 * ```
 	 *
 	 * ```php interactive setup-blueprint=shared-greeting
-	 * <?php
-	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'first' );
 	 * ```
 	 *
@@ -144,8 +138,6 @@ class Test_Class {
 	 * ```
 	 *
 	 * ```php interactive setup-blueprint=shared-greeting
-	 * <?php
-	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'second' );
 	 * ```
 	 *
@@ -162,8 +154,6 @@ class Test_Class {
 	 * This is a method docblock with a file-level setup Blueprint.
 	 *
 	 * ```php interactive setup-blueprint=file-greeting
-	 * <?php
-	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
 	 * ```
 	 *
@@ -191,8 +181,6 @@ $var = apply_filters_ref_array( 'test_ref_array_filter', array( &$var ) );
  * A test action.
  *
  * ```php interactive setup-blueprint=file-greeting
- * <?php
- * require '/wordpress/wp-load.php';
  * echo docs_file_greeting();
  * ```
  *
