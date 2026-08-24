@@ -32,7 +32,9 @@ jobs:
       pull-requests: write
 
     env:
-      WORKFLOW_FILE: .github/workflows/corpus-diff.yml
+      # Keep the mutable pin outside `.github/workflows`: GITHUB_TOKEN cannot
+      # create or update workflow files, even with `contents: write`.
+      CORPUS_PIN_FILE: .github/corpus-version
       # This API excludes beta and RC versions; repository tags do not.
       VERSION_CHECK_API: https://api.wordpress.org/core/version-check/1.7/
       CORPUS_MIRROR: https://github.com/WordPress/WordPress.git
@@ -63,9 +65,9 @@ jobs:
           LATEST: ${{ steps.resolve.outputs.latest }}
         run: |
           set -euo pipefail
-          current="$(sed -n 's/^ *WP_CORPUS_TAG: *"\([^"]*\)".*/\1/p' "${WORKFLOW_FILE}")"
-          if ! printf '%s' "${current}" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
-            echo "::error::Could not read a single WP_CORPUS_TAG version out of ${WORKFLOW_FILE} (got: '${current}')."
+          current="$(cat "${CORPUS_PIN_FILE}")"
+          if [[ ! "${current}" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "::error::${CORPUS_PIN_FILE} does not contain a usable WordPress version (got: '${current}')."
             exit 1
           fi
           echo "Pinned corpus tag: ${current}"
@@ -93,19 +95,18 @@ jobs:
           LATEST: ${{ steps.resolve.outputs.latest }}
         run: |
           set -euo pipefail
-          sed "s/^\( *WP_CORPUS_TAG: *\).*/\1\"${LATEST}\"/" "${WORKFLOW_FILE}" > "${WORKFLOW_FILE}.tmp"
-          mv "${WORKFLOW_FILE}.tmp" "${WORKFLOW_FILE}"
+          printf '%s\n' "${LATEST}" > "${CORPUS_PIN_FILE}"
 
           # Keep the automated edit narrow enough to review safely.
-          check="$(sed -n 's/^ *WP_CORPUS_TAG: *"\([^"]*\)".*/\1/p' "${WORKFLOW_FILE}")"
-          added="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $1}')"
-          removed="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $2}')"
+          check="$(cat "${CORPUS_PIN_FILE}")"
+          added="$(git diff --numstat -- "${CORPUS_PIN_FILE}" | awk '{print $1}')"
+          removed="$(git diff --numstat -- "${CORPUS_PIN_FILE}" | awk '{print $2}')"
           if [ "${check}" != "${LATEST}" ] || [ "${added}" != "1" ] || [ "${removed}" != "1" ]; then
-            echo "::error::Pin rewrite did not produce a single-line change to ${LATEST} (read back '${check}', +${added:-0}/-${removed:-0})."
-            git --no-pager diff -- "${WORKFLOW_FILE}"
+            echo "::error::Pin rewrite did not produce a single-line change to ${LATEST} in ${CORPUS_PIN_FILE} (read back '${check}', +${added:-0}/-${removed:-0})."
+            git --no-pager diff -- "${CORPUS_PIN_FILE}"
             exit 1
           fi
-          git --no-pager diff -- "${WORKFLOW_FILE}"
+          git --no-pager diff -- "${CORPUS_PIN_FILE}"
 
       - name: Open the bump PR
         if: steps.pin.outputs.bump == 'true'
@@ -133,7 +134,7 @@ jobs:
 
           title="Bump the pinned WordPress corpus to ${LATEST}"
           cat > pr-body.md <<BODY
-          \`WP_CORPUS_TAG\` in \`${WORKFLOW_FILE}\` moves from \`${CURRENT}\` to \`${LATEST}\`, the current WordPress stable per [the core version-check API](${VERSION_CHECK_API}).
+          The corpus pin in \`${CORPUS_PIN_FILE}\` moves from \`${CURRENT}\` to \`${LATEST}\`, the current WordPress stable per [the core version-check API](${VERSION_CHECK_API}).
 
           This changes only the corpus input, never the parser, so the corpus-diff run on this PR parses the new corpus with an identical parser on both sides: **0 hunks by construction**. Reviewing this PR is checking that the corpus guards (file count, export size) still pass on the new tag. A non-zero diff here would mean corpus-diff is not comparing what it claims to.
 
@@ -143,7 +144,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "${branch}"
-          git add -- "${WORKFLOW_FILE}"
+          git add -- "${CORPUS_PIN_FILE}"
           git commit -m "${title}"
           # No PR exists at this point. Reusing the branch repairs a run that
           # pushed but failed before opening its PR.
