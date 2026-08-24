@@ -33,8 +33,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        # zizmor: ignore[ref-version-mismatch] upstream omits the v prefix
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2.37.2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
