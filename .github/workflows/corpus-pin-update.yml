@@ -16,6 +16,8 @@ on:
     - cron: "17 3 * * 0"
   workflow_dispatch:
 
+permissions: {}
+
 concurrency:
   group: corpus-pin-update
   cancel-in-progress: false
@@ -28,8 +30,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # Push the update branch.
+      pull-requests: write # Open the update pull request.
 
     env:
       # Keep the mutable pin outside `.github/workflows`: GITHUB_TOKEN cannot
@@ -44,8 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The push below uses the token saved by checkout.
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Resolve the latest WordPress stable
         id: resolve
@@ -148,6 +149,7 @@ jobs:
           git commit -m "${title}"
           # No PR exists at this point. Reusing the branch repairs a run that
           # pushed but failed before opening its PR.
+          gh auth setup-git --hostname github.com --force
           git push --force origin "HEAD:refs/heads/${branch}"
 
           if ! url="$(gh pr create --repo "${GITHUB_REPOSITORY}" --base "${BASE_BRANCH}" --head "${branch}" --title "${title}" --body-file pr-body.md 2>&1)"; then
