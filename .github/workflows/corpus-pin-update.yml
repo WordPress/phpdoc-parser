@@ -132,9 +132,16 @@ jobs:
           set -euo pipefail
           branch="bump-corpus-pin-${LATEST}"
 
-          # Idempotent: any prior PR for this version, open or closed, means the
-          # bump has already been proposed and possibly declined. Leave it be.
-          existing="$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${branch}" --state all --json url --jq '.[0].url // ""')"
+          # Idempotent: any prior PR from this repository for this version, open
+          # or closed, means the bump has already been proposed and possibly
+          # declined. Leave it be.
+          existing="$(
+            gh api --method GET \
+              "repos/${GITHUB_REPOSITORY}/pulls" \
+              -f state=all \
+              -f head="${GITHUB_REPOSITORY_OWNER}:${branch}" \
+              --jq '.[0].html_url // ""'
+          )"
           if [ -n "${existing}" ]; then
             echo "A bump PR for ${LATEST} already exists: ${existing}"
             exit 0
