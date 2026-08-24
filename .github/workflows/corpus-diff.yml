@@ -145,13 +145,22 @@ jobs:
           archive: false
           if-no-files-found: ignore
 
+      # Render on failure too: the comment is updated in place, so skipping
+      # this step would leave the previous push's report standing as current.
       - name: Render report
+        if: ${{ !cancelled() }}
         env:
+          JOB_STATUS: ${{ job.status }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          BASE_SHA="$(git -C base rev-parse HEAD)" tools/corpus-diff-comment.sh corpus.diff > comment.md
+          if [ "${JOB_STATUS}" = "success" ]; then
+            BASE_SHA="$(git -C base rev-parse HEAD)" tools/corpus-diff-comment.sh corpus.diff > comment.md
+          else
+            printf '<!-- corpus-diff -->\n### Corpus diff\n\n**Run failed** at `%s`; no diff was produced for this push. See the [run log](%s).\n' \
+              "${HEAD_SHA:0:7}" "${RUN_URL}" > comment.md
+          fi
           tail -n +2 comment.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload rendered report
@@ -165,7 +174,7 @@ jobs:
   comment:
     name: Publish corpus diff report
     needs: corpus-diff
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+    if: ${{ !cancelled() && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write # Create or update the corpus diff comment.
@@ -185,7 +194,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           ids=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-            --jq '.[] | select(.body | startswith("<!-- corpus-diff -->")) | .id')
+            --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | startswith("<!-- corpus-diff -->")) | .id')
           id=${ids%%$'\n'*}
           if [ -n "$id" ]; then
             gh api --silent -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@comment.md

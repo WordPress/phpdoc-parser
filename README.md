@@ -55,18 +55,20 @@ wp parser create /path/to/source/code --user=<id|login>
 
 Unit tests do not cover every shape of real-world documentation, so changes to the parser are also checked against a corpus of WordPress core source. The same corpus is parsed with the parser at two refs, the base branch and the pull request merged into it, and the two JSON exports are diffed. Everything in that diff is a behavior change the pull request makes: every hunk must be either intended and explained, or it is a regression.
 
-`.github/workflows/corpus-diff.yml` runs this on every pull request. The corpus is the PHP of a whole WordPress release at a pinned tag (`WP_CORPUS_TAG` in the workflow): wp-admin, wp-includes, the root files, and the bundled themes and plugins. Pinning keeps diffs reproducible. The job is non-blocking: it uploads the diff as a `corpus.diff` artifact, reports it in the job summary, and posts one comment on the pull request, updated on every push, with the hunk and line counts and the diff itself when it fits in a comment (`tools/corpus-diff-comment.sh` renders it). Pull requests from forks and from Dependabot run with a read-only token, so they get the summary and the artifact only. The head checkout's `tools/export-corpus.php` drives both sides, so tooling changes never masquerade as parser changes. The exports are diffed as emitted: both sides share the corpus, the PHP binary, and the exporter, so the output is already deterministic. `prep-diff.php` is for comparing exports from different environments; its line-number and namespace-prefix erasure and its collection sorting would hide or scatter real changes here.
+`.github/workflows/corpus-diff.yml` runs this on every pull request. The corpus is the PHP of a whole WordPress release at a pinned tag (`.github/corpus-version`): wp-admin, wp-includes, the root files, and the bundled themes and plugins. Pinning keeps diffs reproducible. The job is non-blocking: it uploads the diff as a `corpus.diff` artifact, reports it in the job summary, and posts one comment on the pull request, updated on every push, with the hunk and line counts and the diff itself when it fits in a comment (`tools/corpus-diff-comment.sh` renders it). Pull requests from forks and from Dependabot run with a read-only token, so they get the summary and the artifact only. The head checkout's `tools/export-corpus.php` drives both sides, so tooling changes never masquerade as parser changes. The exports are diffed as emitted: both sides share the corpus, the PHP binary, and the exporter, so the output is already deterministic. `prep-diff.php` is for comparing exports from different environments; its line-number and namespace-prefix erasure and its collection sorting would hide or scatter real changes here.
 
 To run it locally, get the pinned corpus:
 
 ```bash
-curl -sSfL -o wordpress.zip https://github.com/WordPress/WordPress/archive/refs/tags/7.0.4.zip
+tag="$(cat .github/corpus-version)"
+curl -sSfL -o wordpress.zip "https://github.com/WordPress/WordPress/archive/refs/tags/${tag}.zip"
 unzip -q wordpress.zip
 ```
 
-Check out the other side of the comparison and install its dependencies. The exporter runs under plain PHP — it does not load WordPress — but it needs a Composer autoloader in each parser root:
+Check out the other side of the comparison and install its dependencies. The exporter runs under plain PHP, without loading WordPress, but it needs a Composer autoloader in each parser root:
 
 ```bash
+git fetch origin
 git worktree add base "$(git merge-base origin/master HEAD)"
 composer --working-dir=base install
 composer install
@@ -78,9 +80,16 @@ Export both sides over the same corpus and diff. `export-corpus.php` takes the p
 
 ```bash
 export LC_ALL=C
-php -d memory_limit=4G tools/export-corpus.php base WordPress-7.0.4 > base.json
-php -d memory_limit=4G tools/export-corpus.php . WordPress-7.0.4 > head.json
+php -d memory_limit=4G tools/export-corpus.php base "WordPress-${tag}" > base.json
+php -d memory_limit=4G tools/export-corpus.php . "WordPress-${tag}" > head.json
 diff -u base.json head.json > corpus.diff
 ```
 
 An empty `corpus.diff` means the change has no effect on parser output.
+
+Clean up afterwards:
+
+```bash
+git worktree remove base
+rm -rf wordpress.zip "WordPress-${tag}" base.json head.json corpus.diff
+```
