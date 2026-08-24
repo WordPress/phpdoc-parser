@@ -4,7 +4,8 @@
 # either intended (and explained in the PR) or a regression.
 #
 # Policy decisions, deliberate:
-# - The corpus is pinned to one WordPress tag so diffs are reproducible.
+# - The corpus is pinned in `.github/corpus-version` to one WordPress tag so
+#   diffs are reproducible.
 # - The head checkout's tools/export-corpus.php drives both sides, so tooling
 #   changes never masquerade as parser changes.
 # - The exports are diffed as emitted, without prep-diff.php. Both sides share
@@ -42,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      WP_CORPUS_TAG: "7.0.4"
+      CORPUS_PIN_FILE: .github/corpus-version
       LC_ALL: C
 
     steps:
@@ -50,6 +51,17 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Read corpus pin
+        run: |
+          set -euo pipefail
+          WP_CORPUS_TAG="$(cat "${CORPUS_PIN_FILE}")"
+          if [[ ! "${WP_CORPUS_TAG}" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "::error::${CORPUS_PIN_FILE} does not contain a usable WordPress version (got: '${WP_CORPUS_TAG}')."
+            exit 1
+          fi
+          echo "Pinned corpus tag: ${WP_CORPUS_TAG}"
+          echo "WP_CORPUS_TAG=${WP_CORPUS_TAG}" >> "${GITHUB_ENV}"
 
       - name: Set up PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
