@@ -1,28 +1,19 @@
-# Keeps `WP_CORPUS_TAG` in corpus-diff.yml pinned to the current WordPress
-# stable. Dependabot cannot track WordPress core releases, so this does it:
-# weekly, ask api.wordpress.org for the latest stable, and open a PR that
-# rewrites the one pin line when it has moved.
+# Dependabot cannot track WordPress core releases, so this workflow keeps
+# `WP_CORPUS_TAG` current.
 #
-# Why a bump PR is cheap to review, deliberately: it changes only the corpus
-# input, never the parser. Its own corpus-diff run therefore parses the new
-# corpus with an identical parser on both sides — 0 hunks by construction.
-# Reviewing a bump PR is checking that the corpus guards (file count, export
-# size) still pass on the new tag. A non-zero diff on one of these PRs would
-# mean corpus-diff is not comparing what it claims to.
+# A pin-only PR does not change the parser, and corpus-diff uses the new corpus
+# on both sides. The expected diff is therefore empty.
 #
-# Dependency, and the likely failure: creating the PR needs "Allow GitHub
-# Actions to create and approve pull requests" (Settings -> Actions -> General
-# -> Workflow permissions). Many organizations disable it. If it is off, the
-# "Open the bump PR" step fails loudly with that setting named; enable it, or
-# give the step a PAT as GH_TOKEN. The failure is never swallowed: a silent
-# no-op would leave the corpus quietly rotting on an old tag.
+# Opening the PR also requires "Allow GitHub Actions to create and approve pull
+# requests" in the repository's Actions settings.
 
 name: Corpus Pin Update
 
 on:
   schedule:
-    # Weekly, Mondays. Off the hour to dodge the top-of-hour scheduling queue.
-    - cron: "43 5 * * 1"
+    # Every Sunday at 03:17 UTC. Running at 17 minutes past the hour avoids
+    # the busiest scheduling window.
+    - cron: "17 3 * * 0"
   workflow_dispatch:
 
 concurrency:
@@ -32,7 +23,7 @@ concurrency:
 jobs:
   corpus-pin-update:
     name: Bump the pinned WordPress corpus
-    # Forks inherit schedules; only the canonical repo should open these PRs.
+    # A copied or forked workflow must not open update PRs.
     if: github.repository == 'WordPress/phpdoc-parser'
     runs-on: ubuntu-latest
 
@@ -42,8 +33,7 @@ jobs:
 
     env:
       WORKFLOW_FILE: .github/workflows/corpus-diff.yml
-      # Canonical, and authoritative about what "stable" means: it excludes
-      # betas and RCs, which a raw tag listing of WordPress/WordPress does not.
+      # This API excludes beta and RC versions; repository tags do not.
       VERSION_CHECK_API: https://api.wordpress.org/core/version-check/1.7/
       CORPUS_MIRROR: https://github.com/WordPress/WordPress.git
       LC_ALL: C
@@ -52,7 +42,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The later git push deliberately uses checkout's persisted token.
+          # The push below uses the token saved by checkout.
           persist-credentials: true
 
       - name: Resolve the latest WordPress stable
@@ -60,7 +50,6 @@ jobs:
         run: |
           set -euo pipefail
           latest="$(curl -sSfL --retry 3 --retry-delay 5 "${VERSION_CHECK_API}" | jq -r '.offers[0].current // ""')"
-          # An API hiccup must not become a garbage commit.
           if ! printf '%s' "${latest}" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
             echo "::error::${VERSION_CHECK_API} did not yield a usable version (got: '${latest}')."
             exit 1
@@ -81,12 +70,6 @@ jobs:
           fi
           echo "Pinned corpus tag: ${current}"
 
-          # Three reasons not to bump, in order: nothing moved; the pin is
-          # ahead of the published stable, which is deliberate (someone pinned
-          # a prerelease) and must not be quietly walked back; or the
-          # WordPress/WordPress mirror corpus-diff downloads from has not
-          # tagged the release yet, in which case the next run picks it up
-          # rather than this one opening a PR whose corpus cannot be built.
           bump=false
           if [ "${current}" = "${LATEST}" ]; then
             echo "Already pinned to the latest stable; nothing to do."
@@ -113,7 +96,7 @@ jobs:
           sed "s/^\( *WP_CORPUS_TAG: *\).*/\1\"${LATEST}\"/" "${WORKFLOW_FILE}" > "${WORKFLOW_FILE}.tmp"
           mv "${WORKFLOW_FILE}.tmp" "${WORKFLOW_FILE}"
 
-          # The rewrite must be exactly the pin line and nothing else.
+          # Keep the automated edit narrow enough to review safely.
           check="$(sed -n 's/^ *WP_CORPUS_TAG: *"\([^"]*\)".*/\1/p' "${WORKFLOW_FILE}")"
           added="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $1}')"
           removed="$(git diff --numstat -- "${WORKFLOW_FILE}" | awk '{print $2}')"
@@ -135,9 +118,7 @@ jobs:
           set -euo pipefail
           branch="bump-corpus-pin-${LATEST}"
 
-          # Idempotent: any prior PR from this repository for this version, open
-          # or closed, means the bump has already been proposed and possibly
-          # declined. Leave it be.
+          # Treat closed PRs as handled so a declined update is not reopened.
           existing="$(
             gh api --method GET \
               "repos/${GITHUB_REPOSITORY}/pulls" \
@@ -164,9 +145,8 @@ jobs:
           git checkout -b "${branch}"
           git add -- "${WORKFLOW_FILE}"
           git commit -m "${title}"
-          # Force is safe and wanted: no PR exists for this branch, so any
-          # branch of this name is debris from a run that pushed and then
-          # failed to open the PR. Overwriting it lets that run self-heal.
+          # No PR exists at this point. Reusing the branch repairs a run that
+          # pushed but failed before opening its PR.
           git push --force origin "HEAD:refs/heads/${branch}"
 
           if ! url="$(gh pr create --repo "${GITHUB_REPOSITORY}" --base "${BASE_BRANCH}" --head "${branch}" --title "${title}" --body-file pr-body.md 2>&1)"; then
