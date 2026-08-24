@@ -2,3 +2,11 @@ vendor
 coverage
 node_modules
 .phpunit.result.cache
+# Local corpus-diff runs; see "Corpus diff" in the README.
+/base
+/corpus
+/WordPress-*
+/wordpress.zip
+/base.json
+/head.json
+/corpus.diff
