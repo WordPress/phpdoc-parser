@@ -33,14 +33,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   corpus-diff:
     name: WordPress corpus regeneration diff
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     env:
       CORPUS_PIN_FILE: .github/corpus-version
@@ -48,9 +48,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Read corpus pin
         run: |
@@ -73,7 +74,7 @@ jobs:
       # step changes what it keeps.
       - name: Cache corpus
         id: cache-corpus
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: corpus
           key: wp-corpus-${{ env.WP_CORPUS_TAG }}-php-all
@@ -105,7 +106,9 @@ jobs:
       # now against base plus exactly this PR, with no hunks from other work
       # that landed since the branch point.
       - name: Check out base
-        run: git worktree add base "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git worktree add base "$(git merge-base -- "origin/${BASE_REF}" HEAD)"
 
       - name: Install Composer dependencies (head)
         run: composer install --no-interaction --no-security-blocking
@@ -136,7 +139,7 @@ jobs:
       - name: Upload diff
         id: upload
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: corpus.diff
           path: corpus.diff
@@ -151,10 +154,31 @@ jobs:
           BASE_SHA="$(git -C base rev-parse HEAD)" tools/corpus-diff-comment.sh corpus.diff > comment.md
           tail -n +2 comment.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload rendered report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: corpus-diff-comment
+          path: comment.md
+          if-no-files-found: ignore
+
+  comment:
+    name: Publish corpus diff report
+    needs: corpus-diff
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # Create or update the corpus diff comment.
+
+    steps:
+      - name: Download rendered report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: corpus-diff-comment
+
       # Create the comment on the first run and update it on every later one,
       # so the PR carries one report that reflects the latest push.
       - name: Comment on the pull request
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
