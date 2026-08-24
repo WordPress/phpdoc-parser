@@ -7,7 +7,10 @@
  * side-effect-free function library loaded by the Composer autoloader.
  *
  * The parser root is a parameter so one copy of this script can drive two
- * checkouts of the parser (base and head) over the same corpus.
+ * checkouts of the parser (base and head) over the same corpus. In CI the
+ * head checkout's copy drives both sides, so this script must call only
+ * WP_Parser API that exists on both: renaming or moving get_wp_files() or
+ * parse_files() breaks the base export until base has the rename too.
  *
  * Usage:
  *
@@ -43,4 +46,14 @@ require $parser_root . '/vendor/autoload.php';
 // error with a non-zero exit, so there is no return value to check here.
 $files = \WP_Parser\get_wp_files( $corpus_dir );
 
-echo json_encode( \WP_Parser\parse_files( $files, $corpus_dir ), JSON_PRETTY_PRINT ), PHP_EOL;
+$json = json_encode( \WP_Parser\parse_files( $files, $corpus_dir ), JSON_PRETTY_PRINT );
+
+// On false this would otherwise export an empty document with exit 0, and
+// two empty documents diff clean: a green check that verified nothing.
+// Malformed UTF-8 in parsed source is enough to trigger it.
+if ( false === $json ) {
+	fwrite( STDERR, 'json_encode failed: ' . json_last_error_msg() . PHP_EOL );
+	exit( 1 );
+}
+
+echo $json, PHP_EOL;
