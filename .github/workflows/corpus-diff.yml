@@ -1,0 +1,158 @@
+# Parses a pinned corpus of WordPress core source with the parser at the base
+# branch and with the PR merged into it, and diffs the two JSON exports.
+# Anything in the diff is a behavior change this PR makes: every hunk must be
+# either intended (and explained in the PR) or a regression.
+#
+# Policy decisions, deliberate:
+# - The corpus is pinned to one WordPress tag so diffs are reproducible.
+# - The head checkout's tools/export-corpus.php drives both sides, so tooling
+#   changes never masquerade as parser changes.
+# - The exports are diffed as emitted, without prep-diff.php. Both sides share
+#   the corpus, the PHP binary, and the exporter, so the export is already
+#   deterministic; prep-diff.php exists to reconcile exports from different
+#   environments, and its erasures (line numbers, global-namespace prefixes)
+#   and collection sorting would hide or scatter real changes here.
+# - Non-blocking: the job succeeds even when the diff is non-empty. The diff
+#   is published as an artifact, summarized, and posted as a PR comment that
+#   is updated in place on every run. Make it blocking only after the signal
+#   has proven trustworthy.
+# - The comment needs a token that can write to the PR. pull_request runs for
+#   forks and for Dependabot get a read-only token, so those PRs get the
+#   summary and the artifact only.
+# - PHP 8.4, the newest runtime in the unit-test matrix. Both sides run under
+#   the same binary, so the PHP version never shows up as a parser change.
+
+name: Corpus Diff
+
+on:
+  pull_request:
+
+# A new push to the PR supersedes any run still in flight for it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  corpus-diff:
+    name: WordPress corpus regeneration diff
+    runs-on: ubuntu-latest
+
+    env:
+      WP_CORPUS_TAG: "7.0.4"
+      LC_ALL: C
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: "8.4"
+          coverage: none
+
+      # The key carries the corpus layout: bump the suffix when the download
+      # step changes what it keeps.
+      - name: Cache corpus
+        id: cache-corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: wp-corpus-${{ env.WP_CORPUS_TAG }}-php-all
+
+      # The whole release: wp-admin, wp-includes, the root files, and
+      # wp-content with the bundled themes and plugins. Only PHP files are
+      # kept; the parser reads nothing else.
+      - name: Download corpus
+        if: steps.cache-corpus.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL -o wordpress.zip "https://github.com/WordPress/WordPress/archive/refs/tags/${WP_CORPUS_TAG}.zip"
+          unzip -q wordpress.zip
+          mv "WordPress-${WP_CORPUS_TAG}" corpus
+          find corpus -type f ! -name '*.php' -delete
+          rm wordpress.zip
+
+      # An empty or miscached corpus would make both exports emit `[]` and the
+      # diff trivially empty, a green job that checked nothing. A release has
+      # well over 1500 PHP files on any supported tag.
+      - name: Verify corpus
+        run: |
+          count=$(find corpus -name '*.php' | wc -l)
+          echo "Corpus PHP files: ${count}"
+          [ "$count" -ge 1500 ]
+
+      # On pull_request, HEAD is the PR merged into the base branch, so its
+      # merge base with the base branch is the base branch tip, not the commit
+      # the PR branched from. That is the intended comparison: base as it is
+      # now against base plus exactly this PR, with no hunks from other work
+      # that landed since the branch point.
+      - name: Check out base
+        run: git worktree add base "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
+
+      - name: Install Composer dependencies (head)
+        run: composer install --no-interaction --no-security-blocking
+
+      - name: Install Composer dependencies (base)
+        run: composer --working-dir=base install --no-interaction --no-security-blocking
+
+      # The size floor guards the same failure mode as Verify corpus: a real
+      # export is tens of megabytes of JSON.
+      - name: Export corpus (base)
+        run: |
+          php -d memory_limit=4G tools/export-corpus.php base corpus > base.json
+          ls -l base.json
+          [ "$(wc -c < base.json)" -ge 1000000 ]
+
+      - name: Export corpus (head)
+        run: |
+          php -d memory_limit=4G tools/export-corpus.php . corpus > head.json
+          ls -l head.json
+          [ "$(wc -c < head.json)" -ge 1000000 ]
+
+      - name: Diff
+        run: |
+          # diff exits 1 on differences (expected) and 2 on trouble (fail).
+          diff -u --label base --label head base.json head.json > corpus.diff || [ $? -eq 1 ]
+          echo "Corpus diff: $(grep -c '^@@' corpus.diff || true) hunks, $(wc -l < corpus.diff) lines"
+
+      - name: Upload diff
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus.diff
+          path: corpus.diff
+          if-no-files-found: ignore
+
+      - name: Render report
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          BASE_SHA="$(git -C base rev-parse HEAD)" tools/corpus-diff-comment.sh corpus.diff > comment.md
+          tail -n +2 comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Create the comment on the first run and update it on every later one,
+      # so the PR carries one report that reflects the latest push.
+      - name: Comment on the pull request
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          ids=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- corpus-diff -->")) | .id')
+          id=${ids%%$'\n'*}
+          if [ -n "$id" ]; then
+            gh api --silent -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@comment.md
+          else
+            gh api --silent -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@comment.md
+          fi
