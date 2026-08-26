@@ -14,6 +14,13 @@
  *     diff -u before.norm.json after.norm.json
  */
 
+/*
+ * The exporter's own normalization rules are reused so that this script cannot
+ * hide a difference in them. The file only declares namespaced functions, so it
+ * is safe to load without the Composer autoloader.
+ */
+require_once __DIR__ . '/lib/runner.php';
+
 /**
  * Checks if an array is a JSON list.
  *
@@ -75,10 +82,11 @@ function wp_parser_prep_diff_is_simple_name_record_list( array $list ) {
  * Normalizes scalar values that should not affect output comparisons.
  *
  * @param mixed       $value Scalar value.
+ * @param array       $path  Current JSON path.
  * @param string|null $key   Parent object key.
  * @return mixed Normalized value.
  */
-function wp_parser_prep_diff_normalize_scalar( $value, $key ) {
+function wp_parser_prep_diff_normalize_scalar( $value, array $path, $key ) {
 	if ( in_array( $key, array( 'line', 'end_line', 'startLine', 'endLine' ), true ) ) {
 		return 0;
 	}
@@ -91,14 +99,24 @@ function wp_parser_prep_diff_normalize_scalar( $value, $key ) {
 		return $value;
 	}
 
-	// "\wp_kses()" -> "wp_kses()".
-	$without_global_namespace = preg_replace(
-		'~(^|\p{Z})\\\\([A-Z_a-z\x80-\xFF][0-9A-Z_a-z\x80-\xFF]*)([:(\p{Z}]|->|$)~',
-		'$1$2$3',
-		$value
+	$parent_key = 1 < count( $path ) ? $path[ count( $path ) - 2 ] : null;
+	$normalize = in_array(
+		$key,
+		array( 'class', 'default', 'extends', 'type', 'value' ),
+		true
 	);
 
-	return null === $without_global_namespace ? $value : $without_global_namespace;
+	$normalize = $normalize
+		|| in_array( $parent_key, array( 'aliases', 'implements', 'types' ), true )
+		|| (
+			'name' === $key
+			&& (
+				wp_parser_prep_diff_path_ends_with( $path, array( 'uses', 'functions', '[]', 'name' ) )
+				|| wp_parser_prep_diff_path_ends_with( $path, array( 'uses', 'methods', '[]', 'name' ) )
+			)
+		);
+
+	return $normalize ? \WP_Parser\strip_global_namespace_prefix( $value ) : $value;
 }
 
 /**
@@ -222,7 +240,7 @@ function wp_parser_prep_diff_should_sort_list( array $path, array $list ) {
  */
 function wp_parser_prep_diff_normalize( $value, array $path = array(), $key = null ) {
 	if ( ! is_array( $value ) ) {
-		return wp_parser_prep_diff_normalize_scalar( $value, $key );
+		return wp_parser_prep_diff_normalize_scalar( $value, $path, $key );
 	}
 
 	if ( wp_parser_prep_diff_is_list( $value ) ) {
