@@ -248,11 +248,17 @@ class Plugin {
 	/**
 	 * Replace separators with a more readable version
 	 *
+	 * Only the separators between the top-level members of a union are replaced.
+	 * A union nested inside brackets, as in `list<string|\WP_Post>`, is part of a
+	 * single type and is left untouched.
+	 *
 	 * @param string $type Variable type
 	 *
 	 * @return string
 	 */
 	public function humanize_separator( $type ) {
-		return str_replace( '|', '<span class="wp-parser-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>', $type );
+		$separator = '<span class="wp-parser-item-type-or">' . _x( ' or ', 'separator', 'wp-parser' ) . '</span>';
+
+		return implode( $separator, split_docblock_type_expression( $type, '|' ) );
 	}
 }
