@@ -1177,26 +1177,28 @@ function extract_docblock_php_snippet_output_comment( $code ) {
  * @return array<int, array{text: string, start: int, line_start: int}> Comments in source order.
  */
 function parse_trailing_docblock_php_snippet_line_comments( $code ) {
-	// Force snippets without an opening tag into PHP mode. Do not use TOKEN_PARSE:
-	// documentation snippets may be partial programs that are still valid examples.
-	$tokens = token_get_all( "<?php\n" . $code );
+	// PHP-Parser's emulative lexer normalizes token shapes across PHP versions.
+	// Prefixing forces snippets without an opening tag into PHP mode.
+	$lexer  = new \PhpParser\Lexer\Emulative();
+	$tokens = $lexer->tokenize(
+		"<?php\n" . $code,
+		new \PhpParser\ErrorHandler\Collecting()
+	);
 	array_shift( $tokens );
+	array_pop( $tokens );
 
 	$comments   = array();
 	$offset     = 0;
 	$line_start = 0;
 	foreach ( $tokens as $token ) {
-		$id   = is_array( $token ) ? $token[0] : null;
-		$text = is_array( $token ) ? $token[1] : $token;
+		$id   = $token->id;
+		$text = $token->text;
 		$is_standalone_line_comment =
 			T_COMMENT === $id &&
 			0 === strpos( $text, '//' ) &&
 			'' === trim( substr( $code, $line_start, $offset - $line_start ), " \t" );
 
 		if ( $is_standalone_line_comment ) {
-			// PHP versions differ on whether a line comment token includes its newline.
-			$comment_text = "\n" === substr( $text, -1 ) ? substr( $text, 0, -1 ) : $text;
-
 			if ( ! empty( $comments ) ) {
 				$previous     = end( $comments );
 				$previous_end = $previous['start'] + strlen( $previous['text'] );
@@ -1207,7 +1209,7 @@ function parse_trailing_docblock_php_snippet_line_comments( $code ) {
 			}
 
 			$comments[] = array(
-				'text'       => $comment_text,
+				'text'       => $text,
 				'start'      => $offset,
 				'line_start' => $line_start,
 			);
