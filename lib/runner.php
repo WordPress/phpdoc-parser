@@ -1094,28 +1094,30 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
  * @return array{code: string, expected_output: string|null} Runnable code and its optional output.
  */
 function extract_docblock_php_snippet_output_comment( $code ) {
-	$lines                   = explode( "\n", $code );
-	$last_line               = count( $lines ) - 1;
-	$trailing_comment_start  = $last_line + 1;
-	$trailing_comment_lines  = array();
-
-	for ( $line = $last_line; $line >= 0; $line-- ) {
-		if ( ! preg_match( '/^[ \t]*\/\/(.*)$/', $lines[ $line ], $matches ) ) {
-			break;
-		}
-
-		$trailing_comment_start         = $line;
-		$trailing_comment_lines[ $line ] = $matches[1];
+	if ( false === strpos( $code, '// Outputs' ) ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
 	}
 
-	for ( $line = $trailing_comment_start; $line <= $last_line; $line++ ) {
-		if ( ! isset( $trailing_comment_lines[ $line ] ) || ! preg_match( '/^ Outputs:[ \t]*$/', $trailing_comment_lines[ $line ] ) ) {
+	$comments = parse_trailing_docblock_php_snippet_line_comments( $code );
+	if ( empty( $comments ) ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
+	}
+
+	foreach ( $comments as $comment_index => $comment ) {
+		$value = substr( $comment['text'], 2 );
+		if ( ' Outputs:' !== rtrim( $value, " \t" ) ) {
 			continue;
 		}
 
 		$output_lines = array();
-		for ( $output_line = $line + 1; $output_line <= $last_line; $output_line++ ) {
-			$value = $trailing_comment_lines[ $output_line ];
+		foreach ( array_slice( $comments, $comment_index + 1 ) as $output_comment ) {
+			$value = substr( $output_comment['text'], 2 );
 			if ( 0 === strpos( $value, ' ' ) ) {
 				$value = substr( $value, 1 );
 			}
@@ -1123,31 +1125,33 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 		}
 
 		return array(
-			'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $line ) ), "\n" ),
+			'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
 			'expected_output' => implode( "\n", $output_lines ),
 		);
 	}
 
-	if ( preg_match( '/^[ \t]*\/\/ Outputs:(.*)$/', $lines[ $last_line ], $matches ) ) {
-		$output = $matches[1];
+	$comment = end( $comments );
+	$value   = substr( $comment['text'], 2 );
+	if ( 0 === strpos( $value, ' Outputs:' ) ) {
+		$output = substr( $value, strlen( ' Outputs:' ) );
 		if ( 0 === strpos( $output, ' ' ) ) {
 			$output = substr( $output, 1 );
 		}
 
 		return array(
-			'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $last_line ) ), "\n" ),
+			'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
 			'expected_output' => $output,
 		);
 	}
 
-	if ( ! preg_match( '/^[ \t]*\/\/ Outputs \(JSON-encoded\):(.*)$/', $lines[ $last_line ], $matches ) ) {
+	if ( 0 !== strpos( $value, ' Outputs (JSON-encoded):' ) ) {
 		return array(
 			'code'            => $code,
 			'expected_output' => null,
 		);
 	}
 
-	$output = $matches[1];
+	$output = substr( $value, strlen( ' Outputs (JSON-encoded):' ) );
 	if ( 0 === strpos( $output, ' ' ) ) {
 		$output = substr( $output, 1 );
 	}
@@ -1160,9 +1164,65 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 	}
 
 	return array(
-		'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $last_line ) ), "\n" ),
+		'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
 		'expected_output' => $decoded,
 	);
+}
+
+/**
+ * Parses the consecutive standalone PHP line comments at the end of a snippet.
+ *
+ * @param string $code Snippet code extracted from a DocBlock fence.
+ *
+ * @return array<int, array{text: string, start: int, line_start: int}> Comments in source order.
+ */
+function parse_trailing_docblock_php_snippet_line_comments( $code ) {
+	// Force snippets without an opening tag into PHP mode. Do not use TOKEN_PARSE:
+	// documentation snippets may be partial programs that are still valid examples.
+	$tokens = token_get_all( "<?php\n" . $code );
+	array_shift( $tokens );
+
+	$comments   = array();
+	$offset     = 0;
+	$line_start = 0;
+	foreach ( $tokens as $token ) {
+		$id   = is_array( $token ) ? $token[0] : null;
+		$text = is_array( $token ) ? $token[1] : $token;
+		$is_standalone_line_comment =
+			T_COMMENT === $id &&
+			0 === strpos( $text, '//' ) &&
+			'' === trim( substr( $code, $line_start, $offset - $line_start ), " \t" );
+
+		if ( $is_standalone_line_comment ) {
+			// PHP versions differ on whether a line comment token includes its newline.
+			$comment_text = "\n" === substr( $text, -1 ) ? substr( $text, 0, -1 ) : $text;
+
+			if ( ! empty( $comments ) ) {
+				$previous     = end( $comments );
+				$previous_end = $previous['start'] + strlen( $previous['text'] );
+				$separator    = substr( $code, $previous_end, $line_start - $previous_end );
+				if ( 1 !== substr_count( $separator, "\n" ) || '' !== trim( $separator, " \t\n" ) ) {
+					$comments = array();
+				}
+			}
+
+			$comments[] = array(
+				'text'       => $comment_text,
+				'start'      => $offset,
+				'line_start' => $line_start,
+			);
+		} elseif ( T_WHITESPACE !== $id ) {
+			$comments = array();
+		}
+
+		$last_newline = strrpos( $text, "\n" );
+		if ( false !== $last_newline ) {
+			$line_start = $offset + $last_newline + 1;
+		}
+		$offset += strlen( $text );
+	}
+
+	return $comments;
 }
 
 /**

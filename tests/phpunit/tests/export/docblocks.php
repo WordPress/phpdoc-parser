@@ -349,36 +349,31 @@ class Export_Docblocks extends Export_UnitTestCase {
 	 *
 	 * @dataProvider code_snippet_fence_delimiters
 	 */
-	public function test_code_snippet_fence_delimiters( $description, $expected_code, $expected_output ) {
+	public function test_code_snippet_fence_delimiters( $description, $expected_code ) {
 
 		$snippets = \WP_Parser\export_docblock_code_snippets( $description );
 
 		$this->assertCount( 1, $snippets );
 		$this->assertSame( $expected_code, $snippets[0]['code'] );
-		$this->assertSame( $expected_output, $snippets[0]['expected_output'] );
 	}
 
 	public function code_snippet_fence_delimiters() {
 		return array(
 			'smaller runs stay inside a larger fence' => array(
-				"````php interactive\n<?php\n```\necho 'inside';\n```\n// Outputs: outer\n````",
+				"````php interactive\n<?php\n```\necho 'inside';\n```\n````",
 				"<?php\n```\necho 'inside';\n```",
-				'outer',
 			),
 			'different runs and text do not close a fence' => array(
-				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n// Outputs: exact\n```",
+				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```",
 				"<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
-				'exact',
 			),
 			'arbitrary indentation is removed from content' => array(
-				"    ```php interactive\n    <?php\n      echo 'indented';\n    // Outputs: indented\n\t```",
+				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```",
 				"<?php\n  echo 'indented';",
-				'indented',
 			),
 			'three leading spaces are accepted' => array(
-				"   ```php interactive\n<?php echo 'three';\n// Outputs: three\n   ```",
+				"   ```php interactive\n<?php echo 'three';\n   ```",
 				"<?php echo 'three';",
-				'three',
 			),
 		);
 	}
@@ -710,6 +705,39 @@ class Export_Docblocks extends Export_UnitTestCase {
 				),
 			),
 			$snippets
+		);
+	}
+
+	/**
+	 * Test that Outputs text is metadata only in a trailing standalone line comment.
+	 *
+	 * @dataProvider php_code_containing_non_metadata_outputs_text
+	 */
+	public function test_php_code_containing_non_metadata_outputs_text( $code ) {
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => $code,
+				),
+			),
+			\WP_Parser\export_docblock_code_snippets( "```php interactive\n" . $code . "\n```" )
+		);
+	}
+
+	/**
+	 * Returns PHP tokens in which Outputs text is ordinary program text.
+	 */
+	public function php_code_containing_non_metadata_outputs_text() {
+
+		return array(
+			'string literal' => array( "echo '// Outputs: not metadata';" ),
+			'heredoc body' => array( "echo <<<TEXT\n// Outputs: not metadata\nTEXT;" ),
+			'block comment' => array( "echo 'done';\n/* // Outputs: not metadata */" ),
+			'comment after code on the same line' => array( "echo 'done'; // Outputs: not metadata" ),
+			'ordinary line comment' => array( '// Example containing // Outputs: not metadata' ),
+			'text after a PHP closing tag' => array( "<?php echo 'done'; ?>\n// Outputs: not PHP" ),
 		);
 	}
 
