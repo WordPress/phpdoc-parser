@@ -1105,9 +1105,9 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
  * comment delimiter, while any additional indentation becomes part of the
  * output. A final empty comment line preserves a final output newline.
  *
- * The output form is inferred from the text after `// Outputs:`: a double quote
- * starts a JSON string, while other text is one raw output line. Quoting makes
- * trailing whitespace and escaped characters visible in a one-line output.
+ * Each output line is inferred separately: a double quote starts a JSON string,
+ * while other text is raw output. Quoting makes trailing whitespace and escaped
+ * characters visible in either a one-line or multiline output.
  *
  * @param string $code Snippet code extracted from a DocBlock fence.
  *
@@ -1141,7 +1141,7 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 			if ( 0 === strpos( $value, ' ' ) ) {
 				$value = substr( $value, 1 );
 			}
-			$output_lines[] = $value;
+			$output_lines[] = decode_docblock_php_snippet_output_line( $value );
 		}
 
 		return array(
@@ -1162,20 +1162,35 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 		$output = substr( $output, 1 );
 	}
 
-	if ( 0 === strpos( $output, '"' ) ) {
-		// A quoted inline value uses JSON to preserve the exact output string.
-		$output = json_decode( trim( $output ), true );
-		if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $output ) ) {
-			throw new \InvalidArgumentException(
-				'The trailing quoted Outputs comment must contain one JSON string.'
-			);
-		}
-	}
-
 	return array(
 		'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $last_line ) ), "\n" ),
-		'expected_output' => $output,
+		'expected_output' => decode_docblock_php_snippet_output_line( $output ),
 	);
+}
+
+/**
+ * Decodes one line of output comment text.
+ *
+ * @param string $output One output line after its comment delimiter.
+ *
+ * @throws \InvalidArgumentException When a quoted output line is not a JSON string.
+ *
+ * @return string Raw or decoded output text.
+ */
+function decode_docblock_php_snippet_output_line( $output ) {
+	if ( 0 !== strpos( $output, '"' ) ) {
+		return $output;
+	}
+
+	// A quoted value uses JSON to preserve the exact output string.
+	$decoded = json_decode( trim( $output ), true );
+	if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $decoded ) ) {
+		throw new \InvalidArgumentException(
+			'A quoted Outputs comment must contain one JSON string.'
+		);
+	}
+
+	return $decoded;
 }
 
 /**

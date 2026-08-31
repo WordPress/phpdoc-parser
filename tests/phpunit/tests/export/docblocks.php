@@ -618,6 +618,18 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that quoted output lines preserve trailing whitespace and newlines.
+	 */
+	public function test_multiline_code_snippet_output_comment_preserves_trailing_whitespace() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'done';\n// Outputs:\n// first\n// \"second \"\n//\n//\n```"
+		);
+
+		$this->assertSame( "first\nsecond \n\n", $snippets[0]['expected_output'] );
+	}
+
+	/**
 	 * Test that quoted Outputs comments retain their output value.
 	 *
 	 * @dataProvider quoted_code_snippet_output_comments
@@ -691,7 +703,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 	public function test_quoted_code_snippet_output_comment_requires_json_string() {
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'The trailing quoted Outputs comment must contain one JSON string.' );
+		$this->expectExceptionMessage( 'A quoted Outputs comment must contain one JSON string.' );
 
 		\WP_Parser\export_docblock_code_snippets(
 			"```php interactive\necho 'one';\n// Outputs: \"one\n```"
