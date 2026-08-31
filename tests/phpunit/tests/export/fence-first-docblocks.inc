@@ -48,10 +48,7 @@ function fence_first_period_example() {
  *   @author( 'indentation makes this part of the preceding tag' );
  * @since( 'inside-fence' );
  * echo 'at sign';
- * ```
- *
- * ```expected-output
- * at sign
+ * // Outputs: at sign
  * ```
  *
  * @since 1.0.0

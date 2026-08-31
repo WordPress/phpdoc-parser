@@ -361,22 +361,22 @@ class Export_Docblocks extends Export_UnitTestCase {
 	public function code_snippet_fence_delimiters() {
 		return array(
 			'smaller runs stay inside a larger fence' => array(
-				"````php interactive\n<?php\n```\necho 'inside';\n```\n````\n````expected-output\nouter\n````",
+				"````php interactive\n<?php\n```\necho 'inside';\n```\n// Outputs: outer\n````",
 				"<?php\n```\necho 'inside';\n```",
 				'outer',
 			),
 			'different runs and text do not close a fence' => array(
-				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```\n```expected-output\nexact\n```",
+				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n// Outputs: exact\n```",
 				"<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
 				'exact',
 			),
 			'arbitrary indentation is removed from content' => array(
-				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```\n    ```expected-output\n    indented\n```",
+				"    ```php interactive\n    <?php\n      echo 'indented';\n    // Outputs: indented\n\t```",
 				"<?php\n  echo 'indented';",
 				'indented',
 			),
 			'three leading spaces are accepted' => array(
-				"   ```php interactive\n<?php echo 'three';\n```\n```expected-output\nthree\n   ```",
+				"   ```php interactive\n<?php echo 'three';\n// Outputs: three\n   ```",
 				"<?php echo 'three';",
 				'three',
 			),
@@ -740,19 +740,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that code-comment output cannot conflict with an expected-output fence.
-	 */
-	public function test_code_snippet_output_comment_and_fence_cannot_both_define_output() {
-
-		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'declares output both in code and in an expected-output fence' );
-
-		\WP_Parser\export_docblock_code_snippets(
-			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): \"one\"\n```\n```expected-output\none\n```"
-		);
-	}
-
-	/**
 	 * Test that unsupported info strings remain ordinary documentation.
 	 *
 	 * @dataProvider unrecognized_code_fence_info_strings
@@ -782,6 +769,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'collapsed Blueprint reference' => array( 'php interactive setupblueprint=shared', $php ),
 			'unsupported interactive option' => array( 'php interactive editable=false', $php ),
 			'output alias' => array( 'output', 'output' ),
+			'expected output fence' => array( 'expected-output', 'output' ),
 			'underscored expected output' => array( 'expected_output', 'output' ),
 			'typed expected output' => array( 'text/expected-output', 'output' ),
 			'uppercase PHP' => array( 'PHP interactive', $php ),
@@ -799,8 +787,8 @@ class Export_Docblocks extends Export_UnitTestCase {
 	/**
 	 * Test that each PHP fence is replaced with an inline placeholder, in order,
 	 * so the theme can render each snippet between the surrounding prose instead
-	 * of collapsing every snippet to the end of the description. Snippet-metadata
-	 * fences (expected-output, Blueprints) are removed.
+	 * of collapsing every snippet to the end of the description. Setup Blueprint
+	 * fences are removed.
 	 */
 	public function test_code_snippet_inline_placeholders() {
 
@@ -819,10 +807,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'```php interactive',
 				'<?php',
 				'echo step_two();',
-				'```',
-				'',
-				'```expected-output',
-				'done',
+				'// Outputs: done',
 				'```',
 				'',
 				'Closing prose.',
@@ -841,7 +826,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$this->assertGreaterThan( $first, strpos( $stripped, 'Middle prose.' ) );
 		$this->assertGreaterThan( $second, strpos( $stripped, 'Closing prose.' ) );
 
-		// No raw PHP fence or metadata fence is left behind in the description.
+		// No raw PHP fence is left behind in the description.
 		$this->assertStringNotContainsString( '```', $stripped );
 		$this->assertStringNotContainsString( '<?php', $stripped );
 
@@ -945,18 +930,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'',
 				'    ```php interactive',
 				'    <?php echo 1;',
-				'    ```',
-				'',
-				'    ```expected-output',
-				'    1',
+				'    // Outputs: 1',
 				'    ```',
 				'',
 				'    ```php interactive',
 				'    <?php echo 2;',
-				'    ```',
-				'',
-				'    ```expected-output',
-				'    2',
+				'    // Outputs: 2',
 				'    ```',
 				'',
 				'After',
@@ -1013,9 +992,9 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that snippet metadata fences do not accept extra arguments.
+	 * Test that setup Blueprint fences do not accept extra arguments.
 	 */
-	public function test_code_snippet_metadata_rejects_extra_arguments() {
+	public function test_setup_blueprint_fence_rejects_extra_arguments() {
 
 		$this->assertEquals(
 			array(
@@ -1034,9 +1013,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'```php interactive',
 						'<?php',
 						'echo docs_case_fixture();',
-						'```',
-						'```expected-output copied from a run',
-						'case fixture',
 						'```',
 					)
 				)
@@ -1300,57 +1276,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that metadata after expected output belongs to the next snippet.
-	 */
-	public function test_code_snippet_metadata_boundaries() {
-
-		$this->assertEquals(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'First';",
-					'expected_output' => 'First',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'Second';",
-					'blueprint' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/tmp/second.php',
-								'data' => '<?php echo "second setup";',
-							),
-						),
-					),
-				),
-			),
-			\WP_Parser\export_docblock_code_snippets(
-				implode(
-					"\n",
-					array(
-						'```php interactive',
-						'<?php',
-						'echo \'First\';',
-						'```',
-						'```expected-output',
-						'First',
-						'```',
-						'```setup-blueprint',
-						'{"steps":[{"step":"writeFile","path":"/tmp/second.php","data":"<?php echo \"second setup\";"}]}',
-						'```',
-						'```php interactive',
-						'<?php',
-						'echo \'Second\';',
-						'```',
-					)
-				)
-			)
-		);
-	}
-
-	/**
-	 * Test that recognized snippet metadata must belong to an interactive fence.
+	 * Test that inline setup Blueprints must belong to an interactive fence.
 	 *
 	 * @dataProvider unattached_snippet_metadata
 	 */
@@ -1367,11 +1293,8 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$php = "```php interactive\n<?php echo 1;\n```";
 
 		return array(
-			'expected output before PHP' => array( "```expected-output\n1\n```\n" . $php ),
-			'expected output after prose' => array( $php . "\nProse.\n```expected-output\n1\n```" ),
 			'inline Blueprint before prose' => array( "```setup-blueprint\n{}\n```\nProse.\n" . $php ),
 			'inline Blueprint after prose' => array( $php . "\nProse.\n```setup-blueprint\n{}\n```" ),
-			'duplicate expected output' => array( $php . "\n```expected-output\n1\n```\n```expected-output\n2\n```" ),
 		);
 	}
 
@@ -1391,16 +1314,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 					'```php interactive setup-blueprint=shared',
 					'<?php',
 					'echo "first";',
-					'```',
-					'```expected-output',
-					'first',
+					'// Outputs: first',
 					'```',
 					'```php interactive',
 					'<?php',
 					'echo "no leaked inline blueprint";',
-					'```',
-					'```expected-output',
-					'no leaked inline blueprint',
+					'// Outputs: no leaked inline blueprint',
 					'```',
 					'```php interactive setup-blueprint=shared',
 					'<?php',

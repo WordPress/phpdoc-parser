@@ -60,10 +60,7 @@ class Test_Class {
 	 * @unlink( '/tmp/phpdoc-parser-property' );
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
-	 * ```
-	 *
-	 * ```expected-output
-	 * Hello from the file setup
+	 * // Outputs: Hello from the file setup
 	 * ```
 	 *
 	 * @since 3.0.0
@@ -135,20 +132,14 @@ class Test_Class {
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'first' );
-	 * ```
-	 *
-	 * ```expected-output
-	 * Hello, first
+	 * // Outputs: Hello, first
 	 * ```
 	 *
 	 * ```php interactive setup-blueprint=shared-greeting
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_shared_greeting( 'second' );
-	 * ```
-	 *
-	 * ```expected-output
-	 * Hello, second
+	 * // Outputs: Hello, second
 	 * ```
 	 *
 	 * @since 6.9.0
@@ -163,10 +154,7 @@ class Test_Class {
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_file_greeting();
-	 * ```
-	 *
-	 * ```expected-output
-	 * Hello from the file setup
+	 * // Outputs: Hello from the file setup
 	 * ```
 	 *
 	 * @since 6.9.0
@@ -192,10 +180,7 @@ $var = apply_filters_ref_array( 'test_ref_array_filter', array( &$var ) );
  * <?php
  * require '/wordpress/wp-load.php';
  * echo docs_file_greeting();
- * ```
- *
- * ```expected-output
- * Hello from the file setup
+ * // Outputs: Hello from the file setup
  * ```
  *
  * @since 3.7.0

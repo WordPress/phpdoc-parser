@@ -811,14 +811,12 @@ function get_docblock_code_fences( $text ) {
 			validate_docblock_setup_blueprint_name( $setup_name, $fence['start'] );
 		}
 
-		$is_expected_output = 'expected-output' === $fence['language'] && 1 === count( $info_parts );
-		$is_blueprint       = 'setup-blueprint' === $fence['language'] && 1 === count( $info_parts );
+		$is_blueprint = 'setup-blueprint' === $fence['language'] && 1 === count( $info_parts );
 		$fences[ $key ]['referenced_setup']   = $referenced_setup;
 		$fences[ $key ]['is_interactive_php'] = $is_interactive_php;
-		$fences[ $key ]['is_expected_output'] = $is_expected_output;
 		$fences[ $key ]['is_blueprint']       = $is_blueprint;
 		$fences[ $key ]['setup_name']         = $setup_name;
-		$fences[ $key ]['is_code_snippet']    = $is_interactive_php || $is_expected_output || $is_blueprint || null !== $setup_name;
+		$fences[ $key ]['is_code_snippet']    = $is_interactive_php || $is_blueprint || null !== $setup_name;
 	}
 
 	// Number the interactive PHP fences so the exporter and the stripper agree on each
@@ -1034,20 +1032,6 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 				break;
 			}
 
-			if ( $fences[ $j ]['is_expected_output'] ) {
-				// First expected-output fence ends the run, so a snippet takes one.
-				if ( array_key_exists( 'expected_output', $snippet ) ) {
-					throw new \InvalidArgumentException(
-						'Interactive PHP fence on line ' . ( $fences[ $i ]['start'] + 1 ) .
-						' of the long description declares output both in code and in an expected-output fence.'
-					);
-				}
-
-				$snippet['expected_output'] = $fences[ $j ]['code'];
-				$consumed_fences[ $j ]      = true;
-				break;
-			}
-
 			if ( null !== $fences[ $j ]['setup_name'] ) {
 				break;
 			}
@@ -1077,13 +1061,6 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	foreach ( $fences as $index => $fence ) {
 		if ( isset( $consumed_fences[ $index ] ) ) {
 			continue;
-		}
-
-		if ( $fence['is_expected_output'] ) {
-			throw new \InvalidArgumentException(
-				'Expected-output fence on line ' . ( $fence['start'] + 1 ) .
-				' of the long description is not attached to an interactive PHP fence.'
-			);
 		}
 
 		if ( $fence['is_blueprint'] ) {
@@ -1239,7 +1216,7 @@ function strip_docblock_code_snippet_fences( $text, $fences = null ) {
 		// Interactive PHP fences become `code_snippets` entries. A plain HTML
 		// comment survives Markdown rendering, `the_content`, and block parsing,
 		// allowing the theme to replace it in place between the surrounding prose.
-		// Snippet-metadata fences (expected-output, Blueprints) are removed.
+		// Snippet-metadata fences containing Blueprints are removed.
 		for ( $i = $fence['start']; $i <= $fence['end']; $i++ ) {
 			if ( $fence['is_interactive_php'] && $i === $fence['start'] ) {
 				// Keep a nested fence's indentation so Markdown leaves the replacement
