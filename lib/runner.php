@@ -1105,11 +1105,12 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
  * comment delimiter, while any additional indentation becomes part of the
  * output. A final empty comment line preserves a final output newline.
  *
- * The older one-line form continues to accept a JSON string.
+ * Text after `// Outputs:` is one raw output line. The older one-line
+ * JSON-string form continues to work when that text starts with a double quote.
  *
  * @param string $code Snippet code extracted from a DocBlock fence.
  *
- * @throws \InvalidArgumentException When an Outputs comment is not a JSON string.
+ * @throws \InvalidArgumentException When a quoted Outputs comment is not a JSON string.
  *
  * @return array{code: string, expected_output: string|null} Runnable code and its optional output.
  */
@@ -1155,11 +1156,18 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 		);
 	}
 
-	$output = json_decode( trim( $matches[1] ), true );
-	if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $output ) ) {
-		throw new \InvalidArgumentException(
-			'The trailing Outputs comment must contain one JSON string.'
-		);
+	$output = $matches[1];
+	if ( 0 === strpos( $output, ' ' ) ) {
+		$output = substr( $output, 1 );
+	}
+
+	if ( 0 === strpos( $output, '"' ) ) {
+		$output = json_decode( trim( $output ), true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $output ) ) {
+			throw new \InvalidArgumentException(
+				'The trailing quoted Outputs comment must contain one JSON string.'
+			);
+		}
 	}
 
 	return array(

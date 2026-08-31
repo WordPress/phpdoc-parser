@@ -548,6 +548,27 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that text after Outputs is exported as a raw one-line value.
+	 */
+	public function test_inline_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho esc_html( '<egg>' );\n// Outputs: <egg>\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo esc_html( '<egg>' );",
+					'expected_output' => '<egg>',
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
 	 * Test that a trailing Outputs comment block exports human-readable output.
 	 */
 	public function test_multiline_code_snippet_output_comment() {
@@ -661,15 +682,15 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that a trailing Outputs comment must use JSON-string syntax.
+	 * Test that a quoted Outputs comment must use valid JSON-string syntax.
 	 */
-	public function test_code_snippet_output_comment_requires_json_string() {
+	public function test_quoted_code_snippet_output_comment_requires_json_string() {
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'The trailing Outputs comment must contain one JSON string.' );
+		$this->expectExceptionMessage( 'The trailing quoted Outputs comment must contain one JSON string.' );
 
 		\WP_Parser\export_docblock_code_snippets(
-			"```php interactive\necho 'one';\n// Outputs: one\n```"
+			"```php interactive\necho 'one';\n// Outputs: \"one\n```"
 		);
 	}
 
