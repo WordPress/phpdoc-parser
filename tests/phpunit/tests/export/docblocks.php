@@ -525,7 +525,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 					'foreach ( $p->class_list() as $class_name ) {',
 					'  echo "{$class_name} ";',
 					'}',
-					'// Outputs: "free <egg> lang-en "',
+					'// Outputs (JSON-encoded): "free <egg> lang-en "',
 					'```',
 				)
 			)
@@ -566,6 +566,18 @@ class Export_Docblocks extends Export_UnitTestCase {
 			),
 			$snippets
 		);
+	}
+
+	/**
+	 * Test that quotes in literal one-line output remain output text.
+	 */
+	public function test_inline_code_snippet_output_comment_preserves_quotes() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'example';\n// Outputs: \"second \"\n```"
+		);
+
+		$this->assertSame( '"second "', $snippets[0]['expected_output'] );
 	}
 
 	/**
@@ -618,23 +630,23 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that quoted output lines preserve trailing whitespace and newlines.
+	 * Test that literal output preserves quotes and trailing newlines.
 	 */
-	public function test_multiline_code_snippet_output_comment_preserves_trailing_whitespace() {
+	public function test_multiline_code_snippet_output_comment_preserves_literal_text() {
 
 		$snippets = \WP_Parser\export_docblock_code_snippets(
 			"```php interactive\necho 'done';\n// Outputs:\n// first\n// \"second \"\n//\n//\n```"
 		);
 
-		$this->assertSame( "first\nsecond \n\n", $snippets[0]['expected_output'] );
+		$this->assertSame( "first\n\"second \"\n\n", $snippets[0]['expected_output'] );
 	}
 
 	/**
-	 * Test that quoted Outputs comments retain their output value.
+	 * Test that JSON-encoded Outputs comments retain their output value.
 	 *
-	 * @dataProvider quoted_code_snippet_output_comments
+	 * @dataProvider json_encoded_code_snippet_output_comments
 	 */
-	public function test_quoted_code_snippet_output_comments( $comment, $expected_output ) {
+	public function test_json_encoded_code_snippet_output_comments( $comment, $expected_output ) {
 
 		$snippets = \WP_Parser\export_docblock_code_snippets(
 			"```php interactive\necho 'example';\n" . $comment . "\n```"
@@ -653,26 +665,30 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Returns quoted output comments with formatting that must survive export.
+	 * Returns JSON-encoded output comments with formatting that must survive export.
 	 */
-	public function quoted_code_snippet_output_comments() {
+	public function json_encoded_code_snippet_output_comments() {
 
 		return array(
-			'quoted output preserves trailing whitespace' => array(
-				'// Outputs: "ends with a space "',
+			'JSON string preserves trailing whitespace' => array(
+				'// Outputs (JSON-encoded): "ends with a space "',
 				'ends with a space ',
 			),
-			'multiline output with a trailing newline' => array(
-				'// Outputs: "first\\nsecond\\n"',
+			'JSON string preserves multiline output with a trailing newline' => array(
+				'// Outputs (JSON-encoded): "first\\nsecond\\n"',
 				"first\nsecond\n",
 			),
 			'escaped quotes and tabs' => array(
-				'// Outputs: "A \\"quote\\" and a \\t tab"',
+				'// Outputs (JSON-encoded): "A \\"quote\\" and a \\t tab"',
 				"A \"quote\" and a \t tab",
 			),
 			'whitespace after the JSON string is not output' => array(
-				'// Outputs: "done"   ',
+				'// Outputs (JSON-encoded): "done"   ',
 				'done',
+			),
+			'literal Unicode remains readable' => array(
+				'// Outputs (JSON-encoded): "✅ Complete "',
+				'✅ Complete ',
 			),
 		);
 	}
@@ -698,15 +714,28 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that a quoted Outputs comment must use valid JSON-string syntax.
+	 * Test that a JSON-encoded Outputs comment must contain a JSON string.
+	 *
+	 * @dataProvider invalid_json_encoded_code_snippet_output_comments
 	 */
-	public function test_quoted_code_snippet_output_comment_requires_json_string() {
+	public function test_json_encoded_code_snippet_output_comment_requires_json_string( $output ) {
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'A quoted Outputs comment must contain one JSON string.' );
+		$this->expectExceptionMessage( 'The Outputs (JSON-encoded) comment must contain one JSON string.' );
 
 		\WP_Parser\export_docblock_code_snippets(
-			"```php interactive\necho 'one';\n// Outputs: \"one\n```"
+			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): " . $output . "\n```"
+		);
+	}
+
+	/**
+	 * Returns invalid JSON-encoded output values.
+	 */
+	public function invalid_json_encoded_code_snippet_output_comments() {
+
+		return array(
+			'malformed JSON' => array( '"one' ),
+			'JSON value is not a string' => array( '1' ),
 		);
 	}
 
@@ -719,7 +748,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$this->expectExceptionMessage( 'declares output both in code and in an expected-output fence' );
 
 		\WP_Parser\export_docblock_code_snippets(
-			"```php interactive\necho 'one';\n// Outputs: \"one\"\n```\n```expected-output\none\n```"
+			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): \"one\"\n```\n```expected-output\none\n```"
 		);
 	}
 
