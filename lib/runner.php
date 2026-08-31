@@ -1105,8 +1105,9 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
  * comment delimiter, while any additional indentation becomes part of the
  * output. A final empty comment line preserves a final output newline.
  *
- * Text after `// Outputs:` is one raw output line. The older one-line
- * JSON-string form continues to work when that text starts with a double quote.
+ * The output form is inferred from the text after `// Outputs:`: a double quote
+ * starts a JSON string, while other text is one raw output line. Quoting makes
+ * trailing whitespace and escaped characters visible in a one-line output.
  *
  * @param string $code Snippet code extracted from a DocBlock fence.
  *
@@ -1162,6 +1163,7 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 	}
 
 	if ( 0 === strpos( $output, '"' ) ) {
+		// A quoted inline value uses JSON to preserve the exact output string.
 		$output = json_decode( trim( $output ), true );
 		if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $output ) ) {
 			throw new \InvalidArgumentException(

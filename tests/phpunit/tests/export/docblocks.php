@@ -618,11 +618,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that older JSON-string Outputs comments retain their output value.
+	 * Test that quoted Outputs comments retain their output value.
 	 *
-	 * @dataProvider trailing_code_snippet_output_comments
+	 * @dataProvider quoted_code_snippet_output_comments
 	 */
-	public function test_trailing_code_snippet_output_comments( $comment, $expected_output ) {
+	public function test_quoted_code_snippet_output_comments( $comment, $expected_output ) {
 
 		$snippets = \WP_Parser\export_docblock_code_snippets(
 			"```php interactive\necho 'example';\n" . $comment . "\n```"
@@ -641,11 +641,15 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Returns JSON-string output comments with escaping that must survive export.
+	 * Returns quoted output comments with formatting that must survive export.
 	 */
-	public function trailing_code_snippet_output_comments() {
+	public function quoted_code_snippet_output_comments() {
 
 		return array(
+			'quoted output preserves trailing whitespace' => array(
+				'// Outputs: "ends with a space "',
+				'ends with a space ',
+			),
 			'multiline output with a trailing newline' => array(
 				'// Outputs: "first\\nsecond\\n"',
 				"first\nsecond\n",
