@@ -996,6 +996,11 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 			'type' => 'php-code-snippet',
 			'code' => $fences[ $i ]['code'],
 		);
+		$output_comment = extract_docblock_php_snippet_output_comment( $snippet['code'] );
+		$snippet['code'] = $output_comment['code'];
+		if ( null !== $output_comment['expected_output'] ) {
+			$snippet['expected_output'] = $output_comment['expected_output'];
+		}
 
 		if ( null !== $fences[ $i ]['referenced_setup'] ) {
 			$snippet['blueprint'] = $fences[ $i ]['referenced_setup'];
@@ -1031,6 +1036,13 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 
 			if ( $fences[ $j ]['is_expected_output'] ) {
 				// First expected-output fence ends the run, so a snippet takes one.
+				if ( array_key_exists( 'expected_output', $snippet ) ) {
+					throw new \InvalidArgumentException(
+						'Interactive PHP fence on line ' . ( $fences[ $i ]['start'] + 1 ) .
+						' of the long description declares output both in code and in an expected-output fence.'
+					);
+				}
+
 				$snippet['expected_output'] = $fences[ $j ]['code'];
 				$consumed_fences[ $j ]      = true;
 				break;
@@ -1083,6 +1095,46 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	}
 
 	return $snippets;
+}
+
+/**
+ * Extracts a trailing output comment from an interactive PHP snippet.
+ *
+ * The output value uses JSON-string syntax so punctuation, whitespace, and
+ * escaped newlines retain their exact value in the exported JSON.
+ *
+ * @param string $code Snippet code extracted from a DocBlock fence.
+ *
+ * @throws \InvalidArgumentException When an Outputs comment is not a JSON string.
+ *
+ * @return array{code: string, expected_output: string|null} Runnable code and its optional output.
+ */
+function extract_docblock_php_snippet_output_comment( $code ) {
+	$lines      = explode( "\n", $code );
+	$last_line  = count( $lines ) - 1;
+	$comment    = $lines[ $last_line ];
+	$has_output = preg_match( '/^[ \t]*\/\/ Outputs:(.*)$/', $comment, $matches );
+
+	if ( ! $has_output ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
+	}
+
+	$output = json_decode( trim( $matches[1] ), true );
+	if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $output ) ) {
+		throw new \InvalidArgumentException(
+			'The trailing Outputs comment must contain one JSON string.'
+		);
+	}
+
+	array_pop( $lines );
+
+	return array(
+		'code'            => rtrim( implode( "\n", $lines ), "\n" ),
+		'expected_output' => $output,
+	);
 }
 
 /**

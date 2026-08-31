@@ -511,6 +511,69 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a trailing Outputs comment becomes structured output metadata.
+	 */
+	public function test_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```php interactive',
+					'$p = WP_HTML_Processor::create_fragment( "<div class=\'free &lt;egg&gt;\'\\tlang-en>" );',
+					'$p->next_tag();',
+					'foreach ( $p->class_list() as $class_name ) {',
+					'  echo "{$class_name} ";',
+					'}',
+					'// Outputs: "free <egg> lang-en "',
+					'```',
+				)
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "\$p = WP_HTML_Processor::create_fragment( \"<div class='free &lt;egg&gt;'\\tlang-en>\" );\n" .
+						"\$p->next_tag();\n" .
+						"foreach ( \$p->class_list() as \$class_name ) {\n" .
+						"  echo \"{\$class_name} \";\n" .
+						'}',
+					'expected_output' => 'free <egg> lang-en ',
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that a trailing Outputs comment must use JSON-string syntax.
+	 */
+	public function test_code_snippet_output_comment_requires_json_string() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'The trailing Outputs comment must contain one JSON string.' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'one';\n// Outputs: one\n```"
+		);
+	}
+
+	/**
+	 * Test that code-comment output cannot conflict with an expected-output fence.
+	 */
+	public function test_code_snippet_output_comment_and_fence_cannot_both_define_output() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'declares output both in code and in an expected-output fence' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'one';\n// Outputs: \"one\"\n```\n```expected-output\none\n```"
+		);
+	}
+
+	/**
 	 * Test that unsupported info strings remain ordinary documentation.
 	 *
 	 * @dataProvider unrecognized_code_fence_info_strings
