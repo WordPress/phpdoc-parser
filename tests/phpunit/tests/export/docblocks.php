@@ -548,6 +548,70 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that JSON escapes in a trailing Outputs comment retain their output value.
+	 *
+	 * @dataProvider trailing_code_snippet_output_comments
+	 */
+	public function test_trailing_code_snippet_output_comments( $comment, $expected_output ) {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'example';\n" . $comment . "\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo 'example';",
+					'expected_output' => $expected_output,
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Returns JSON-string output comments with escaping that must survive export.
+	 */
+	public function trailing_code_snippet_output_comments() {
+
+		return array(
+			'multiline output with a trailing newline' => array(
+				'// Outputs: "first\\nsecond\\n"',
+				"first\nsecond\n",
+			),
+			'escaped quotes and tabs' => array(
+				'// Outputs: "A \\"quote\\" and a \\t tab"',
+				"A \"quote\" and a \t tab",
+			),
+			'whitespace after the JSON string is not output' => array(
+				'// Outputs: "done"   ',
+				'done',
+			),
+		);
+	}
+
+	/**
+	 * Test that an Outputs comment before further code remains part of the snippet.
+	 */
+	public function test_non_trailing_code_snippet_output_comment_remains_code() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'before';\n// Outputs: \"before\"\necho 'after';\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo 'before';\n// Outputs: \"before\"\necho 'after';",
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
 	 * Test that a trailing Outputs comment must use JSON-string syntax.
 	 */
 	public function test_code_snippet_output_comment_requires_json_string() {
