@@ -107,7 +107,8 @@ class Test_Class {
 	 * <?php
 	 * require '/wordpress/wp-load.php';
 	 * echo docs_fixture_greeting();
-	 * // Outputs: "Hello from a method"
+	 * // Outputs:
+	 * // Hello from a method
 	 * ```
 	 *
 	 * @since 6.9.0

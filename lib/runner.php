@@ -1098,10 +1098,14 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 }
 
 /**
- * Extracts a trailing output comment from an interactive PHP snippet.
+ * Extracts trailing Outputs metadata from an interactive PHP snippet.
  *
- * The output value uses JSON-string syntax so punctuation, whitespace, and
- * escaped newlines retain their exact value in the exported JSON.
+ * A human-readable output block starts with `// Outputs:` and continues through
+ * the final consecutive `//` comment lines. One space after each `//` is a
+ * comment delimiter, while any additional indentation becomes part of the
+ * output. A final empty comment line preserves a final output newline.
+ *
+ * The older one-line form continues to accept a JSON string.
  *
  * @param string $code Snippet code extracted from a DocBlock fence.
  *
@@ -1110,12 +1114,41 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
  * @return array{code: string, expected_output: string|null} Runnable code and its optional output.
  */
 function extract_docblock_php_snippet_output_comment( $code ) {
-	$lines      = explode( "\n", $code );
-	$last_line  = count( $lines ) - 1;
-	$comment    = $lines[ $last_line ];
-	$has_output = preg_match( '/^[ \t]*\/\/ Outputs:(.*)$/', $comment, $matches );
+	$lines                   = explode( "\n", $code );
+	$last_line               = count( $lines ) - 1;
+	$trailing_comment_start  = $last_line + 1;
+	$trailing_comment_lines  = array();
 
-	if ( ! $has_output ) {
+	for ( $line = $last_line; $line >= 0; $line-- ) {
+		if ( ! preg_match( '/^[ \t]*\/\/(.*)$/', $lines[ $line ], $matches ) ) {
+			break;
+		}
+
+		$trailing_comment_start         = $line;
+		$trailing_comment_lines[ $line ] = $matches[1];
+	}
+
+	for ( $line = $trailing_comment_start; $line <= $last_line; $line++ ) {
+		if ( ! isset( $trailing_comment_lines[ $line ] ) || ! preg_match( '/^ Outputs:[ \t]*$/', $trailing_comment_lines[ $line ] ) ) {
+			continue;
+		}
+
+		$output_lines = array();
+		for ( $output_line = $line + 1; $output_line <= $last_line; $output_line++ ) {
+			$value = $trailing_comment_lines[ $output_line ];
+			if ( 0 === strpos( $value, ' ' ) ) {
+				$value = substr( $value, 1 );
+			}
+			$output_lines[] = $value;
+		}
+
+		return array(
+			'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $line ) ), "\n" ),
+			'expected_output' => implode( "\n", $output_lines ),
+		);
+	}
+
+	if ( ! preg_match( '/^[ \t]*\/\/ Outputs:(.*)$/', $lines[ $last_line ], $matches ) ) {
 		return array(
 			'code'            => $code,
 			'expected_output' => null,
@@ -1129,10 +1162,8 @@ function extract_docblock_php_snippet_output_comment( $code ) {
 		);
 	}
 
-	array_pop( $lines );
-
 	return array(
-		'code'            => rtrim( implode( "\n", $lines ), "\n" ),
+		'code'            => rtrim( implode( "\n", array_slice( $lines, 0, $last_line ) ), "\n" ),
 		'expected_output' => $output,
 	);
 }

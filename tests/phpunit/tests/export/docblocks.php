@@ -548,7 +548,56 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that JSON escapes in a trailing Outputs comment retain their output value.
+	 * Test that a trailing Outputs comment block exports human-readable output.
+	 */
+	public function test_multiline_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```php interactive',
+					'$values = array(',
+					"\t'fruit' => 'apple',",
+					');',
+					'print_r( $values );',
+					'// Outputs:',
+					'// Array',
+					'// (',
+					'//     [fruit] => apple',
+					'// )',
+					'//',
+					'```',
+				)
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "\$values = array(\n\t'fruit' => 'apple',\n);\nprint_r( \$values );",
+					'expected_output' => "Array\n(\n    [fruit] => apple\n)\n",
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that a human-readable output block preserves literal Unicode text.
+	 */
+	public function test_multiline_code_snippet_output_comment_preserves_unicode() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'done';\n// Outputs:\n// ✅ Complete\n```"
+		);
+
+		$this->assertSame( '✅ Complete', $snippets[0]['expected_output'] );
+	}
+
+	/**
+	 * Test that older JSON-string Outputs comments retain their output value.
 	 *
 	 * @dataProvider trailing_code_snippet_output_comments
 	 */
