@@ -231,6 +231,374 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a nested union inside a generic remains one exported type.
+	 */
+	public function test_nested_union_inside_generic() {
+
+		$this->assertFunctionHasDocs(
+			'test_nested_union_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A prompt.',
+						'types' => array(
+							'\WordPress\AiClient\Messages\DTO\MessagePart',
+							'list<string|\WordPress\AiClient\Messages\DTO\MessagePart|array>',
+							'\WordPress\AiClient\Messages\DTO\MessagePart[]',
+						),
+						'variable' => '$prompt',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a parenthesized union with an array suffix survives the export.
+	 */
+	public function test_grouped_union_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_grouped_union_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Grouped.',
+						'types' => array(
+							'(int|\WordPress\AiClient\Messages\DTO\MessagePart)[]',
+						),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a space inside a generic doesn't truncate the type.
+	 */
+	public function test_generic_type_with_space() {
+
+		$this->assertFunctionHasDocs(
+			'test_generic_type_with_space'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A map.',
+						'types' => array( 'array<int,string>' ),
+						'variable' => '$map',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a non-breaking space separates the type from the variable.
+	 */
+	public function test_nbsp_separated_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_nbsp_separated_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'NBSP separated.',
+						'types' => array( 'string' ),
+						'variable' => '$nb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an iterable generic isn't turned into a class name.
+	 */
+	public function test_iterable_generic_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_iterable_generic_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Iterable.',
+						'types' => array(
+							'iterable<\WordPress\AiClient\Messages\DTO\MessagePart>',
+						),
+						'variable' => '$it',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an integer range return type keeps both of its bounds.
+	 */
+	public function test_int_range_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_int_range_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'Count.',
+						'types' => array( 'int<0,max>' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that each member of an intersection type is resolved separately.
+	 */
+	public function test_intersection_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_intersection_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Intersect.',
+						'types' => array(
+							'\WordPress\AiClient\Messages\DTO\MessagePart&\Countable',
+						),
+						'variable' => '$both',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a bracket inside a quoted literal doesn't extend the type.
+	 *
+	 * The `<` is inside a string literal, so it doesn't open a bracket and the
+	 * type ends at the first whitespace after the literal. Without that, the
+	 * unclosed bracket swallows the variable and eats up to the `>` in the prose.
+	 */
+	public function test_quoted_literal_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_quoted_literal_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'A description &gt; with gt',
+						'types' => array( "'a<b'" ),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an unclosed generic followed by prose falls back to a plain split.
+	 *
+	 * The whitespace after `int` isn't in a position where a type expression may
+	 * contain whitespace, so the type expression is malformed and nothing better
+	 * can be inferred than the plain split the legacy dependency made.
+	 */
+	public function test_unclosed_generic_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_unclosed_generic_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'The arrow-&gt;prop blah',
+						'types' => array( 'array<int' ),
+						'variable' => '$x',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a generic which only balances at the last byte doesn't eat the description.
+	 */
+	public function test_unbalanced_generic_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_unbalanced_generic_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'A generator of things&gt;',
+						'types' => array( 'Generator<int' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a callable type keeps its parameters and its return type.
+	 */
+	public function test_callable_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_callable_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Desc.',
+						'types' => array( 'callable(int $a, string $b): bool' ),
+						'variable' => '$cb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a by-reference parameter's name is recovered.
+	 */
+	public function test_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'By ref.',
+						'types' => array( 'array<int,string>' ),
+						'variable' => '$arr',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a leading group full of prose doesn't swallow the description.
+	 *
+	 * A `(` which follows an identifier opens a callable's parameter list, where
+	 * whitespace separates one parameter from the next. A `(` which follows
+	 * anything else opens a group which holds a single nested expression, and
+	 * prose inside one of those means it isn't a type expression at all. Nothing
+	 * better can be inferred then than the plain split the legacy dependency made.
+	 */
+	public function test_leading_group_prose_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_leading_group_prose_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'depends on context)',
+						'types' => array( '(mixed' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a colon after a leading group doesn't continue the type.
+	 *
+	 * A return type is written after a callable's parameter list, so the
+	 * whitespace which follows the colon is inside the type expression. A group
+	 * which holds a nested expression has no return type to continue into.
+	 */
+	public function test_leading_group_colon_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_leading_group_colon_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => 'true on success',
+						'types' => array( '(bool):' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a callable with an empty parameter list keeps its return type.
+	 */
+	public function test_empty_callable_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_empty_callable_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Empty.',
+						'types' => array( 'callable(): bool' ),
+						'variable' => '$cb',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an untyped by-reference parameter's name is recovered.
+	 *
+	 * The legacy dependency only recognizes a name written as `$name` or
+	 * `...$name`, so `&$arr` is read as the type expression and the parameter
+	 * loses its name. There is no type expression there to publish.
+	 */
+	public function test_untyped_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_untyped_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'By ref desc.',
+						'types' => array(),
+						'variable' => '$arr',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an untyped variadic by-reference parameter's name is recovered.
+	 */
+	public function test_untyped_variadic_by_reference_param() {
+
+		$this->assertFunctionHasDocs(
+			'test_untyped_variadic_by_reference_param'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'The rest.',
+						'types' => array(),
+						'variable' => '$rest',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {
@@ -1470,6 +1838,53 @@ class Export_Docblocks extends Export_UnitTestCase {
 					),
 				),
 			),
+		);
+	}
+
+	/**
+	 * Test that a callable property type keeps its return type.
+	 */
+	public function test_callable_property_type() {
+
+		$this->assertPropertyHasDocs(
+			'Test_Class'
+			, '$a_callback'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'var',
+						'content' => '',
+						'types' => array( 'callable(string): string' ),
+						'variable' => '',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a tag whose content starts with a variable is exported as before.
+	 *
+	 * The legacy dependency treats the whole first token as the variable name and
+	 * leaves nothing for a type. Nothing can be recovered from that, so the
+	 * export has to match the legacy export byte for byte rather than rewriting
+	 * half of it.
+	 */
+	public function test_variable_first_property_type() {
+
+		$this->assertPropertyHasDocs(
+			'Test_Class'
+			, '$a_shape'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'var',
+						'content' => 'string} Some desc',
+						'types' => array(),
+						'variable' => '$map{int,',
+					),
+				),
+			)
 		);
 	}
 }

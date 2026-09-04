@@ -22,6 +22,8 @@
  * @since 1.5.0
  */
 
+use WordPress\AiClient\Messages\DTO\MessagePart;
+
 /**
  * This is a function docblock.
  *
@@ -38,6 +40,142 @@ function test_func( $var, $num ) {
 
 	// In real life, there *might* be more stuff in here.
 	return true;
+}
+
+/**
+ * Tests a nested union type inside a generic.
+ *
+ * @param MessagePart|list<string|MessagePart|array>|MessagePart[] $prompt A prompt.
+ */
+function test_nested_union_type( $prompt ) {
+}
+
+/**
+ * Tests a parenthesized union with an array suffix.
+ *
+ * @param (int|MessagePart)[] $x Grouped.
+ */
+function test_grouped_union_type( $x ) {
+}
+
+/**
+ * Tests a generic type which contains a space after the delimiter.
+ *
+ * @param array<int, string> $map A map.
+ */
+function test_generic_type_with_space( $map ) {
+}
+
+/**
+ * Tests a type separated from the variable by a non-breaking space.
+ *
+ * @param string $nb NBSP separated.
+ */
+function test_nbsp_separated_type( $nb ) {
+}
+
+/**
+ * Tests an iterable generic type.
+ *
+ * @param iterable<MessagePart> $it Iterable.
+ */
+function test_iterable_generic_type( $it ) {
+}
+
+/**
+ * Tests an integer range return type.
+ *
+ * @return int<0,max> Count.
+ */
+function test_int_range_return_type() {
+}
+
+/**
+ * Tests an intersection type.
+ *
+ * @param MessagePart&Countable $both Intersect.
+ */
+function test_intersection_type( $both ) {
+}
+
+/**
+ * Tests a quoted string literal type which contains a bracket.
+ *
+ * @param 'a<b' $x A description > with gt
+ */
+function test_quoted_literal_type( $x ) {
+}
+
+/**
+ * Tests an unclosed generic type followed by prose.
+ *
+ * @param array<int $x The arrow->prop blah
+ */
+function test_unclosed_generic_type( $x ) {
+}
+
+/**
+ * Tests a generic which is missing a comma and balances at the last byte.
+ *
+ * @return Generator<int A generator of things>
+ */
+function test_unbalanced_generic_return_type() {
+}
+
+/**
+ * Tests a callable type which declares a return type.
+ *
+ * @param callable(int $a, string $b): bool $cb Desc.
+ */
+function test_callable_return_type( $cb ) {
+}
+
+/**
+ * Tests a parameter which is passed by reference.
+ *
+ * @param array<int, string> &$arr By ref.
+ */
+function test_by_reference_param( &$arr ) {
+}
+
+/**
+ * Tests a return type which is one leading paren group full of prose.
+ *
+ * @return (mixed depends on context)
+ */
+function test_leading_group_prose_return_type() {
+}
+
+/**
+ * Tests a leading paren group which is followed by a colon.
+ *
+ * @return (bool): true on success
+ */
+function test_leading_group_colon_return_type() {
+}
+
+/**
+ * Tests a callable type with an empty parameter list.
+ *
+ * @param callable(): bool $cb Empty.
+ */
+function test_empty_callable_param( $cb ) {
+}
+
+/**
+ * Tests an untyped parameter which is passed by reference.
+ *
+ * @param &$arr By ref desc.
+ */
+function test_untyped_by_reference_param( &$arr ) {
+}
+
+/**
+ * Tests an untyped variadic parameter which is passed by reference.
+ *
+ * @param &...$rest The rest.
+ */
+function test_untyped_variadic_by_reference_param( &...$rest ) {
 }
 
 /**
@@ -68,6 +206,20 @@ class Test_Class {
 	 * @var string
 	 */
 	public $a_string;
+
+	/**
+	 * This is a callable property.
+	 *
+	 * @var callable(string): string
+	 */
+	public $a_callback;
+
+	/**
+	 * This is a property whose type expression begins with a variable.
+	 *
+	 * @var $map{int, string} Some desc
+	 */
+	public $a_shape;
 
 	/**
 	 * This is a method docblock.
