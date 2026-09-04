@@ -576,6 +576,18 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that an expected-output fence remains supported for compatibility.
+	 */
+	public function test_expected_output_fence_remains_supported() {
+
+		$description = "```php interactive\necho 'example';\n```\n```expected-output\nexample\n```";
+		$snippets    = \WP_Parser\export_docblock_code_snippets( $description );
+
+		$this->assertSame( 'example', $snippets[0]['expected_output'] );
+		$this->assertStringNotContainsString( 'expected-output', \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	/**
 	 * Test that a trailing Outputs comment block exports human-readable output.
 	 */
 	public function test_multiline_code_snippet_output_comment() {
@@ -742,6 +754,19 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that code-comment output cannot conflict with an expected-output fence.
+	 */
+	public function test_code_snippet_output_comment_and_fence_cannot_both_define_output() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'declares output both in code and in an expected-output fence' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): \"one\"\n```\n```expected-output\none\n```"
+		);
+	}
+
+	/**
 	 * Test that a JSON-encoded Outputs comment must contain a JSON string.
 	 *
 	 * @dataProvider invalid_json_encoded_code_snippet_output_comments
@@ -797,7 +822,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 			'collapsed Blueprint reference' => array( 'php interactive setupblueprint=shared', $php ),
 			'unsupported interactive option' => array( 'php interactive editable=false', $php ),
 			'output alias' => array( 'output', 'output' ),
-			'expected output fence' => array( 'expected-output', 'output' ),
 			'underscored expected output' => array( 'expected_output', 'output' ),
 			'typed expected output' => array( 'text/expected-output', 'output' ),
 			'uppercase PHP' => array( 'PHP interactive', $php ),
@@ -1321,8 +1345,11 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$php = "```php interactive\n<?php echo 1;\n```";
 
 		return array(
+			'expected output before PHP' => array( "```expected-output\n1\n```\n" . $php ),
+			'expected output after prose' => array( $php . "\nProse.\n```expected-output\n1\n```" ),
 			'inline Blueprint before prose' => array( "```setup-blueprint\n{}\n```\nProse.\n" . $php ),
 			'inline Blueprint after prose' => array( $php . "\nProse.\n```setup-blueprint\n{}\n```" ),
+			'duplicate expected output' => array( $php . "\n```expected-output\n1\n```\n```expected-output\n2\n```" ),
 		);
 	}
 
