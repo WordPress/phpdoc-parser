@@ -349,36 +349,31 @@ class Export_Docblocks extends Export_UnitTestCase {
 	 *
 	 * @dataProvider code_snippet_fence_delimiters
 	 */
-	public function test_code_snippet_fence_delimiters( $description, $expected_code, $expected_output ) {
+	public function test_code_snippet_fence_delimiters( $description, $expected_code ) {
 
 		$snippets = \WP_Parser\export_docblock_code_snippets( $description );
 
 		$this->assertCount( 1, $snippets );
 		$this->assertSame( $expected_code, $snippets[0]['code'] );
-		$this->assertSame( $expected_output, $snippets[0]['expected_output'] );
 	}
 
 	public function code_snippet_fence_delimiters() {
 		return array(
 			'smaller runs stay inside a larger fence' => array(
-				"````php interactive\n<?php\n```\necho 'inside';\n```\n````\n````expected-output\nouter\n````",
+				"````php interactive\n<?php\n```\necho 'inside';\n```\n````",
 				"<?php\n```\necho 'inside';\n```",
-				'outer',
 			),
 			'different runs and text do not close a fence' => array(
-				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```\n```expected-output\nexact\n```",
+				"```php interactive\n<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';\n```",
 				"<?php\n````\necho 'inside';\n``` not a closer\necho 'still inside';",
-				'exact',
 			),
 			'arbitrary indentation is removed from content' => array(
-				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```\n    ```expected-output\n    indented\n```",
+				"    ```php interactive\n    <?php\n      echo 'indented';\n\t```",
 				"<?php\n  echo 'indented';",
-				'indented',
 			),
 			'three leading spaces are accepted' => array(
-				"   ```php interactive\n<?php echo 'three';\n```\n```expected-output\nthree\n   ```",
+				"   ```php interactive\n<?php echo 'three';\n   ```",
 				"<?php echo 'three';",
-				'three',
 			),
 		);
 	}
@@ -511,6 +506,293 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that a trailing Outputs comment becomes structured output metadata.
+	 */
+	public function test_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```php interactive',
+					'$p = WP_HTML_Processor::create_fragment( "<div class=\'free &lt;egg&gt;\'\\tlang-en>" );',
+					'$p->next_tag();',
+					'foreach ( $p->class_list() as $class_name ) {',
+					'  echo "{$class_name} ";',
+					'}',
+					'// Outputs (JSON-encoded): "free <egg> lang-en "',
+					'```',
+				)
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "\$p = WP_HTML_Processor::create_fragment( \"<div class='free &lt;egg&gt;'\\tlang-en>\" );\n" .
+						"\$p->next_tag();\n" .
+						"foreach ( \$p->class_list() as \$class_name ) {\n" .
+						"  echo \"{\$class_name} \";\n" .
+						'}',
+					'expected_output' => 'free <egg> lang-en ',
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that text after Outputs is exported as a raw one-line value.
+	 */
+	public function test_inline_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho esc_html( '<egg>' );\n// Outputs: <egg>\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo esc_html( '<egg>' );",
+					'expected_output' => '<egg>',
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that quotes in literal one-line output remain output text.
+	 */
+	public function test_inline_code_snippet_output_comment_preserves_quotes() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'example';\n// Outputs: \"second \"\n```"
+		);
+
+		$this->assertSame( '"second "', $snippets[0]['expected_output'] );
+	}
+
+	/**
+	 * Test that an expected-output fence remains supported for compatibility.
+	 */
+	public function test_expected_output_fence_remains_supported() {
+
+		$description = "```php interactive\necho 'example';\n```\n```expected-output\nexample\n```";
+		$snippets    = \WP_Parser\export_docblock_code_snippets( $description );
+
+		$this->assertSame( 'example', $snippets[0]['expected_output'] );
+		$this->assertStringNotContainsString( 'expected-output', \WP_Parser\strip_docblock_code_snippet_fences( $description ) );
+	}
+
+	/**
+	 * Test that a trailing Outputs comment block exports human-readable output.
+	 */
+	public function test_multiline_code_snippet_output_comment() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			implode(
+				"\n",
+				array(
+					'```php interactive',
+					'$values = array(',
+					"\t'fruit' => 'apple',",
+					');',
+					'print_r( $values );',
+					'// Outputs:',
+					'// Array',
+					'// (',
+					'//     [fruit] => apple',
+					'// )',
+					'//',
+					'```',
+				)
+			)
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "\$values = array(\n\t'fruit' => 'apple',\n);\nprint_r( \$values );",
+					'expected_output' => "Array\n(\n    [fruit] => apple\n)\n",
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that a human-readable output block preserves literal Unicode text.
+	 */
+	public function test_multiline_code_snippet_output_comment_preserves_unicode() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'done';\n// Outputs:\n// ✅ Complete\n```"
+		);
+
+		$this->assertSame( '✅ Complete', $snippets[0]['expected_output'] );
+	}
+
+	/**
+	 * Test that literal output preserves quotes and trailing newlines.
+	 */
+	public function test_multiline_code_snippet_output_comment_preserves_literal_text() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'done';\n// Outputs:\n// first\n// \"second \"\n//\n//\n```"
+		);
+
+		$this->assertSame( "first\n\"second \"\n\n", $snippets[0]['expected_output'] );
+	}
+
+	/**
+	 * Test that JSON-encoded Outputs comments retain their output value.
+	 *
+	 * @dataProvider json_encoded_code_snippet_output_comments
+	 */
+	public function test_json_encoded_code_snippet_output_comments( $comment, $expected_output ) {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'example';\n" . $comment . "\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo 'example';",
+					'expected_output' => $expected_output,
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Returns JSON-encoded output comments with formatting that must survive export.
+	 */
+	public function json_encoded_code_snippet_output_comments() {
+
+		return array(
+			'JSON string preserves trailing whitespace' => array(
+				'// Outputs (JSON-encoded): "ends with a space "',
+				'ends with a space ',
+			),
+			'JSON string preserves multiline output with a trailing newline' => array(
+				'// Outputs (JSON-encoded): "first\\nsecond\\n"',
+				"first\nsecond\n",
+			),
+			'escaped quotes and tabs' => array(
+				'// Outputs (JSON-encoded): "A \\"quote\\" and a \\t tab"',
+				"A \"quote\" and a \t tab",
+			),
+			'whitespace after the JSON string is not output' => array(
+				'// Outputs (JSON-encoded): "done"   ',
+				'done',
+			),
+			'literal Unicode remains readable' => array(
+				'// Outputs (JSON-encoded): "✅ Complete "',
+				'✅ Complete ',
+			),
+		);
+	}
+
+	/**
+	 * Test that an Outputs comment before further code remains part of the snippet.
+	 */
+	public function test_non_trailing_code_snippet_output_comment_remains_code() {
+
+		$snippets = \WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'before';\n// Outputs: \"before\"\necho 'after';\n```"
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => "echo 'before';\n// Outputs: \"before\"\necho 'after';",
+				),
+			),
+			$snippets
+		);
+	}
+
+	/**
+	 * Test that Outputs text is metadata only in a trailing standalone line comment.
+	 *
+	 * @dataProvider php_code_containing_non_metadata_outputs_text
+	 */
+	public function test_php_code_containing_non_metadata_outputs_text( $code ) {
+
+		$this->assertSame(
+			array(
+				array(
+					'type' => 'php-code-snippet',
+					'code' => $code,
+				),
+			),
+			\WP_Parser\export_docblock_code_snippets( "```php interactive\n" . $code . "\n```" )
+		);
+	}
+
+	/**
+	 * Returns PHP tokens in which Outputs text is ordinary program text.
+	 */
+	public function php_code_containing_non_metadata_outputs_text() {
+
+		return array(
+			'string literal' => array( "echo '// Outputs: not metadata';" ),
+			'heredoc body' => array( "echo <<<TEXT\n// Outputs: not metadata\nTEXT;" ),
+			'block comment' => array( "echo 'done';\n/* // Outputs: not metadata */" ),
+			'comment after code on the same line' => array( "echo 'done'; // Outputs: not metadata" ),
+			'ordinary line comment' => array( '// Example containing // Outputs: not metadata' ),
+			'text after a PHP closing tag' => array( "<?php echo 'done'; ?>\n// Outputs: not PHP" ),
+		);
+	}
+
+	/**
+	 * Test that code-comment output cannot conflict with an expected-output fence.
+	 */
+	public function test_code_snippet_output_comment_and_fence_cannot_both_define_output() {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'declares output both in code and in an expected-output fence' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): \"one\"\n```\n```expected-output\none\n```"
+		);
+	}
+
+	/**
+	 * Test that a JSON-encoded Outputs comment must contain a JSON string.
+	 *
+	 * @dataProvider invalid_json_encoded_code_snippet_output_comments
+	 */
+	public function test_json_encoded_code_snippet_output_comment_requires_json_string( $output ) {
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'The Outputs (JSON-encoded) comment must contain one JSON string.' );
+
+		\WP_Parser\export_docblock_code_snippets(
+			"```php interactive\necho 'one';\n// Outputs (JSON-encoded): " . $output . "\n```"
+		);
+	}
+
+	/**
+	 * Returns invalid JSON-encoded output values.
+	 */
+	public function invalid_json_encoded_code_snippet_output_comments() {
+
+		return array(
+			'malformed JSON' => array( '"one' ),
+			'JSON value is not a string' => array( '1' ),
+		);
+	}
+
+	/**
 	 * Test that unsupported info strings remain ordinary documentation.
 	 *
 	 * @dataProvider unrecognized_code_fence_info_strings
@@ -557,8 +839,8 @@ class Export_Docblocks extends Export_UnitTestCase {
 	/**
 	 * Test that each PHP fence is replaced with an inline placeholder, in order,
 	 * so the theme can render each snippet between the surrounding prose instead
-	 * of collapsing every snippet to the end of the description. Snippet-metadata
-	 * fences (expected-output, Blueprints) are removed.
+	 * of collapsing every snippet to the end of the description. Setup Blueprint
+	 * fences are removed.
 	 */
 	public function test_code_snippet_inline_placeholders() {
 
@@ -577,10 +859,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'```php interactive',
 				'<?php',
 				'echo step_two();',
-				'```',
-				'',
-				'```expected-output',
-				'done',
+				'// Outputs: done',
 				'```',
 				'',
 				'Closing prose.',
@@ -599,7 +878,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 		$this->assertGreaterThan( $first, strpos( $stripped, 'Middle prose.' ) );
 		$this->assertGreaterThan( $second, strpos( $stripped, 'Closing prose.' ) );
 
-		// No raw PHP fence or metadata fence is left behind in the description.
+		// No raw PHP fence is left behind in the description.
 		$this->assertStringNotContainsString( '```', $stripped );
 		$this->assertStringNotContainsString( '<?php', $stripped );
 
@@ -703,18 +982,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 				'',
 				'    ```php interactive',
 				'    <?php echo 1;',
-				'    ```',
-				'',
-				'    ```expected-output',
-				'    1',
+				'    // Outputs: 1',
 				'    ```',
 				'',
 				'    ```php interactive',
 				'    <?php echo 2;',
-				'    ```',
-				'',
-				'    ```expected-output',
-				'    2',
+				'    // Outputs: 2',
 				'    ```',
 				'',
 				'After',
@@ -771,9 +1044,9 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that snippet metadata fences do not accept extra arguments.
+	 * Test that setup Blueprint fences do not accept extra arguments.
 	 */
-	public function test_code_snippet_metadata_rejects_extra_arguments() {
+	public function test_setup_blueprint_fence_rejects_extra_arguments() {
 
 		$this->assertEquals(
 			array(
@@ -792,9 +1065,6 @@ class Export_Docblocks extends Export_UnitTestCase {
 						'```php interactive',
 						'<?php',
 						'echo docs_case_fixture();',
-						'```',
-						'```expected-output copied from a run',
-						'case fixture',
 						'```',
 					)
 				)
@@ -1058,57 +1328,7 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
-	 * Test that metadata after expected output belongs to the next snippet.
-	 */
-	public function test_code_snippet_metadata_boundaries() {
-
-		$this->assertEquals(
-			array(
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'First';",
-					'expected_output' => 'First',
-				),
-				array(
-					'type' => 'php-code-snippet',
-					'code' => "<?php\necho 'Second';",
-					'blueprint' => array(
-						'steps' => array(
-							array(
-								'step' => 'writeFile',
-								'path' => '/tmp/second.php',
-								'data' => '<?php echo "second setup";',
-							),
-						),
-					),
-				),
-			),
-			\WP_Parser\export_docblock_code_snippets(
-				implode(
-					"\n",
-					array(
-						'```php interactive',
-						'<?php',
-						'echo \'First\';',
-						'```',
-						'```expected-output',
-						'First',
-						'```',
-						'```setup-blueprint',
-						'{"steps":[{"step":"writeFile","path":"/tmp/second.php","data":"<?php echo \"second setup\";"}]}',
-						'```',
-						'```php interactive',
-						'<?php',
-						'echo \'Second\';',
-						'```',
-					)
-				)
-			)
-		);
-	}
-
-	/**
-	 * Test that recognized snippet metadata must belong to an interactive fence.
+	 * Test that inline setup Blueprints must belong to an interactive fence.
 	 *
 	 * @dataProvider unattached_snippet_metadata
 	 */
@@ -1149,16 +1369,12 @@ class Export_Docblocks extends Export_UnitTestCase {
 					'```php interactive setup-blueprint=shared',
 					'<?php',
 					'echo "first";',
-					'```',
-					'```expected-output',
-					'first',
+					'// Outputs: first',
 					'```',
 					'```php interactive',
 					'<?php',
 					'echo "no leaked inline blueprint";',
-					'```',
-					'```expected-output',
-					'no leaked inline blueprint',
+					'// Outputs: no leaked inline blueprint',
 					'```',
 					'```php interactive setup-blueprint=shared',
 					'<?php',

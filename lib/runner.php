@@ -996,6 +996,11 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 			'type' => 'php-code-snippet',
 			'code' => $fences[ $i ]['code'],
 		);
+		$output_comment = extract_docblock_php_snippet_output_comment( $snippet['code'] );
+		$snippet['code'] = $output_comment['code'];
+		if ( null !== $output_comment['expected_output'] ) {
+			$snippet['expected_output'] = $output_comment['expected_output'];
+		}
 
 		if ( null !== $fences[ $i ]['referenced_setup'] ) {
 			$snippet['blueprint'] = $fences[ $i ]['referenced_setup'];
@@ -1031,6 +1036,13 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 
 			if ( $fences[ $j ]['is_expected_output'] ) {
 				// First expected-output fence ends the run, so a snippet takes one.
+				if ( array_key_exists( 'expected_output', $snippet ) ) {
+					throw new \InvalidArgumentException(
+						'Interactive PHP fence on line ' . ( $fences[ $i ]['start'] + 1 ) .
+						' of the long description declares output both in code and in an expected-output fence.'
+					);
+				}
+
 				$snippet['expected_output'] = $fences[ $j ]['code'];
 				$consumed_fences[ $j ]      = true;
 				break;
@@ -1083,6 +1095,159 @@ function export_docblock_code_snippets( $text, &$setup_blueprints = null, $fence
 	}
 
 	return $snippets;
+}
+
+/**
+ * Extracts trailing Outputs metadata from an interactive PHP snippet.
+ *
+ * `// Outputs:` declares literal output. Text on the same line is a one-line
+ * value. An empty header starts a block that continues through the final
+ * consecutive `//` comment lines. One space after each `//` is a comment
+ * delimiter, while any additional indentation becomes part of the output. A
+ * final empty comment line preserves a final output newline.
+ *
+ * `// Outputs (JSON-encoded):` declares one JSON string. This explicit form
+ * makes trailing whitespace and escaped characters visible without assigning
+ * special meaning to any literal output text.
+ *
+ * @param string $code Snippet code extracted from a DocBlock fence.
+ *
+ * @throws \InvalidArgumentException When an Outputs (JSON-encoded) comment is not a JSON string.
+ *
+ * @return array{code: string, expected_output: string|null} Runnable code and its optional output.
+ */
+function extract_docblock_php_snippet_output_comment( $code ) {
+	if ( false === strpos( $code, '// Outputs' ) ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
+	}
+
+	$comments = parse_trailing_docblock_php_snippet_line_comments( $code );
+	if ( empty( $comments ) ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
+	}
+
+	foreach ( $comments as $comment_index => $comment ) {
+		$value = substr( $comment['text'], 2 );
+		if ( ' Outputs:' !== rtrim( $value, " \t" ) ) {
+			continue;
+		}
+
+		$output_lines = array();
+		foreach ( array_slice( $comments, $comment_index + 1 ) as $output_comment ) {
+			$value = substr( $output_comment['text'], 2 );
+			if ( 0 === strpos( $value, ' ' ) ) {
+				$value = substr( $value, 1 );
+			}
+			$output_lines[] = $value;
+		}
+
+		return array(
+			'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
+			'expected_output' => implode( "\n", $output_lines ),
+		);
+	}
+
+	$comment = end( $comments );
+	$value   = substr( $comment['text'], 2 );
+	if ( 0 === strpos( $value, ' Outputs:' ) ) {
+		$output = substr( $value, strlen( ' Outputs:' ) );
+		if ( 0 === strpos( $output, ' ' ) ) {
+			$output = substr( $output, 1 );
+		}
+
+		return array(
+			'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
+			'expected_output' => $output,
+		);
+	}
+
+	if ( 0 !== strpos( $value, ' Outputs (JSON-encoded):' ) ) {
+		return array(
+			'code'            => $code,
+			'expected_output' => null,
+		);
+	}
+
+	$output = substr( $value, strlen( ' Outputs (JSON-encoded):' ) );
+	if ( 0 === strpos( $output, ' ' ) ) {
+		$output = substr( $output, 1 );
+	}
+
+	$decoded = json_decode( trim( $output ), true );
+	if ( JSON_ERROR_NONE !== json_last_error() || ! is_string( $decoded ) ) {
+		throw new \InvalidArgumentException(
+			'The Outputs (JSON-encoded) comment must contain one JSON string.'
+		);
+	}
+
+	return array(
+		'code'            => rtrim( substr( $code, 0, $comment['line_start'] ), "\n" ),
+		'expected_output' => $decoded,
+	);
+}
+
+/**
+ * Parses the consecutive standalone PHP line comments at the end of a snippet.
+ *
+ * @param string $code Snippet code extracted from a DocBlock fence.
+ *
+ * @return array<int, array{text: string, start: int, line_start: int}> Comments in source order.
+ */
+function parse_trailing_docblock_php_snippet_line_comments( $code ) {
+	// PHP-Parser's emulative lexer normalizes token shapes across PHP versions.
+	// Prefixing forces snippets without an opening tag into PHP mode.
+	$lexer  = new \PhpParser\Lexer\Emulative();
+	$tokens = $lexer->tokenize(
+		"<?php\n" . $code,
+		new \PhpParser\ErrorHandler\Collecting()
+	);
+	array_shift( $tokens );
+	array_pop( $tokens );
+
+	$comments   = array();
+	$offset     = 0;
+	$line_start = 0;
+	foreach ( $tokens as $token ) {
+		$id   = $token->id;
+		$text = $token->text;
+		$is_standalone_line_comment =
+			T_COMMENT === $id &&
+			0 === strpos( $text, '//' ) &&
+			'' === trim( substr( $code, $line_start, $offset - $line_start ), " \t" );
+
+		if ( $is_standalone_line_comment ) {
+			if ( ! empty( $comments ) ) {
+				$previous     = end( $comments );
+				$previous_end = $previous['start'] + strlen( $previous['text'] );
+				$separator    = substr( $code, $previous_end, $line_start - $previous_end );
+				if ( 1 !== substr_count( $separator, "\n" ) || '' !== trim( $separator, " \t\n" ) ) {
+					$comments = array();
+				}
+			}
+
+			$comments[] = array(
+				'text'       => $text,
+				'start'      => $offset,
+				'line_start' => $line_start,
+			);
+		} elseif ( T_WHITESPACE !== $id ) {
+			$comments = array();
+		}
+
+		$last_newline = strrpos( $text, "\n" );
+		if ( false !== $last_newline ) {
+			$line_start = $offset + $last_newline + 1;
+		}
+		$offset += strlen( $text );
+	}
+
+	return $comments;
 }
 
 /**
