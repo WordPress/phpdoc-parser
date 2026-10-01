@@ -152,7 +152,14 @@ class Command extends WP_CLI_Command {
 		$output = parse_files( $files, $path );
 
 		if ( 'json' == $format ) {
-			return json_encode( $output, JSON_PRETTY_PRINT );
+			$json = json_encode( $output, JSON_PRETTY_PRINT );
+
+			if ( false === $json ) {
+				WP_CLI::error( sprintf( 'Problem encoding the data from %1$s as JSON: %2$s', $path, json_last_error_msg() ) );
+				exit;
+			}
+
+			return $json;
 		}
 
 		return $output;

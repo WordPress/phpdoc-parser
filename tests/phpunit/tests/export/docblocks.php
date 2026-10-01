@@ -231,6 +231,31 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that special characters in documentation are preserved.
+	 */
+	public function test_special_characters_are_preserved() {
+		$this->assertFunctionHasDocs(
+			'test_special_characters',
+			array(
+				'long_description' => '<pre><code class="language-php">true === wp_is_valid_utf8( \'✏\' );' . "\n"
+					. 'false === wp_is_valid_utf8( "just \\xC0 test" );</code></pre>',
+			)
+		);
+	}
+
+	/**
+	 * Test that a leading escape sequence in documentation is preserved.
+	 */
+	public function test_leading_escape_sequence_is_preserved() {
+		$this->assertFunctionHasDocs(
+			'test_leading_escape_sequence',
+			array(
+				'description' => '\\xC0 starts this description.',
+			)
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {
