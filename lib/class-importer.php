@@ -297,13 +297,18 @@ class Importer implements LoggerAwareInterface {
 		// Detect deprecated file
 		$deprecated_file = false;
 		if ( isset( $file['uses']['functions'] ) ) {
-			$first_function = $file['uses']['functions'][0];
+			foreach ( $file['uses']['functions'] as $function_use ) {
 
-			// If the first function in this file is _deprecated_function
-			if ( '_deprecated_file' === $first_function['name'] ) {
+				// The file is deprecated if it calls _deprecated_file()
+				if ( isset( $function_use['name'] ) && '_deprecated_file' === $function_use['name'] ) {
 
-				// Set the deprecated flag to the version number
-				$deprecated_file = $first_function['deprecation_version'];
+					// Set the deprecated flag to the version number
+					if ( isset( $function_use['deprecation_version'] ) ) {
+						$deprecated_file = $function_use['deprecation_version'];
+					}
+
+					break;
+				}
 			}
 		}
 
