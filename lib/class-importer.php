@@ -433,9 +433,12 @@ class Importer implements LoggerAwareInterface {
 		// Set class-specific meta
 		update_post_meta( $class_id, '_wp-parser_final', (string) $data['final'] );
 		update_post_meta( $class_id, '_wp-parser_abstract', (string) $data['abstract'] );
-		update_post_meta( $class_id, '_wp-parser_extends', $data['extends'] );
-		update_post_meta( $class_id, '_wp-parser_implements', $data['implements'] );
-		update_post_meta( $class_id, '_wp-parser_properties', $data['properties'] );
+		// Metadata APIs unslash their input. map_deep() reaches every nested
+		// string, preserving the namespace separators in class relatives and
+		// property types.
+		update_post_meta( $class_id, '_wp-parser_extends', map_deep( $data['extends'], 'wp_slash' ) );
+		update_post_meta( $class_id, '_wp-parser_implements', map_deep( $data['implements'], 'wp_slash' ) );
+		update_post_meta( $class_id, '_wp-parser_properties', map_deep( $data['properties'], 'wp_slash' ) );
 
 		// Now add the methods
 		foreach ( $data['methods'] as $method ) {
@@ -743,13 +746,16 @@ class Importer implements LoggerAwareInterface {
 			$data['doc']['tags']['deprecated'] = $this->file_meta['deprecated'];
 		}
 
+		// Metadata APIs unslash their input. map_deep() reaches every nested
+		// string, preserving the namespace separators in argument and alias
+		// types.
 		if ( $post_data['post_type'] !== $this->post_type_class ) {
-			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', $data['arguments'] );
+			$anything_updated[] = update_post_meta( $post_id, '_wp-parser_args', map_deep( $data['arguments'], 'wp_slash' ) );
 		}
 
 		// If the post type is using namespace aliases, record them.
 		if ( ! empty( $data['aliases'] ) ) {
-			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_aliases', (array) $data['aliases'] );
+			$anything_updated[] = update_post_meta( $post_id, '_wp_parser_aliases', map_deep( (array) $data['aliases'], 'wp_slash' ) );
 		}
 
 		// Recored the namespace if there is one.
@@ -759,7 +765,11 @@ class Importer implements LoggerAwareInterface {
 
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_line_num', (string) $data['line'] );
 		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_end_line_num', (string) $data['end_line'] );
-		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', $data['doc']['tags'] );
+
+		// Metadata APIs unslash their input. map_deep() reaches every nested
+		// string, preserving the namespace separators in tag types and
+		// references such as `@param \Foo\Bar` and `@see \Foo\Bar`.
+		$anything_updated[] = update_post_meta( $post_id, '_wp-parser_tags', map_deep( $data['doc']['tags'], 'wp_slash' ) );
 
 		// Metadata APIs unslash their input. map_deep() reaches retained JSON
 		// objects as well as arrays, preserving backslashes in PHP and Blueprint
