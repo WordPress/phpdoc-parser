@@ -726,7 +726,7 @@ class Importer implements LoggerAwareInterface {
 			}
 		}
 		$added_term_relationship = did_action( 'added_term_relationship' );
-		wp_set_object_terms( $post_id, $package_term_ids, $this->taxonomy_package );
+		wp_set_object_terms( $post_id, $package_term_ids, $this->taxonomy_package, true );
 		if ( did_action( 'added_term_relationship' ) > $added_term_relationship ) {
 			$anything_updated[] = true;
 		}
