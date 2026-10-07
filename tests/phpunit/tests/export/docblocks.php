@@ -441,6 +441,218 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that hash notation is exported as a structure beside the unchanged `content`.
+	 *
+	 * Covers nested hashes, `$0` and `...$0` names, an entry with no name, a
+	 * description on continuation lines, a generic with whitespace, a `@type`
+	 * PHPStan's parser rejects, a `},` closing line, and a named `@return` hash.
+	 * Each `content` string is what the parser exported before hashes were read.
+	 */
+	public function test_hash_notation() {
+
+		$this->assertFunctionHasDocs(
+			'test_hash_notation'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => '{     Optional. Arguments.<br>    @type string                  $label Label.<br>    @type array&lt;int               $broken A type PHPStan\'s parser rejects.<br>    @type array&lt;string, int|null&gt; ...$0 {         Each entry, wrapped onto         a continuation line.<br>        @type string $0 The first element.<br>        @type int    $1 The second element.<br>    }     @type array {         An entry with no name.<br>        @type bool $flag A flag.<br>    }, }',
+						'types' => array( 'array' ),
+						'variable' => '$args',
+						'hash' => array(
+							'content' => 'Optional. Arguments.',
+							'items' => array(
+								array(
+									'types' => array( 'string' ),
+									'variable' => '$label',
+									'content' => 'Label.',
+								),
+								array(
+									'types' => array( '\\array<int' ),
+									'variable' => '$broken',
+									'content' => 'A type PHPStan\'s parser rejects.',
+								),
+								array(
+									'types' => array( 'array<string, int|null>' ),
+									'variable' => '...$0',
+									'content' => '',
+									'hash' => array(
+										'content' => 'Each entry, wrapped onto a continuation line.',
+										'items' => array(
+											array(
+												'types' => array( 'string' ),
+												'variable' => '$0',
+												'content' => 'The first element.',
+											),
+											array(
+												'types' => array( 'int' ),
+												'variable' => '$1',
+												'content' => 'The second element.',
+											),
+										),
+									),
+								),
+								array(
+									'types' => array( 'array' ),
+									'variable' => '',
+									'content' => '',
+									'hash' => array(
+										'content' => 'An entry with no name.',
+										'items' => array(
+											array(
+												'types' => array( 'bool' ),
+												'variable' => '$flag',
+												'content' => 'A flag.',
+											),
+										),
+									),
+								),
+							),
+						),
+					),
+					array(
+						'name' => 'return',
+						'content' => '$results {     The results, or false.<br>    @type int $ID Post ID.<br>}',
+						'types' => array( 'array', 'false' ),
+						'hash' => array(
+							'content' => 'The results, or false.',
+							'items' => array(
+								array(
+									'types' => array( 'int' ),
+									'variable' => '$ID',
+									'content' => 'Post ID.',
+								),
+							),
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a hash whose braces do not balance is exported as text only.
+	 */
+	public function test_unbalanced_hash_notation() {
+
+		$this->assertFunctionHasDocs(
+			'test_unbalanced_hash_notation'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => '{     Arguments.<br>    @type string $label Label.',
+						'types' => array( 'array' ),
+						'variable' => '$args',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test the nested hash of a WordPress core function (wp_register_ability).
+	 */
+	public function test_core_hash_notation() {
+
+		$func = $this->find_entity_data_in( $this->export_data, 'functions', 'docs_wp_register_ability' );
+
+		$this->assertSame(
+			array(
+				'content' => 'An associative array of arguments for configuring the ability.',
+				'items' => array(
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$label',
+						'content' => 'Required. The human-readable label for the ability.',
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$description',
+						'content' => 'Required. A detailed description of what the ability does and when it should be used.',
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$category',
+						'content' => 'Required. The ability category slug this ability belongs to.<br>The ability category must be registered via <code>wp_register_ability_category()</code> before registering the ability.',
+					),
+					array(
+						'types' => array( 'callable' ),
+						'variable' => '$execute_callback',
+						'content' => 'Required. A callback function to execute when the ability is invoked.<br>Receives optional mixed input data and must return either a result value (any type) or a <code>WP_Error</code> object on failure.',
+					),
+					array(
+						'types' => array( 'callable' ),
+						'variable' => '$permission_callback',
+						'content' => 'Required. A callback function to check permissions before execution.<br>Receives optional mixed input data (same as <code>execute_callback</code>) and must return <code>true</code>/<code>false</code> for simple checks, or <code>WP_Error</code> for detailed error responses.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$input_schema',
+						'content' => 'Optional. JSON Schema definition for validating the ability\'s input.<br>Must be a valid JSON Schema object defining the structure and constraints for input data. Used for automatic validation and API documentation.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$output_schema',
+						'content' => 'Optional. JSON Schema definition for the ability\'s output.<br>Describes the structure of successful return values from <code>execute_callback</code>. Used for documentation and validation.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$meta',
+						'content' => '',
+						'hash' => array(
+							'content' => 'Optional. Additional metadata for the ability.',
+							'items' => array(
+								array(
+									'types' => array( 'array<string, bool|null>' ),
+									'variable' => '$annotations',
+									'content' => '',
+									'hash' => array(
+										'content' => 'Optional. Semantic annotations describing the ability\'s behavioral characteristics.<br>These annotations are hints for tooling and documentation.',
+										'items' => array(
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$readonly',
+												'content' => 'Optional. If true, the ability does not modify its environment.',
+											),
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$destructive',
+												'content' => 'Optional. If true, the ability may perform destructive updates to its environment.<br>If false, the ability performs only additive updates.',
+											),
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$idempotent',
+												'content' => 'Optional. If true, calling the ability repeatedly with the same arguments will have no additional effect on its environment.',
+											),
+										),
+									),
+								),
+								array(
+									'types' => array( 'bool' ),
+									'variable' => '$public',
+									'content' => 'Optional. Whether the ability is meant to be available to clients such as the REST API, MCP, or AI agents. Seeds the default for per-channel flags like <code>$show_in_rest</code>.<br>Defaults to false.',
+								),
+								array(
+									'types' => array( 'bool' ),
+									'variable' => '$show_in_rest',
+									'content' => 'Optional. Whether to expose this ability in the REST API.<br>When true, the ability can be invoked via HTTP requests.<br>Default is the value of <code>$public</code> when set, false otherwise.',
+								),
+							),
+						),
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$ability_class',
+						'content' => 'Optional. Fully-qualified custom class name to instantiate instead of the default <code>WP_Ability</code> class. The custom class must extend <code>WP_Ability</code>. Useful for advanced customization of ability behavior.',
+					),
+				),
+			),
+			$func['doc']['tags'][1]['hash']
+		);
+	}
+
+	/**
 	 * Test the type expression reader directly.
 	 *
 	 * @dataProvider data_type_expressions

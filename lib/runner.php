@@ -542,6 +542,17 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 		if ( method_exists( $tag, 'getVariableName' ) ) {
 			$tag_data['variable'] = null !== $parsed_tag ? $parsed_tag['variable'] : $tag->getVariableName();
 		}
+		if ( $tag instanceof \phpDocumentor\Reflection\DocBlock\Tag\ReturnTag && ! ( $tag instanceof \phpDocumentor\Reflection\DocBlock\Tag\MethodTag ) ) {
+			// Hash notation, structured; `content` keeps it as flat text.
+			$hash = export_docblock_hash(
+				null !== $parsed_tag ? $parsed_tag['description'] : $tag->getDescription(),
+				$docblock->getContext(),
+				get_docblock_template_names( $docblock )
+			);
+			if ( null !== $hash ) {
+				$tag_data['hash'] = $hash;
+			}
+		}
 		if ( method_exists( $tag, 'getReference' ) ) {
 			$tag_data['refers'] = $tag->getReference();
 		}
@@ -856,6 +867,196 @@ function is_docblock_class_name( $name ) {
 	return '\\' !== $name[0] &&
 		false === strpos( $name, '-' ) &&
 		! in_array( strtolower( $name ), $keywords, true );
+}
+
+/**
+ * Reads WordPress hash notation from a tag description.
+ *
+ * A description of the form `{ intro @type Type $key Desc. ... }` documents the
+ * keys of an array. Each `@type` line names one key; a `@type` line ending in
+ * `{` opens a nested hash, closed by a line holding only `}`. For example:
+ *
+ *     @param array $args {
+ *         Optional. Arguments.
+ *
+ *         @type string               $label Label.
+ *         @type array<string, mixed> $meta  {
+ *             Metadata.
+ *
+ *             @type bool $public Whether public.
+ *         }
+ *     }
+ *
+ * The tag's `content` keeps the hash as flat text; this is a structured copy.
+ *
+ * @param string                                          $description Raw tag description.
+ * @param \phpDocumentor\Reflection\DocBlock\Context|null $context     DocBlock context.
+ * @param true[]                                          $templates   Template names declared in the DocBlock, as keys.
+ *
+ * @return array|null {
+ *     Null unless the description is a hash with at least one `@type` line and
+ *     balanced braces.
+ *
+ *     @type string $content Text before the first `@type` line.
+ *     @type array  $items   {
+ *         One entry per `@type` line.
+ *
+ *         @type string[] $types    One string per top-level union member.
+ *         @type string   $variable Key name as written, such as `$label`,
+ *                                  `$0` or `...$0`, or an empty string.
+ *         @type string   $content  Description.
+ *         @type array    $hash     Nested hash, in this same shape, if any.
+ *     }
+ * }
+ */
+function export_docblock_hash( $description, $context = null, array $templates = array() ) {
+	$description = trim( $description );
+
+	// A few `@return` tags name the returned array first: `@return array $args {`.
+	$description = preg_replace( '/\A(?:\.\.\.)?\$\w+\s+(?=\{)/', '', $description );
+	if ( '{' !== substr( $description, 0, 1 ) || '}' !== substr( $description, -1 ) ) {
+		return null;
+	}
+
+	$lines = explode( "\n", substr( $description, 1, -1 ) );
+	$index = 0;
+	$hash  = parse_docblock_hash_lines( $lines, $index, false, $context, $templates );
+	if ( null === $hash || empty( $hash['items'] ) ) {
+		return null;
+	}
+
+	return $hash;
+}
+
+/**
+ * Reads the lines of one hash level, recursing into nested hashes.
+ *
+ * @param string[]                                        $lines     Hash body lines.
+ * @param int                                             $index     Current line; left on the closing line of a nested hash.
+ * @param bool                                            $nested    Whether a closing `}` line ends this level.
+ * @param \phpDocumentor\Reflection\DocBlock\Context|null $context   DocBlock context.
+ * @param true[]                                          $templates Template names declared in the DocBlock, as keys.
+ *
+ * @return array|null The hash, or null when its braces do not balance.
+ */
+function parse_docblock_hash_lines( array $lines, &$index, $nested, $context, array $templates ) {
+	$intro   = array();
+	$items   = array();
+	$current = null;
+	$count   = count( $lines );
+
+	for ( ; $index < $count; $index++ ) {
+		$line = trim( $lines[ $index ] );
+
+		if ( preg_match( '/\A\}[,;.]?\z/', $line ) ) {
+			if ( ! $nested ) {
+				return null;
+			}
+			return finish_docblock_hash( $intro, $items );
+		}
+
+		if ( preg_match( '/\A@type(?:\s+(.*))?\z/s', $line, $match ) ) {
+			$item = parse_docblock_hash_item( isset( $match[1] ) ? $match[1] : '', $context, $templates );
+			if ( $item['opens'] ) {
+				$index++;
+				$item['hash'] = parse_docblock_hash_lines( $lines, $index, true, $context, $templates );
+				if ( null === $item['hash'] ) {
+					return null;
+				}
+			}
+			unset( $item['opens'] );
+			$items[] = $item;
+			$current = count( $items ) - 1;
+			continue;
+		}
+
+		if ( null === $current ) {
+			$intro[] = $line;
+		} else {
+			$items[ $current ]['lines'][] = $line;
+		}
+	}
+
+	return $nested ? null : finish_docblock_hash( $intro, $items );
+}
+
+/**
+ * Reads the type, key name and first description line of a `@type` line.
+ *
+ * @param string                                          $value     Text after `@type`.
+ * @param \phpDocumentor\Reflection\DocBlock\Context|null $context   DocBlock context.
+ * @param true[]                                          $templates Template names declared in the DocBlock, as keys.
+ *
+ * @return array Item with `types`, `variable`, description `lines`, and whether it `opens` a nested hash.
+ */
+function parse_docblock_hash_item( $value, $context, array $templates ) {
+	$types = array();
+	$rest  = $value;
+
+	if ( '' !== $value && ! preg_match( '/\A(?:\.\.\.)?\$/', $value ) ) {
+		$parsed = parse_docblock_type_expression( $value, $context, $templates );
+		if ( null !== $parsed ) {
+			$types = $parsed['types'];
+			$rest  = (string) substr( $value, $parsed['length'] );
+		} else {
+			// The type as phpDocumentor would read a tag's: the first word.
+			$words      = preg_split( '/\s+/Su', $value, 2 );
+			$collection = new \phpDocumentor\Reflection\DocBlock\Type\Collection( array( $words[0] ), $context );
+			$types      = $collection->getArrayCopy();
+			$rest       = isset( $words[1] ) ? $words[1] : '';
+		}
+	}
+
+	$variable = '';
+	$words    = preg_split( '/\s+/Su', ltrim( $rest ), 2 );
+	if ( preg_match( '/\A(?:\.\.\.)?\$/', $words[0] ) ) {
+		$variable = $words[0];
+		$rest     = isset( $words[1] ) ? $words[1] : '';
+	}
+
+	$rest  = trim( $rest );
+	$opens = '{' === substr( $rest, -1 );
+	if ( $opens ) {
+		$rest = rtrim( substr( $rest, 0, -1 ) );
+	}
+
+	return array(
+		'types'    => $types,
+		'variable' => $variable,
+		'lines'    => array( $rest ),
+		'opens'    => $opens,
+	);
+}
+
+/**
+ * Formats the text of a parsed hash level like a tag's `content`.
+ *
+ * @param string[] $intro Lines before the first `@type` line.
+ * @param array[]  $items Parsed items, each with description `lines`.
+ *
+ * @return array Hash with `content` and `items`.
+ */
+function finish_docblock_hash( array $intro, array $items ) {
+	$format = function ( array $lines ) {
+		return preg_replace( '/[\n\r]+/', ' ', format_description( trim( implode( "\n", $lines ) ) ) );
+	};
+
+	foreach ( $items as $key => $item ) {
+		$finished = array(
+			'types'    => $item['types'],
+			'variable' => $item['variable'],
+			'content'  => $format( $item['lines'] ),
+		);
+		if ( isset( $item['hash'] ) ) {
+			$finished['hash'] = $item['hash'];
+		}
+		$items[ $key ] = $finished;
+	}
+
+	return array(
+		'content' => $format( $intro ),
+		'items'   => $items,
+	);
 }
 
 /**

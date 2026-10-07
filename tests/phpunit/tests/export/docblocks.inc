@@ -179,6 +179,47 @@ function test_invalid_type_fallback( $x ) {
 }
 
 /**
+ * Tests hash notation shapes from WordPress core.
+ *
+ * @param array $args {
+ *     Optional. Arguments.
+ *
+ *     @type string                  $label Label.
+ *     @type array<int               $broken A type PHPStan's parser rejects.
+ *     @type array<string, int|null> ...$0 {
+ *         Each entry, wrapped onto
+ *         a continuation line.
+ *
+ *         @type string $0 The first element.
+ *         @type int    $1 The second element.
+ *     }
+ *     @type array {
+ *         An entry with no name.
+ *
+ *         @type bool $flag A flag.
+ *     },
+ * }
+ * @return array|false $results {
+ *     The results, or false.
+ *
+ *     @type int $ID Post ID.
+ * }
+ */
+function test_hash_notation( $args ) {
+}
+
+/**
+ * Tests hash notation whose braces do not balance.
+ *
+ * @param array $args {
+ *     Arguments.
+ *
+ *     @type string $label Label.
+ */
+function test_unbalanced_hash_notation( $args ) {
+}
+
+/**
  * This is a class docblock.
  *
  * This is the more wordy description: This is a comment with two *'s at the start,
