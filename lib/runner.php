@@ -525,18 +525,22 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 			continue;
 		}
 
+		// Types, variable and description come from PHPStan's type parser when
+		// it reads the tag; otherwise from phpDocumentor, as before.
+		$parsed_tag = parse_docblock_tag( $tag );
+
 		$tag_data = array(
 			'name'    => $tag->getName(),
-			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( $tag->getDescription() ) ),
+			'content' => preg_replace( '/[\n\r]+/', ' ', format_description( null !== $parsed_tag ? $parsed_tag['description'] : $tag->getDescription() ) ),
 		);
 		if ( method_exists( $tag, 'getTypes' ) ) {
-			$tag_data['types'] = $tag->getTypes();
+			$tag_data['types'] = null !== $parsed_tag ? $parsed_tag['types'] : $tag->getTypes();
 		}
 		if ( method_exists( $tag, 'getLink' ) ) {
 			$tag_data['link'] = $tag->getLink();
 		}
 		if ( method_exists( $tag, 'getVariableName' ) ) {
-			$tag_data['variable'] = $tag->getVariableName();
+			$tag_data['variable'] = null !== $parsed_tag ? $parsed_tag['variable'] : $tag->getVariableName();
 		}
 		if ( method_exists( $tag, 'getReference' ) ) {
 			$tag_data['refers'] = $tag->getReference();
@@ -559,6 +563,299 @@ function export_docblock( $element, array $inherited_setup_blueprints = array(),
 	}
 
 	return $output;
+}
+
+/**
+ * Reads a tag's types, variable and description with PHPStan's type parser.
+ *
+ * phpDocumentor 2.x splits a tag's content on the first whitespace and its type
+ * on every `|`, so `@param array<string, mixed> $l10n Desc.` exports the type
+ * `array<string,` and the description `mixed> $l10n Desc.`. This reads the type
+ * expression at the start of the content with PHPStan's grammar instead, then
+ * the variable and description that follow it.
+ *
+ * Applies to the tags phpDocumentor gives a type: `@param`, `@var`, `@property`,
+ * `@property-read` and `@property-write` read a variable after the type;
+ * `@return` and `@throws` do not. `@method` keeps phpDocumentor's parsing.
+ *
+ * @param \phpDocumentor\Reflection\DocBlock\Tag $tag Tag to read.
+ *
+ * @return array|null {
+ *     Null when the tag has no type to read or PHPStan's parser does not accept
+ *     it, in which case the caller keeps phpDocumentor's result for the tag.
+ *
+ *     @type string[] $types       One string per top-level union member.
+ *     @type string   $variable    Variable name, or an empty string. Parameter-like tags only.
+ *     @type string   $description The text after the type and variable.
+ * }
+ */
+function parse_docblock_tag( $tag ) {
+	if (
+		$tag instanceof \phpDocumentor\Reflection\DocBlock\Tag\MethodTag ||
+		! ( $tag instanceof \phpDocumentor\Reflection\DocBlock\Tag\ReturnTag )
+	) {
+		return null;
+	}
+
+	$has_variable = $tag instanceof \phpDocumentor\Reflection\DocBlock\Tag\ParamTag;
+	$content      = (string) $tag->getContent();
+	$docblock     = $tag->getDocBlock();
+	$context      = $docblock ? $docblock->getContext() : null;
+	$templates    = get_docblock_template_names( $docblock );
+
+	if ( '' === $content ) {
+		return null;
+	}
+
+	$types = array();
+	$rest  = $content;
+
+	// A parameter-like tag may name its variable with no type: `@param $var Desc`.
+	if ( ! $has_variable || ! preg_match( '/\A&?(?:\.\.\.)?\$/', $content ) ) {
+		$parsed = parse_docblock_type_expression( $content, $context, $templates );
+		if ( null === $parsed ) {
+			return null;
+		}
+		$types = $parsed['types'];
+		$rest  = (string) substr( $content, $parsed['length'] );
+	}
+
+	$variable = '';
+	if ( $has_variable ) {
+		// As phpDocumentor reads it: the next whitespace-delimited word, when it
+		// starts with `$` or `...$`. A by-reference `&` is also accepted here.
+		$words = preg_split( '/\s+/Su', ltrim( $rest ), 2 );
+		if ( preg_match( '/\A&?(?:\.\.\.)?(\$.*)\z/s', $words[0], $match ) ) {
+			$variable = $match[1];
+			$rest     = isset( $words[1] ) ? $words[1] : '';
+		}
+	}
+
+	return array(
+		'types'       => $types,
+		'variable'    => $variable,
+		'description' => trim( $rest ),
+	);
+}
+
+/**
+ * Parses the type expression at the start of a string with PHPStan's type parser.
+ *
+ * The type must end at whitespace or at the end of the string, and must not
+ * attach an opening bracket across whitespace to the type before it outside
+ * any bracket: in `@return string <code>x</code>`, `<code>` belongs to the
+ * description.
+ *
+ * Each top-level union member is printed as written, with class names resolved
+ * against the DocBlock's namespace and `use` aliases the way phpDocumentor
+ * resolves them, including inside generics, shapes and callables. A line break
+ * inside a type, as in a multi-line array shape, is printed as one space.
+ *
+ * @param string                                         $text      Text starting with a type.
+ * @param \phpDocumentor\Reflection\DocBlock\Context|null $context   DocBlock context.
+ * @param true[]                                         $templates Template names declared in the DocBlock, as keys.
+ *
+ * @return array|null {
+ *     Null when no type expression is read.
+ *
+ *     @type string[] $types  One string per top-level union member.
+ *     @type int      $length Byte length of the type expression in `$text`.
+ * }
+ */
+function parse_docblock_type_expression( $text, $context = null, array $templates = array() ) {
+	static $lexer = null, $type_parser = null;
+	if ( null === $lexer ) {
+		$config      = new \PHPStan\PhpDocParser\ParserConfig( array( 'indexes' => true ) );
+		$lexer       = new \PHPStan\PhpDocParser\Lexer\Lexer( $config );
+		$type_parser = new \PHPStan\PhpDocParser\Parser\TypeParser(
+			$config,
+			new \PHPStan\PhpDocParser\Parser\ConstExprParser( $config )
+		);
+	}
+
+	try {
+		$tokens = $lexer->tokenize( $text );
+		$node   = $type_parser->parse( new \PHPStan\PhpDocParser\Parser\TokenIterator( $tokens ) );
+	} catch ( \Throwable $exception ) {
+		return null;
+	}
+
+	$start = $node->getAttribute( \PHPStan\PhpDocParser\Ast\Attribute::START_INDEX );
+	$end   = $node->getAttribute( \PHPStan\PhpDocParser\Ast\Attribute::END_INDEX );
+	if ( 0 !== $start || null === $end ) {
+		return null;
+	}
+
+	$length = 0;
+	for ( $i = 0; $i <= $end; $i++ ) {
+		$length += strlen( $tokens[ $i ][0] );
+	}
+	if ( $length < strlen( $text ) && ! preg_match( '/\A\s/', substr( $text, $length, 1 ) ) ) {
+		return null;
+	}
+
+	$whitespace = array(
+		\PHPStan\PhpDocParser\Lexer\Lexer::TOKEN_HORIZONTAL_WS => true,
+		\PHPStan\PhpDocParser\Lexer\Lexer::TOKEN_PHPDOC_EOL    => true,
+	);
+	$depth      = 0;
+	$previous   = '';
+	for ( $i = 0; $i <= $end; $i++ ) {
+		$value = $tokens[ $i ][0];
+		if ( isset( $whitespace[ $tokens[ $i ][1] ] ) ) {
+			// `callable(): (A|B)` and `A | (B|C)[]` start a new type after the
+			// whitespace; `array <int>` would attach a bracket to the type before it.
+			if (
+				0 === $depth &&
+				in_array( $tokens[ $i + 1 ][0], array( '<', '(', '[', '{' ), true ) &&
+				! in_array( $previous, array( ':', '|', '&' ), true )
+			) {
+				return null;
+			}
+			continue;
+		}
+		if ( in_array( $value, array( '<', '(', '[', '{' ), true ) ) {
+			$depth++;
+		} elseif ( in_array( $value, array( '>', ')', ']', '}' ), true ) ) {
+			$depth--;
+		}
+		$previous = $value;
+	}
+
+	$replacements = resolve_docblock_type_names( $node, $tokens, $context, $templates );
+	$members      = $node instanceof \PHPStan\PhpDocParser\Ast\Type\UnionTypeNode ? $node->types : array( $node );
+	$types        = array();
+	foreach ( $members as $member ) {
+		$printed = '';
+		$to      = $member->getAttribute( \PHPStan\PhpDocParser\Ast\Attribute::END_INDEX );
+		for ( $i = $member->getAttribute( \PHPStan\PhpDocParser\Ast\Attribute::START_INDEX ); $i <= $to; $i++ ) {
+			$printed .= isset( $replacements[ $i ] ) ? $replacements[ $i ] : $tokens[ $i ][0];
+		}
+		$types[] = preg_replace( '/\s*[\r\n]\s*/', ' ', $printed );
+	}
+
+	return array(
+		'types'  => $types,
+		'length' => $length,
+	);
+}
+
+/**
+ * Resolves the class names in a parsed type to fully qualified names.
+ *
+ * Follows phpDocumentor's `Type\Collection::expand()`: a name starting with `\`
+ * is kept; a name whose first segment is a `use` alias has that segment
+ * replaced; any other name is prefixed with `\` and the current namespace.
+ * PHPDoc keywords, PHPStan pseudo-types and the DocBlock's own template names
+ * are never prefixed, and neither are array and object shape keys.
+ *
+ * @param \PHPStan\PhpDocParser\Ast\Type\TypeNode         $node      Parsed type.
+ * @param array                                           $tokens    Tokens the type was parsed from.
+ * @param \phpDocumentor\Reflection\DocBlock\Context|null $context   DocBlock context.
+ * @param true[]                                          $templates Template names declared in the DocBlock, as keys.
+ *
+ * @return string[] Resolved names keyed by token index.
+ */
+function resolve_docblock_type_names( $node, array $tokens, $context = null, array $templates = array() ) {
+	$visitor = new class() extends \PHPStan\PhpDocParser\Ast\AbstractNodeVisitor {
+		/** @var \PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode[] */
+		public $names = array();
+		/** @var true[] Shape key nodes, keyed by object ID. */
+		public $keys = array();
+
+		public function enterNode( \PHPStan\PhpDocParser\Ast\Node $node ) {
+			if (
+				( $node instanceof \PHPStan\PhpDocParser\Ast\Type\ArrayShapeItemNode || $node instanceof \PHPStan\PhpDocParser\Ast\Type\ObjectShapeItemNode ) &&
+				is_object( $node->keyName )
+			) {
+				$this->keys[ spl_object_id( $node->keyName ) ] = true;
+			} elseif ( $node instanceof \PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode && ! isset( $this->keys[ spl_object_id( $node ) ] ) ) {
+				$this->names[] = $node;
+			} elseif (
+				$node instanceof \PHPStan\PhpDocParser\Ast\Type\ConstTypeNode &&
+				$node->constExpr instanceof \PHPStan\PhpDocParser\Ast\ConstExpr\ConstFetchNode &&
+				'' !== $node->constExpr->className
+			) {
+				// `Base::TYPE_FEED` starts with the class name's token.
+				$this->names[] = $node;
+			}
+			return null;
+		}
+	};
+	$traverser = new \PHPStan\PhpDocParser\Ast\NodeTraverser( array( $visitor ) );
+	$traverser->traverse( array( $node ) );
+
+	$namespace = $context ? $context->getNamespace() : '';
+	$aliases   = $context ? $context->getNamespaceAliases() : array();
+
+	$replacements = array();
+	foreach ( $visitor->names as $identifier ) {
+		$index = $identifier->getAttribute( \PHPStan\PhpDocParser\Ast\Attribute::START_INDEX );
+		$name  = $tokens[ $index ][0];
+		$known = $identifier instanceof \PHPStan\PhpDocParser\Ast\Type\ConstTypeNode ? $identifier->constExpr->className : $identifier->name;
+		if ( $name !== $known || isset( $templates[ $name ] ) || ! is_docblock_class_name( $name ) ) {
+			continue;
+		}
+
+		$segments = explode( '\\', $name, 2 );
+		if ( isset( $aliases[ $segments[0] ] ) ) {
+			$segments[0] = $aliases[ $segments[0] ];
+			$replacements[ $index ] = implode( '\\', $segments );
+		} else {
+			$replacements[ $index ] = '\\' . ( '' !== $namespace ? $namespace . '\\' : '' ) . $name;
+		}
+	}
+
+	return $replacements;
+}
+
+/**
+ * Returns the template type names a DocBlock declares.
+ *
+ * `@template T` makes `T` a type variable in that DocBlock, not a class name.
+ * Templates declared on an enclosing class are not visible here.
+ *
+ * @param \phpDocumentor\Reflection\DocBlock|null $docblock DocBlock.
+ *
+ * @return true[] Template names as keys.
+ */
+function get_docblock_template_names( $docblock ) {
+	$templates = array();
+	if ( ! $docblock ) {
+		return $templates;
+	}
+	foreach ( $docblock->getTags() as $tag ) {
+		if (
+			preg_match( '/\A(?:phpstan-|psalm-)?template(?:-covariant|-contravariant)?\z/', $tag->getName() ) &&
+			preg_match( '/\A[A-Za-z_\x80-\xff][\w\x80-\xff]*/', (string) $tag->getContent(), $match )
+		) {
+			$templates[ $match[0] ] = true;
+		}
+	}
+	return $templates;
+}
+
+/**
+ * Reports whether a type identifier is a relative class name to resolve.
+ *
+ * @param string $name Identifier as written.
+ *
+ * @return bool False for fully qualified names, PHPDoc keywords and PHPStan
+ *              pseudo-types such as `list`, `non-empty-string` or `max`.
+ */
+function is_docblock_class_name( $name ) {
+	static $keywords = array(
+		// phpDocumentor's keywords.
+		'string', 'int', 'integer', 'bool', 'boolean', 'float', 'double', 'object', 'mixed', 'array',
+		'resource', 'void', 'null', 'scalar', 'callback', 'callable', 'false', 'true', 'self', 'static',
+		// PHPStan's types written without a dash.
+		'iterable', 'list', 'never', 'noreturn', 'numeric', 'number', 'empty', 'parent', 'max', 'min',
+	);
+
+	// Class names cannot contain `-`; PHPStan types such as `class-string` do.
+	return '\\' !== $name[0] &&
+		false === strpos( $name, '-' ) &&
+		! in_array( strtolower( $name ), $keywords, true );
 }
 
 /**
