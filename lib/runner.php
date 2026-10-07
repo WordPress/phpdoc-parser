@@ -1457,7 +1457,7 @@ function export_uses( array $uses ) {
 
 				default:
 				case 'functions':
-					$out[ $type ][] = array(
+					$used = array(
 						'name'     => $name,
 						'line'     => $element->getLineNumber(),
 						'end_line' => $element->getNode()->getAttribute( 'endLine' ),
@@ -1475,8 +1475,10 @@ function export_uses( array $uses ) {
 							$version = (string) $arguments[1]->value->value;
 						}
 
-						$out[ $type ][0]['deprecation_version'] = $version;
+						$used['deprecation_version'] = $version;
 					}
+
+					$out[ $type ][] = $used;
 
 					break;
 			}
