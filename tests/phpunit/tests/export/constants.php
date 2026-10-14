@@ -26,4 +26,24 @@ class Export_Constants extends Export_UnitTestCase {
 			, array( 'description' => 'A constant declared with const.' )
 		);
 	}
+
+	/**
+	 * Test that class constants are exported.
+	 */
+	public function test_class_constants() {
+
+		$class = $this->find_entity_data_in( $this->export_data, 'classes', 'Test_Constants_Class' );
+
+		$this->assertEntityContains(
+			$class
+			, 'constants'
+			, array(
+				'name'            => 'TEST_CLASS_CONSTANT',
+				'line'            => 18,
+				'end_line'        => 18,
+				'value'           => '2',
+				'doc.description' => 'A class constant.',
+			)
+		);
+	}
 }

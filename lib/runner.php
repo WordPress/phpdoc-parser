@@ -4,6 +4,7 @@ namespace WP_Parser;
 
 use phpDocumentor\Reflection\BaseReflector;
 use phpDocumentor\Reflection\ClassReflector;
+use phpDocumentor\Reflection\ClassReflector\ConstantReflector;
 use phpDocumentor\Reflection\ClassReflector\MethodReflector;
 use phpDocumentor\Reflection\ClassReflector\PropertyReflector;
 use phpDocumentor\Reflection\FunctionReflector;
@@ -135,6 +136,7 @@ function parse_files( $files, $root ) {
 					'abstract'   => $class->isAbstract(),
 					'extends'    => $class->getParentClass(),
 					'implements' => $class->getInterfaces(),
+					'constants'  => export_constants( $class->getConstants(), $class_setup_blueprints, $path ),
 					'properties' => export_properties( $class->getProperties(), $class_setup_blueprints, $path ),
 					'methods'    => export_methods( $class->getMethods(), $class_setup_blueprints, $path ),
 					'doc'        => $class_doc,
@@ -704,6 +706,29 @@ function export_arguments( array $arguments ) {
 	}
 
 	return $output;
+}
+
+/**
+ * @param ConstantReflector[] $constants
+ * @param array               $inherited_setup_blueprints Optional. Setup Blueprints inherited from the file or class DocBlock.
+ * @param string              $source_file                Optional. Source path used in invalid snippet metadata errors.
+ *
+ * @return array
+ */
+function export_constants( array $constants, array $inherited_setup_blueprints = array(), $source_file = '' ) {
+	$out = array();
+
+	foreach ( $constants as $constant ) {
+		$out[] = array(
+			'name'     => $constant->getShortName(),
+			'line'     => $constant->getLineNumber(),
+			'end_line' => $constant->getNode()->getAttribute( 'endLine' ),
+			'value'    => $constant->getValue(),
+			'doc'      => export_docblock( $constant, $inherited_setup_blueprints, $source_file ),
+		);
+	}
+
+	return $out;
 }
 
 /**
