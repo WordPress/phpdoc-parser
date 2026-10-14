@@ -91,6 +91,7 @@ function parse_files( $files, $root ) {
 					'name'  => $constant->getShortName(),
 					'line'  => $constant->getLineNumber(),
 					'value' => $constant->getValue(),
+					'doc'   => export_docblock( $constant, $file_setup_blueprints, $path ),
 				);
 			}
 
