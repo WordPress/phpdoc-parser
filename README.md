@@ -69,12 +69,12 @@ Check out the other side of the comparison and install its dependencies. The exp
 
 ```bash
 git fetch origin
-git worktree add base "$(git merge-base origin/master HEAD)"
+git worktree add base "$(git merge-base origin/trunk HEAD)"
 composer --working-dir=base install
 composer install
 ```
 
-On a branch this compares against the commit the branch left `master` at. CI runs on the pull request merged into `master`, so it compares against the `master` tip; merge `master` into the branch first to get the same comparison.
+On a branch this compares against the commit the branch left `trunk` at. CI runs on the pull request merged into `trunk`, so it compares against the `trunk` tip; merge `trunk` into the branch first to get the same comparison.
 
 Export both sides over the same corpus and diff. `export-corpus.php` takes the parser root and the corpus directory, and writes JSON to stdout:
 

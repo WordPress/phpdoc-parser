@@ -6,7 +6,7 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-    target-branch: master
+    target-branch: trunk
 
   - package-ecosystem: npm
     directory: /
@@ -14,7 +14,7 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-    target-branch: master
+    target-branch: trunk
 
   - package-ecosystem: github-actions
     directory: /
@@ -22,4 +22,4 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-    target-branch: master
+    target-branch: trunk
