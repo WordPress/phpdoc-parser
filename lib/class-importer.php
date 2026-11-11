@@ -587,13 +587,21 @@ class Importer implements LoggerAwareInterface {
 
 		// Look for an existing post for this item
 		if ( 'wp-parser-hook' === $post_data['post_type'] ) {
-			$existing_post_id = $wpdb->get_var(
-				$q = $wpdb->prepare(
-					"SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type = %s LIMIT 1",
-					$slug,
+			// Hooks like `activate_plugin` and `activate_{$plugin}` share a slug, so match the title as wp_insert_post() stores it.
+			$existing_post = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The import must see the current rows.
+				$wpdb->prepare(
+					"SELECT ID, post_name FROM $wpdb->posts WHERE BINARY post_title = %s AND post_type = %s LIMIT 1",
+					wp_unslash( sanitize_post_field( 'post_title', wp_slash( $post_data['post_title'] ), 0, 'db' ) ),
 					$post_data['post_type']
 				)
 			);
+
+			$existing_post_id = $existing_post ? $existing_post->ID : null;
+
+			// Keep the unique slug wp_insert_post() gave it, like `activate_plugin-2`.
+			if ( $existing_post ) {
+				$post_data['post_name'] = $existing_post->post_name;
+			}
 		} else {
 			$existing_post_id = $wpdb->get_var(
 				$q = $wpdb->prepare(

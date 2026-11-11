@@ -138,6 +138,10 @@ class Relationships {
 			'method' => $importer->post_type_method,
 			'function' => $importer->post_type_function,
 		);
+
+		// The previous import in this request left IDs where slugs are expected.
+		$this->slugs_to_ids  = array();
+		$this->relationships = array();
 	}
 
 	/**
@@ -166,7 +170,8 @@ class Relationships {
 	public function import_item( $post_id, $data, $post_data ) {
 
 		$from_type = $post_data['post_type'];
-		$slug = $post_data['post_name'];
+		// Hooks are keyed by name, since different hooks can share a slug.
+		$slug = ( $this->post_types['hook'] === $from_type ) ? $data['name'] : $post_data['post_name'];
 
 		$this->slugs_to_ids[ $from_type ][ $slug ] = $post_id;
 
@@ -198,8 +203,7 @@ class Relationships {
 			// Functions to Hooks
 			$to_type = $this->post_types['hook'];
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
-				// Never a namespace on a hook so don't send one.
-				$to_hook_slug = $this->names_to_slugs( $to_hook['name'] );
+				$to_hook_slug = array( $to_hook['name'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
@@ -236,7 +240,7 @@ class Relationships {
 			// Methods to Hooks
 			$to_type = $this->post_types['hook'];
 			foreach ( (array) @$data['hooks'] as $to_hook ) {
-				$to_hook_slug = $this->names_to_slugs( $to_hook['name'] );
+				$to_hook_slug = array( $to_hook['name'] );
 
 				$this->relationships[ $from_type ][ $post_id ][ $to_type ][] = $to_hook_slug;
 			}
