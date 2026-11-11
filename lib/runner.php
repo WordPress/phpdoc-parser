@@ -695,11 +695,17 @@ function export_arguments( array $arguments ) {
 	$output = array();
 
 	foreach ( $arguments as $argument ) {
-		$output[] = array(
+		$data = array(
 			'name'    => $argument->getName(),
 			'default' => $argument->getDefault(),
 			'type'    => $argument->getType(),
 		);
+
+		if ( $argument->getNode()->variadic ) {
+			$data['variadic'] = true;
+		}
+
+		$output[] = $data;
 	}
 
 	return $output;
