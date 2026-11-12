@@ -45,5 +45,79 @@ class Export_Hooks extends Export_UnitTestCase {
 				'arguments.1' => '$filter_context'
 			)
 		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\xC0 hook', 'line' => 9 )
+		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\x09tab', 'line' => 10 )
+		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\x09tab', 'line' => 11 )
+		);
+	}
+
+	/**
+	 * Test that hook names keep escapes that are invalid UTF-8 once interpreted.
+	 */
+	public function test_hook_names_keep_invalid_utf8_escapes() {
+
+		$this->assertFileContainsHook(
+			array( 'name' => '\\xC0 bad', 'line' => 12 )
+		);
+	}
+
+	/**
+	 * Test that heredoc and nowdoc arguments keep their delimiters.
+	 */
+	public function test_hook_arguments_keep_doc_string_delimiters() {
+
+		$this->assertFileContainsHook(
+			array(
+				'type' => 'filter',
+				'name' => 'heredoc_filter',
+				'line' => 13,
+				'arguments.0' => "<<<EOT\nheredoc body\nEOT",
+				'arguments.1' => '2',
+			)
+		);
+
+		$this->assertFileContainsHook(
+			array(
+				'type' => 'filter',
+				'name' => 'nowdoc_filter',
+				'line' => 16,
+				'arguments.0' => "<<<'EOT'\nnowdoc \$body\nEOT",
+				'arguments.1' => '2',
+			)
+		);
+	}
+
+	/**
+	 * Test that hook names containing a quote character lose the quotes that
+	 * surround them in the source.
+	 */
+	public function test_hook_names_containing_quotes() {
+
+		$this->assertFileContainsHook(
+			array( 'name' => "it's", 'line' => 19 )
+		);
+
+		$this->assertFileContainsHook(
+			array( 'name' => "it\\'s", 'line' => 20 )
+		);
+	}
+
+	/**
+	 * Test that the exported data can be encoded as JSON.
+	 */
+	public function test_export_data_is_json_encodable() {
+
+		$this->assertNotFalse(
+			json_encode( $this->export_data, JSON_PRETTY_PRINT ),
+			json_last_error_msg()
+		);
 	}
 }

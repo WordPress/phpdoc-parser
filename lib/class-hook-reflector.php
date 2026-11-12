@@ -10,10 +10,16 @@ use phpDocumentor\Reflection\BaseReflector;
 class Hook_Reflector extends BaseReflector {
 
 	/**
+	 * Get the hook name as it is spelled in the source.
+	 *
+	 * The name is printed from the source expression instead of read from the
+	 * interpreted string value. Interpreting escape sequences may produce bytes
+	 * that are not valid UTF-8, which cannot be encoded as JSON.
+	 *
 	 * @return string
 	 */
 	public function getName() {
-		$printer = new \PhpParser\PrettyPrinter\Standard();
+		$printer = new Pretty_Printer();
 		return $this->cleanupName( $printer->prettyPrintExpr( $this->node->args[0]->value ) );
 	}
 
@@ -26,8 +32,10 @@ class Hook_Reflector extends BaseReflector {
 		$matches = array();
 
 		// quotes on both ends of a string
-		if ( preg_match( '/^[\'"]([^\'"]*)[\'"]$/', $name, $matches ) ) {
-			return $matches[1];
+		// The quoted body may contain the other quote character, as in "it's",
+		// or an escaped copy of the quote that delimits it, as in 'it\'s'.
+		if ( preg_match( '/^([\'"])((?:(?!\1)[^\\\\]|\\\\.)*)\1$/s', $name, $matches ) ) {
+			return $matches[2];
 		}
 
 		// two concatenated things, last one of them a variable
