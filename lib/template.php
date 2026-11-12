@@ -31,7 +31,7 @@ function the_content() {
 
 	foreach ( $args as $arg ) {
 		$after_content .= '<div class="wp-parser-arg">';
-		$after_content .= '<h4><code><span class="type">' . implode( '|', $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
+		$after_content .= '<h4><code><span class="type">' . get_type_list_html( $arg['types'] ) . '</span> <span class="variable">' . $arg['name'] . '</span></code></h4>';
 		$after_content .= empty( $arg['desc'] ) ? '' : wpautop( $arg['desc'], false );
 		$after_content .= '</div>';
 	}
@@ -51,7 +51,28 @@ function the_content() {
 }
 
 /**
+ * Renders a list of types as the text of a prototype.
+ *
+ * A type expression isn't markup, but it's written with characters which are:
+ * `list<string|\WP_Post>` is read as the text `list` followed by a start tag,
+ * and everything the type says about itself disappears from the page. Each type
+ * is escaped so that it's displayed as written.
+ *
+ * @param string[] $types The types to render.
+ *
+ * @return string The types as display-ready HTML.
+ */
+function get_type_list_html( $types ) {
+	return implode( '|', array_map( 'esc_html', (array) $types ) );
+}
+
+/**
  * Get the current function's return types
+ *
+ * The types are returned as display-ready HTML: the `wp_parser_return_type`
+ * filter is passed the types as they were parsed, and is responsible for
+ * escaping them, which is what the default `humanize_separator()` callback
+ * does before it decorates the separators between them.
  *
  * @return array
  */
@@ -73,7 +94,11 @@ function get_return_type() {
 /**
  * Print the current function's return type
  *
- * @see return_type
+ * The types are already escaped by the `wp_parser_return_type` filter, and
+ * aren't escaped again here: the separator between the members of a union is
+ * markup which that filter added on purpose.
+ *
+ * @see get_return_type
  */
 function the_return_type() {
 	echo implode( '|', get_return_type() );
@@ -249,12 +274,13 @@ function get_hook_arguments() {
  * @return string Prototype HTML
  */
 function get_prototype() {
+	// Already escaped by the `wp_parser_return_type` filter. @see get_return_type().
 	$type = get_return_type();
 
 	$friendly_args = array();
 	$args          = get_arguments();
 	foreach ( $args as $arg ) {
-		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', get_type_list_html( $arg['types'] ), $arg['name'] );
 		$friendly .= empty( $arg['default_value'] ) ? '' : ' <span class="default"> = <span class="value">' . $arg['default_value'] . '</span></span>';
 
 		$friendly_args[] = $friendly;
@@ -288,7 +314,7 @@ function get_hook_prototype() {
 	$friendly_args = array();
 	$args          = get_hook_arguments();
 	foreach ( $args as $arg ) {
-		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', implode( '|', $arg['types'] ), $arg['name'] );
+		$friendly = sprintf( '<span class="type">%s</span> <span class="variable">%s</span>', get_type_list_html( $arg['types'] ), $arg['name'] );
 		$has_value = ! empty( $arg['value'] ) && 0 !== strpos( $arg['value'], '$' );
 		$friendly .= $has_value ? ' <span class="default"> = <span class="value">' . $arg['value'] . '</span></span>' : '';
 
