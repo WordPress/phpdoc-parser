@@ -84,7 +84,17 @@ class Export_Method_Use extends Export_UnitTestCase {
 				'name'     => 'update',
 				'line'     => 5,
 				'end_line' => 5,
-				'class'    => '$wpdb',
+				'class'    => 'wpdb',
+				'static'   => false,
+			)
+		);
+
+		$this->assertFileUsesMethod(
+			array(
+				'name'     => 'get',
+				'line'     => 23,
+				'end_line' => 23,
+				'class'    => 'WP_Query',
 				'static'   => false,
 			)
 		);
