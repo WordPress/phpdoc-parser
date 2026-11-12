@@ -231,6 +231,464 @@ class Export_Docblocks extends Export_UnitTestCase {
 	}
 
 	/**
+	 * Test that whitespace inside a generic type does not end the type (wp_localize_script).
+	 */
+	public function test_generic_type_with_whitespace() {
+
+		$this->assertFunctionHasDocs(
+			'docs_wp_localize_script'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Script handle the data will be attached to.',
+						'types' => array( 'string' ),
+						'variable' => '$handle',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'Name for the JavaScript object. Passed directly, so it should be qualified JS variable.<br>                                         Example: \'/[a-zA-Z0-9_]+/\'.',
+						'types' => array( 'string' ),
+						'variable' => '$object_name',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'The data itself. The data can be either a single or multi-dimensional array.',
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$l10n',
+					),
+					array(
+						'name' => 'return',
+						'content' => 'True if the script was successfully localized, false otherwise.',
+						'types' => array( 'bool' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a union nested in a generic stays one type and class names inside it resolve (wp_ai_client_prompt).
+	 */
+	public function test_nested_union_inside_generic() {
+
+		$this->assertFunctionHasDocs(
+			'docs_wp_ai_client_prompt'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'Optional. Initial prompt content.<br>                                                                                                  A string for simple text prompts,                                                                                                   a MessagePart or Message object for                                                                                                   structured content, an array for a                                                                                                   message array shape, or a list of                                                                                                   parts or messages for multi-turn                                                                                                   conversations. Default null.',
+						'types' => array(
+							'string',
+							'\\WordPress\\AiClient\\Messages\\DTO\\MessagePart',
+							'\\WordPress\\AiClient\\Messages\\DTO\\Message',
+							'array',
+							'list<string|\\WordPress\\AiClient\\Messages\\DTO\\MessagePart|array>',
+							'list<\\WordPress\\AiClient\\Messages\\DTO\\Message>',
+							'null',
+						),
+						'variable' => '$prompt',
+					),
+					array(
+						'name' => 'return',
+						'content' => 'The prompt builder instance.',
+						'types' => array( 'WP_AI_Client_Prompt_Builder' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test type expressions in PHPStan's grammar: shapes, nullables, intersections, callables, pseudo-types, templates, constants and references.
+	 */
+	public function test_phpstan_type_expressions() {
+
+		$this->assertFunctionHasDocs(
+			'test_phpstan_types'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'template',
+						'content' => 'T',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'An array shape.',
+						'types' => array( 'array{label: string, count?: int}' ),
+						'variable' => '$shape',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'A nullable class.',
+						'types' => array( '?\\WP_Post' ),
+						'variable' => '$post',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'An intersection.',
+						'types' => array( '\\WordPress\\AiClient\\Messages\\DTO\\MessagePart&\\Countable' ),
+						'variable' => '$both',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'Class names resolved inside generics.',
+						'types' => array( 'iterable<int, list<\\WordPress\\AiClient\\Messages\\DTO\\MessagePart>>' ),
+						'variable' => '$parts',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'A callable with a signature.',
+						'types' => array( 'callable(string $a): bool' ),
+						'variable' => '$callback',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'PHPStan pseudo-types.',
+						'types' => array( 'non-empty-string', 'int<0, max>' ),
+						'variable' => '$pseudo',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'A template type.',
+						'types' => array( 'class-string<T>' ),
+						'variable' => '$class',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'A class constant pattern.',
+						'types' => array( '\\WordPress\\AiClient\\Messages\\DTO\\MessagePart::TYPE_*' ),
+						'variable' => '$constant',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'A reference.',
+						'types' => array( 'array<int, string>' ),
+						'variable' => '$by_ref',
+					),
+					array(
+						'name' => 'param',
+						'content' => 'No type.',
+						'types' => array(),
+						'variable' => '$untyped',
+					),
+					array(
+						'name' => 'return',
+						'content' => 'Labels keyed by name.',
+						'types' => array( 'array<string, string>' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that an array shape written over several lines is one type, printed on one line.
+	 */
+	public function test_multiline_array_shape_return_type() {
+
+		$this->assertFunctionHasDocs(
+			'test_multiline_shape_return_type'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'return',
+						'content' => '',
+						'types' => array( 'array{ label: string, badge: array{ color: string, }, }', 'false' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a tag PHPStan's parser rejects is exported as phpDocumentor reads it.
+	 */
+	public function test_invalid_type_keeps_phpdocumentor_reading() {
+
+		$this->assertFunctionHasDocs(
+			'test_invalid_type_fallback'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => 'The arrow-&gt;prop blah',
+						'types' => array( '\\array<int' ),
+						'variable' => '$x',
+					),
+					array(
+						'name' => 'return',
+						'content' => 'A generator of things&gt;',
+						'types' => array( '\\Generator<int' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a parameter whose description is a hash keeps its type (wp_register_ability).
+	 */
+	public function test_generic_type_before_hash() {
+
+		$func = $this->find_entity_data_in( $this->export_data, 'functions', 'docs_wp_register_ability' );
+		$args = $func['doc']['tags'][1];
+
+		$this->assertSame( array( 'array<string, mixed>' ), $args['types'] );
+		$this->assertSame( '$args', $args['variable'] );
+		$this->assertStringStartsWith( '{     An associative array of arguments for configuring the ability.<br>    @type string ', $args['content'] );
+	}
+
+	/**
+	 * Test that hash notation is exported as a structure beside the unchanged `content`.
+	 *
+	 * Covers nested hashes, `$0` and `...$0` names, an entry with no name, a
+	 * description on continuation lines, a generic with whitespace, a `@type`
+	 * PHPStan's parser rejects, a `},` closing line, and a named `@return` hash.
+	 * Each `content` string is what the parser exported before hashes were read.
+	 */
+	public function test_hash_notation() {
+
+		$this->assertFunctionHasDocs(
+			'test_hash_notation'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => '{     Optional. Arguments.<br>    @type string                  $label Label.<br>    @type array&lt;int               $broken A type PHPStan\'s parser rejects.<br>    @type array&lt;string, int|null&gt; ...$0 {         Each entry, wrapped onto         a continuation line.<br>        @type string $0 The first element.<br>        @type int    $1 The second element.<br>    }     @type array {         An entry with no name.<br>        @type bool $flag A flag.<br>    }, }',
+						'types' => array( 'array' ),
+						'variable' => '$args',
+						'hash' => array(
+							'content' => 'Optional. Arguments.',
+							'items' => array(
+								array(
+									'types' => array( 'string' ),
+									'variable' => '$label',
+									'content' => 'Label.',
+								),
+								array(
+									'types' => array( '\\array<int' ),
+									'variable' => '$broken',
+									'content' => 'A type PHPStan\'s parser rejects.',
+								),
+								array(
+									'types' => array( 'array<string, int|null>' ),
+									'variable' => '...$0',
+									'content' => '',
+									'hash' => array(
+										'content' => 'Each entry, wrapped onto a continuation line.',
+										'items' => array(
+											array(
+												'types' => array( 'string' ),
+												'variable' => '$0',
+												'content' => 'The first element.',
+											),
+											array(
+												'types' => array( 'int' ),
+												'variable' => '$1',
+												'content' => 'The second element.',
+											),
+										),
+									),
+								),
+								array(
+									'types' => array( 'array' ),
+									'variable' => '',
+									'content' => '',
+									'hash' => array(
+										'content' => 'An entry with no name.',
+										'items' => array(
+											array(
+												'types' => array( 'bool' ),
+												'variable' => '$flag',
+												'content' => 'A flag.',
+											),
+										),
+									),
+								),
+							),
+						),
+					),
+					array(
+						'name' => 'return',
+						'content' => '$results {     The results, or false.<br>    @type int $ID Post ID.<br>}',
+						'types' => array( 'array', 'false' ),
+						'hash' => array(
+							'content' => 'The results, or false.',
+							'items' => array(
+								array(
+									'types' => array( 'int' ),
+									'variable' => '$ID',
+									'content' => 'Post ID.',
+								),
+							),
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test that a hash whose braces do not balance is exported as text only.
+	 */
+	public function test_unbalanced_hash_notation() {
+
+		$this->assertFunctionHasDocs(
+			'test_unbalanced_hash_notation'
+			, array(
+				'tags' => array(
+					array(
+						'name' => 'param',
+						'content' => '{     Arguments.<br>    @type string $label Label.',
+						'types' => array( 'array' ),
+						'variable' => '$args',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Test the nested hash of a WordPress core function (wp_register_ability).
+	 */
+	public function test_core_hash_notation() {
+
+		$func = $this->find_entity_data_in( $this->export_data, 'functions', 'docs_wp_register_ability' );
+
+		$this->assertSame(
+			array(
+				'content' => 'An associative array of arguments for configuring the ability.',
+				'items' => array(
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$label',
+						'content' => 'Required. The human-readable label for the ability.',
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$description',
+						'content' => 'Required. A detailed description of what the ability does and when it should be used.',
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$category',
+						'content' => 'Required. The ability category slug this ability belongs to.<br>The ability category must be registered via <code>wp_register_ability_category()</code> before registering the ability.',
+					),
+					array(
+						'types' => array( 'callable' ),
+						'variable' => '$execute_callback',
+						'content' => 'Required. A callback function to execute when the ability is invoked.<br>Receives optional mixed input data and must return either a result value (any type) or a <code>WP_Error</code> object on failure.',
+					),
+					array(
+						'types' => array( 'callable' ),
+						'variable' => '$permission_callback',
+						'content' => 'Required. A callback function to check permissions before execution.<br>Receives optional mixed input data (same as <code>execute_callback</code>) and must return <code>true</code>/<code>false</code> for simple checks, or <code>WP_Error</code> for detailed error responses.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$input_schema',
+						'content' => 'Optional. JSON Schema definition for validating the ability\'s input.<br>Must be a valid JSON Schema object defining the structure and constraints for input data. Used for automatic validation and API documentation.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$output_schema',
+						'content' => 'Optional. JSON Schema definition for the ability\'s output.<br>Describes the structure of successful return values from <code>execute_callback</code>. Used for documentation and validation.',
+					),
+					array(
+						'types' => array( 'array<string, mixed>' ),
+						'variable' => '$meta',
+						'content' => '',
+						'hash' => array(
+							'content' => 'Optional. Additional metadata for the ability.',
+							'items' => array(
+								array(
+									'types' => array( 'array<string, bool|null>' ),
+									'variable' => '$annotations',
+									'content' => '',
+									'hash' => array(
+										'content' => 'Optional. Semantic annotations describing the ability\'s behavioral characteristics.<br>These annotations are hints for tooling and documentation.',
+										'items' => array(
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$readonly',
+												'content' => 'Optional. If true, the ability does not modify its environment.',
+											),
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$destructive',
+												'content' => 'Optional. If true, the ability may perform destructive updates to its environment.<br>If false, the ability performs only additive updates.',
+											),
+											array(
+												'types' => array( 'bool', 'null' ),
+												'variable' => '$idempotent',
+												'content' => 'Optional. If true, calling the ability repeatedly with the same arguments will have no additional effect on its environment.',
+											),
+										),
+									),
+								),
+								array(
+									'types' => array( 'bool' ),
+									'variable' => '$public',
+									'content' => 'Optional. Whether the ability is meant to be available to clients such as the REST API, MCP, or AI agents. Seeds the default for per-channel flags like <code>$show_in_rest</code>.<br>Defaults to false.',
+								),
+								array(
+									'types' => array( 'bool' ),
+									'variable' => '$show_in_rest',
+									'content' => 'Optional. Whether to expose this ability in the REST API.<br>When true, the ability can be invoked via HTTP requests.<br>Default is the value of <code>$public</code> when set, false otherwise.',
+								),
+							),
+						),
+					),
+					array(
+						'types' => array( 'string' ),
+						'variable' => '$ability_class',
+						'content' => 'Optional. Fully-qualified custom class name to instantiate instead of the default <code>WP_Ability</code> class. The custom class must extend <code>WP_Ability</code>. Useful for advanced customization of ability behavior.',
+					),
+				),
+			),
+			$func['doc']['tags'][1]['hash']
+		);
+	}
+
+	/**
+	 * Test the type expression reader directly.
+	 *
+	 * @dataProvider data_type_expressions
+	 *
+	 * @param string     $text     Text starting with a type.
+	 * @param array|null $expected Expected result.
+	 */
+	public function test_parse_docblock_type_expression( $text, $expected ) {
+
+		$this->assertSame( $expected, \WP_Parser\parse_docblock_type_expression( $text ) );
+	}
+
+	/**
+	 * Data provider for test_parse_docblock_type_expression().
+	 *
+	 * @return array[]
+	 */
+	public function data_type_expressions() {
+
+		return array(
+			'generic with whitespace'         => array( 'array<string, mixed> $l10n Desc', array( 'types' => array( 'array<string, mixed>' ), 'length' => 20 ) ),
+			'top-level union'                 => array( 'int|false', array( 'types' => array( 'int', 'false' ), 'length' => 9 ) ),
+			'class name, no context'          => array( 'WP_Post|null', array( 'types' => array( '\\WP_Post', 'null' ), 'length' => 12 ) ),
+			'shape keys are not class names'  => array( 'array{WP_Post: Foo}', array( 'types' => array( 'array{WP_Post: \\Foo}' ), 'length' => 19 ) ),
+			'conditional type'                => array( "(\$a is 'U' ? int : string) Desc", array( 'types' => array( "(\$a is 'U' ? int : string)" ), 'length' => 26 ) ),
+			'parser exception'                => array( 'array<int $x Desc', null ),
+			'unclosed group'                  => array( '(mixed depends on context)', null ),
+			'no whitespace after the type'    => array( 'string|null. Desc', null ),
+			'description markup'              => array( 'string <code>x</code>', array( 'types' => array( 'string' ), 'length' => 6 ) ),
+			'whitespace before a bracket'     => array( 'array <int> $x', null ),
+			'callable with a grouped return'  => array( 'callable(mixed): (bool|WP_Error) $cb', array( 'types' => array( 'callable(mixed): (bool|\\WP_Error)' ), 'length' => 32 ) ),
+			'empty string'                    => array( '', null ),
+		);
+	}
+
+	/**
 	 * Test that class docs are exported.
 	 */
 	public function test_class_docblocks() {

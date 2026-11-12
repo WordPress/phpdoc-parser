@@ -213,4 +213,59 @@ class File_Import_Test extends Import_UnitTestCase {
 		$this->assertEquals( $snippets, get_post_meta( $post->ID, '_wp-parser_code_snippets', true ) );
 		$this->assertEquals( $setup_blueprints, get_post_meta( $post->ID, '_wp-parser_setup_blueprints', true ) );
 	}
+
+	/**
+	 * Test that generic types and hash notation are stored in tag meta as exported.
+	 *
+	 * Import stores tags with update_post_meta(), which unslashes but applies no
+	 * KSES, so `<...>` in types is preserved. Namespace separators are a separate
+	 * problem: unslashing removes them.
+	 */
+	public function test_function_tag_types_and_hash_imported() {
+
+		$posts = get_posts(
+			array( 'post_type' => $this->importer->post_type_function )
+		);
+		$post  = $posts[0];
+
+		$function_data = $this->export_data['functions'][0];
+		$tags          = array(
+			array(
+				'name' => 'param',
+				'content' => 'The data.',
+				'types' => array( 'array<string, mixed>', 'list<int|string>', 'null' ),
+				'variable' => '$var',
+				'hash' => array(
+					'content' => 'Arguments.',
+					'items' => array(
+						array(
+							'types' => array( 'array<string, bool|null>' ),
+							'variable' => '$meta',
+							'content' => '',
+							'hash' => array(
+								'content' => '',
+								'items' => array(
+									array(
+										'types' => array( 'array{label: string, count?: int}' ),
+										'variable' => '$0',
+										'content' => 'A shape.',
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+			array(
+				'name' => 'return',
+				'content' => 'Labels.',
+				'types' => array( 'array<string, string>' ),
+			),
+		);
+		$function_data['doc']['tags'] = $tags;
+
+		$this->importer->import_function( $function_data );
+
+		$this->assertSame( $tags, get_post_meta( $post->ID, '_wp-parser_tags', true ) );
+	}
 }
